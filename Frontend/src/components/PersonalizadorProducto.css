@@ -1,0 +1,578 @@
+.personalizador {
+    width: min(1180px, calc(100% - 40px));
+
+    margin: 45px auto 80px;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.15fr)
+        minmax(330px, 0.85fr);
+
+    gap: 48px;
+
+    align-items: start;
+}
+
+/* =========================
+   VISUAL
+========================= */
+
+.personalizador-visual {
+    min-width: 0;
+}
+
+.personalizador-tabs {
+    display: flex;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    margin-bottom: 12px;
+}
+
+.personalizador-tabs button {
+    padding: 8px 15px;
+
+    color: #647d91;
+
+    background: #f1f5f8;
+
+    border: 1px solid #dce5ec;
+    border-radius: 50px;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    text-transform: capitalize;
+
+    cursor: pointer;
+}
+
+.personalizador-tabs button.active {
+    color: #ffffff;
+
+    background: #032a5b;
+
+    border-color: #032a5b;
+}
+
+.personalizador-canvas {
+    position: relative;
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            145deg,
+            #f4f7f9,
+            #e8eef3
+        );
+
+    border: 1px solid #dee6ec;
+    border-radius: 18px;
+
+    user-select: none;
+
+    touch-action: none;
+}
+
+.personalizador-base {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+
+    pointer-events: none;
+}
+
+/* =========================
+   PRINT AREA
+========================= */
+
+.personalizador-area {
+    position: absolute;
+
+    z-index: 2;
+
+    box-sizing: border-box;
+
+    border:
+        1.5px dashed
+        rgba(3, 42, 91, 0.48);
+
+    cursor: pointer;
+}
+
+.personalizador-placeholder {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    color: #5b7185;
+
+    text-align: center;
+
+    background:
+        rgba(255, 255, 255, 0.18);
+}
+
+.personalizador-placeholder strong {
+    color: #173c5b;
+
+    font-size: clamp(
+        11px,
+        2vw,
+        20px
+    );
+
+    letter-spacing: 1px;
+}
+
+.personalizador-placeholder span {
+    color: #173c5b;
+
+    font-size: clamp(
+        10px,
+        1.6vw,
+        16px
+    );
+
+    font-weight: 600;
+}
+
+.personalizador-placeholder small {
+    margin-top: 7px;
+
+    color: #718598;
+
+    font-size: 8px;
+}
+
+/* =========================
+   LOGO
+========================= */
+
+.personalizador-logo {
+    position: absolute;
+
+    z-index: 4;
+
+    box-sizing: border-box;
+
+    cursor: grab;
+
+    border:
+        1px dashed
+        rgba(3, 42, 91, 0.6);
+
+    touch-action: none;
+}
+
+.personalizador-logo:active {
+    cursor: grabbing;
+}
+
+.personalizador-logo img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    pointer-events: none;
+}
+
+.personalizador-resize {
+    position: absolute;
+
+    right: -7px;
+    bottom: -7px;
+
+    width: 15px;
+    height: 15px;
+
+    padding: 0;
+
+    background: #032a5b;
+
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+
+    box-shadow:
+        0 2px 8px
+        rgba(0, 0, 0, 0.25);
+
+    cursor: nwse-resize;
+}
+
+.cambiar-diseno {
+    margin-top: 10px;
+
+    padding: 8px 12px;
+
+    color: #42657f;
+
+    background: #eef3f7;
+
+    border: none;
+    border-radius: 7px;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+/* =========================
+   CONTROLS
+========================= */
+
+.personalizador-controles {
+    text-align: left;
+}
+
+.personalizador-eyebrow {
+    color: #607c93;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 1.6px;
+}
+
+.personalizador-controles h1 {
+    margin: 7px 0 10px;
+
+    color: #032a5b;
+
+    font-size: 33px;
+    font-weight: 720;
+
+    letter-spacing: -0.7px;
+}
+
+.personalizador-descripcion {
+    margin: 0 0 20px;
+
+    color: #71879a;
+
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.personalizador-precio {
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+
+    padding-bottom: 20px;
+
+    border-bottom: 1px solid #e4e9ed;
+}
+
+.personalizador-precio strong {
+    color: #032a5b;
+
+    font-size: 27px;
+}
+
+.personalizador-precio span {
+    color: #8496a5;
+
+    font-size: 9px;
+}
+
+/* =========================
+   SECTIONS
+========================= */
+
+.control-section {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+
+    padding: 17px 0;
+
+    border-bottom: 1px solid #e6ebef;
+}
+
+.control-section > label {
+    color: #294c69;
+
+    font-size: 11px;
+    font-weight: 750;
+}
+
+.control-section > select,
+.control-section > input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 11px 12px;
+
+    color: #264b68;
+
+    background: #fbfcfd;
+
+    border: 1px solid #dce4ea;
+    border-radius: 8px;
+
+    font-family: inherit;
+
+    outline: none;
+}
+
+/* =========================
+   SIZE BUTTONS
+========================= */
+
+.tamano-options {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 7px;
+}
+
+.tamano-options button {
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 3px;
+
+    padding: 11px 7px;
+
+    color: #557188;
+
+    background: #f8fafb;
+
+    border: 1px solid #dce5eb;
+    border-radius: 8px;
+
+    cursor: pointer;
+}
+
+.tamano-options button.active {
+    color: #032a5b;
+
+    background: #edf4fa;
+
+    border-color: #6489aa;
+}
+
+.tamano-options strong {
+    font-size: 10px;
+}
+
+.tamano-options span {
+    font-size: 8px;
+}
+
+.medida-actual {
+    color: #71899b;
+
+    font-size: 9px;
+}
+
+/* =========================
+   CART
+========================= */
+
+.agregar-carrito-button {
+    width: 100%;
+
+    margin-top: 22px;
+
+    padding: 14px 16px;
+
+    color: #ffffff;
+
+    background:
+        linear-gradient(
+            180deg,
+            #064b8a,
+            #032a5b
+        );
+
+    border: none;
+    border-radius: 9px;
+
+    font-size: 11px;
+    font-weight: 750;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 12px 30px
+        rgba(3, 42, 91, 0.16);
+}
+
+.agregar-carrito-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+.agregar-carrito-button:disabled {
+    opacity: 0.55;
+
+    cursor: wait;
+}
+
+/* =========================
+   MESSAGES
+========================= */
+
+.personalizador-message {
+    margin-top: 14px;
+
+    padding: 10px 12px;
+
+    border-radius: 7px;
+
+    font-size: 10px;
+}
+
+.personalizador-message.error {
+    color: #993d3d;
+
+    background: #fff2f2;
+
+    border: 1px solid #efd1d1;
+}
+
+.personalizador-message.success {
+    color: #2c6643;
+
+    background: #eef8f1;
+
+    border: 1px solid #cae4d2;
+}
+
+.personalizador-loading,
+.personalizador-no-config {
+    width: min(
+        1100px,
+        calc(100% - 40px)
+    );
+
+    margin: 50px auto;
+
+    padding: 35px;
+
+    box-sizing: border-box;
+
+    color: #6e8496;
+
+    background: #f6f9fb;
+
+    border: 1px solid #dfe7ed;
+    border-radius: 12px;
+
+    text-align: center;
+
+    font-size: 11px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 850px) {
+
+    .personalizador {
+        grid-template-columns: 1fr;
+
+        width:
+            min(
+                650px,
+                calc(100% - 30px)
+            );
+
+        gap: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .personalizador {
+        width:
+            calc(100% - 20px);
+
+        margin-top: 25px;
+    }
+
+    .personalizador-controles h1 {
+        font-size: 27px;
+    }
+
+    .tamano-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================
+   COLOR OPTIONS
+========================= */
+
+.color-options {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 8px;
+}
+
+.color-options button {
+    min-width: 74px;
+
+    padding: 10px 13px;
+
+    color: #557188;
+    background: #f8fafb;
+
+    border: 1px solid #dce5eb;
+    border-radius: 999px;
+
+    font: inherit;
+    font-size: 10px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.color-options button:hover {
+    transform: translateY(-1px);
+}
+
+.color-options button.active {
+    color: #ffffff;
+    background: #032a5b;
+    border-color: #032a5b;
+}

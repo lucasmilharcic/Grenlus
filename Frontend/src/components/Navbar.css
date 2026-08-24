@@ -1,0 +1,726 @@
+﻿/* =========================================================
+   NAVBAR
+========================================================= */
+
+.site-navbar {
+    position: sticky;
+
+    top: 0;
+
+    z-index: 1000;
+
+    width: 100%;
+
+    background:
+        rgba(244, 244, 246, 0.94);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border-bottom:
+        1px solid rgba(3, 42, 91, 0.06);
+
+    box-shadow:
+        0 4px 22px
+        rgba(3, 42, 91, 0.045);
+}
+
+
+/* =========================================================
+   ESTRUCTURA
+
+   1fr | navegación | 1fr
+
+   Al tener los laterales del mismo tamaño,
+   la navegación queda centrada de verdad.
+========================================================= */
+
+.navbar-inner {
+    width:
+        min(
+            1660px,
+            calc(100% - 80px)
+        );
+
+    min-height: 82px;
+
+    margin: 0 auto;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto
+        minmax(0, 1fr);
+
+    align-items: center;
+
+    column-gap: 34px;
+}
+
+
+/* =========================================================
+   LADO IZQUIERDO
+========================================================= */
+
+.navbar-left {
+    justify-self: start;
+
+    display: flex;
+    align-items: center;
+}
+
+
+.logo {
+    color: #032a5b;
+
+    font-family:
+        "Inter",
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
+
+    font-size: 22px;
+    font-weight: 850;
+
+    letter-spacing: 3px;
+
+    line-height: 1;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+.logo:hover {
+    opacity: 0.82;
+
+    transform:
+        translateY(-1px);
+}
+
+
+/* =========================================================
+   NAVEGACIÓN CENTRAL
+========================================================= */
+
+.nav {
+    justify-self: center;
+}
+
+
+.nav ul {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 46px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+
+.nav a {
+    position: relative;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 9px 2px;
+
+    color: #032a5b;
+
+    font-size: 15px;
+    font-weight: 650;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    transition:
+        color 0.18s ease;
+}
+
+
+.nav a::after {
+    content: "";
+
+    position: absolute;
+
+    left: 50%;
+    bottom: 3px;
+
+    width: 0;
+    height: 2px;
+
+    background: #064b8a;
+
+    border-radius: 10px;
+
+    transform:
+        translateX(-50%);
+
+    transition:
+        width 0.2s ease;
+}
+
+
+.nav a:hover::after {
+    width: 100%;
+}
+
+
+/* =========================================================
+   ACCIONES DERECHA
+========================================================= */
+
+.actions {
+    justify-self: end;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 11px;
+
+    min-width: 0;
+}
+
+
+/* =========================================================
+   USUARIO
+========================================================= */
+
+.navbar-user {
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+}
+
+
+.navbar-greeting {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    margin-right: 4px;
+
+    color: #8a9bac;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    white-space: nowrap;
+}
+
+
+.navbar-greeting strong {
+    color: #49677f;
+
+    font-weight: 750;
+}
+
+
+/* =========================================================
+   MI PANEL
+========================================================= */
+
+.navbar-panel-button,
+.navbar-login {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: 38px;
+
+    box-sizing: border-box;
+
+    padding: 0 14px;
+
+    color: #032a5b;
+
+    background:
+        rgba(255, 255, 255, 0.45);
+
+    border:
+        1px solid rgba(
+            3,
+            42,
+            91,
+            0.11
+        );
+
+    border-radius: 9px;
+
+    font-size: 12px;
+    font-weight: 650;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+
+.navbar-panel-button:hover,
+.navbar-login:hover {
+    background: #ffffff;
+
+    border-color:
+        rgba(3, 42, 91, 0.18);
+
+    box-shadow:
+        0 5px 18px
+        rgba(3, 42, 91, 0.07);
+
+    transform:
+        translateY(-1px);
+}
+
+
+/* =========================================================
+   SALIR
+========================================================= */
+
+.navbar-logout {
+    min-height: 36px;
+
+    padding: 0 11px;
+
+    color: #7a5360;
+
+    background: transparent;
+
+    border: none;
+
+    border-radius: 7px;
+
+    font: inherit;
+
+    font-size: 11px;
+    font-weight: 650;
+
+    cursor: pointer;
+
+    transition:
+        color 0.18s ease,
+        background 0.18s ease;
+}
+
+
+.navbar-logout:hover {
+    color: #a03c4c;
+
+    background:
+        rgba(160, 60, 76, 0.06);
+}
+
+
+/* =========================================================
+   CARRITO
+========================================================= */
+
+.navbar-cart {
+    position: relative;
+
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    color: #032a5b;
+
+    background:
+        rgba(255, 255, 255, 0.55);
+
+    border:
+        1px solid rgba(
+            3,
+            42,
+            91,
+            0.1
+        );
+
+    border-radius: 50%;
+
+    text-decoration: none;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+
+.navbar-cart:hover {
+    color: #ffffff;
+
+    background: #032a5b;
+
+    border-color: #032a5b;
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 7px 18px
+        rgba(3, 42, 91, 0.18);
+}
+
+
+.navbar-cart-icon {
+    width: 21px;
+    height: 21px;
+
+    display: block;
+}
+
+
+/* =========================================================
+   BURGER
+========================================================= */
+
+.burger {
+    display: none;
+
+    width: 40px;
+    height: 40px;
+
+    padding: 8px;
+
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    background: transparent;
+
+    border: none;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+}
+
+
+.burger span {
+    display: block;
+
+    width: 21px;
+    height: 2px;
+
+    margin: 2.5px 0;
+
+    background: #032a5b;
+
+    border-radius: 20px;
+
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1150px) {
+
+    .navbar-inner {
+        width:
+            calc(100% - 40px);
+
+        column-gap: 20px;
+    }
+
+    .nav ul {
+        gap: 25px;
+    }
+
+    .navbar-greeting {
+        display: none;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 820px) {
+
+    .navbar-inner {
+        position: relative;
+
+        width:
+            calc(100% - 28px);
+
+        min-height: 68px;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 14px;
+    }
+
+
+    .logo {
+        font-size: 19px;
+
+        letter-spacing: 2.4px;
+    }
+
+
+    /* MENÚ DESPLEGABLE */
+
+    .nav {
+        position: absolute;
+
+        top: 68px;
+        left: -14px;
+        right: -14px;
+
+        padding: 12px 14px 16px;
+
+        background:
+            rgba(
+                247,
+                249,
+                251,
+                0.99
+            );
+
+        border-bottom:
+            1px solid
+            rgba(
+                3,
+                42,
+                91,
+                0.08
+            );
+
+        box-shadow:
+            0 14px 30px
+            rgba(
+                3,
+                42,
+                91,
+                0.08
+            );
+
+        opacity: 0;
+
+        visibility: hidden;
+
+        transform:
+            translateY(-8px);
+
+        pointer-events: none;
+
+        transition:
+            opacity 0.18s ease,
+            transform 0.18s ease,
+            visibility 0.18s ease;
+    }
+
+
+    .site-navbar.open .nav {
+        opacity: 1;
+
+        visibility: visible;
+
+        transform:
+            translateY(0);
+
+        pointer-events: auto;
+    }
+
+
+    .nav ul {
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 2px;
+    }
+
+
+    .nav a {
+        width: 100%;
+
+        box-sizing: border-box;
+
+        justify-content: flex-start;
+
+        padding: 12px 10px;
+
+        border-radius: 7px;
+    }
+
+
+    .nav a::after {
+        display: none;
+    }
+
+
+    .nav a:hover {
+        background:
+            rgba(
+                3,
+                42,
+                91,
+                0.05
+            );
+    }
+
+
+    /* ACCIONES */
+
+    .actions {
+        margin-left: auto;
+
+        gap: 7px;
+    }
+
+
+    .navbar-user {
+        gap: 5px;
+    }
+
+
+    .navbar-greeting {
+        display: none;
+    }
+
+
+    .navbar-panel-button {
+        min-height: 36px;
+
+        padding: 0 10px;
+
+        font-size: 11px;
+    }
+
+
+    .navbar-logout {
+        display: none;
+    }
+
+
+    .navbar-login {
+        padding: 0 10px;
+
+        font-size: 11px;
+    }
+
+
+    .navbar-cart {
+        width: 38px;
+        height: 38px;
+    }
+
+
+    .navbar-cart-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+
+    .burger {
+        display: flex;
+    }
+
+
+    /* BURGER ABIERTO */
+
+    .site-navbar.open
+    .burger span:nth-child(1) {
+        transform:
+            translateY(7px)
+            rotate(45deg);
+    }
+
+
+    .site-navbar.open
+    .burger span:nth-child(2) {
+        opacity: 0;
+    }
+
+
+    .site-navbar.open
+    .burger span:nth-child(3) {
+        transform:
+            translateY(-7px)
+            rotate(-45deg);
+    }
+}
+
+
+/* =========================================================
+   MOBILE CHICO
+========================================================= */
+
+@media (max-width: 480px) {
+
+    .navbar-inner {
+        width:
+            calc(100% - 22px);
+    }
+
+
+    .logo {
+        font-size: 17px;
+
+        letter-spacing: 2px;
+    }
+
+
+    .navbar-panel-button {
+        display: none;
+    }
+
+
+    .navbar-cart {
+        width: 36px;
+        height: 36px;
+    }
+
+
+    .burger {
+        width: 36px;
+        height: 36px;
+    }
+}

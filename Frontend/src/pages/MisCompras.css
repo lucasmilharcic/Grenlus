@@ -1,0 +1,205 @@
+.mis-compras {
+    min-height: 75vh;
+
+    padding: 60px 6% 90px;
+
+    background: #f4f7f9;
+
+    color: #082d58;
+}
+
+.mis-compras-header,
+.mis-compras-list,
+.mis-compras-state {
+    max-width: 1100px;
+
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.mis-compras-header {
+    margin-bottom: 34px;
+}
+
+.mis-compras-header > span {
+    color: #6d89a2;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 3px;
+}
+
+.mis-compras-header h1 {
+    margin: 8px 0;
+
+    font-size: clamp(
+        36px,
+        5vw,
+        60px
+    );
+}
+
+.mis-compras-header p {
+    margin: 0;
+
+    color: #71879a;
+}
+
+.mis-compras-list {
+    display: grid;
+    gap: 20px;
+}
+
+.mi-compra-card {
+    padding: 25px;
+
+    background: #ffffff;
+
+    border: 1px solid #dfe8ef;
+    border-radius: 18px;
+
+    box-shadow:
+        0 12px 32px
+        rgba(4, 39, 72, 0.06);
+}
+
+.mi-compra-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.mi-compra-numero {
+    color: #71889d;
+
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.mi-compra-top h2 {
+    margin: 6px 0 0;
+
+    font-size: 18px;
+}
+
+.mi-compra-top > strong {
+    font-size: 24px;
+}
+
+.mi-compra-estados {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin: 20px 0;
+
+    padding: 14px;
+
+    background: #edf4f8;
+
+    border-radius: 10px;
+}
+
+.mi-compra-estados span {
+    padding: 6px 10px;
+
+    background: #ffffff;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+}
+
+.mi-compra-productos {
+    border-top:
+        1px solid #e3eaf0;
+}
+
+.mi-compra-producto {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 16px 0;
+
+    border-bottom:
+        1px solid #e8eef2;
+}
+
+.mi-compra-producto span {
+    display: inline-block;
+
+    margin-top: 7px;
+    margin-right: 10px;
+
+    color: #74899b;
+
+    font-size: 12px;
+}
+
+.continuar-pago {
+    display: inline-flex;
+
+    margin-top: 18px;
+    padding: 11px 17px;
+
+    color: #ffffff;
+    background: #07509a;
+
+    border-radius: 9px;
+
+    text-decoration: none;
+
+    font-weight: 750;
+}
+
+.mis-compras-state {
+    padding: 45px;
+
+    text-align: center;
+
+    background: #ffffff;
+
+    border-radius: 16px;
+}
+
+.mis-compras-state.error {
+    color: #a63c3c;
+}
+
+.mis-compras-state a,
+.mis-compras-state button {
+    display: inline-block;
+
+    margin-top: 12px;
+    padding: 10px 16px;
+
+    color: #ffffff;
+    background: #07509a;
+
+    border: 0;
+    border-radius: 8px;
+
+    text-decoration: none;
+
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+
+    .mis-compras {
+        padding:
+            35px 18px
+            70px;
+    }
+
+    .mi-compra-top,
+    .mi-compra-producto {
+        flex-direction: column;
+    }
+}
