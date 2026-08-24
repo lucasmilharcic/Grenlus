@@ -1,0 +1,23 @@
+# CREDENCIALES
+.env
+.env.*
+!.env.example
+
+# FRONTEND
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.vite/
+
+# BACKEND
+Backend/target/
+Backend/uploads/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# SISTEMA
+.DS_Store
+Thumbs.db

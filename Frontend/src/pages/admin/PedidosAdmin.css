@@ -1,0 +1,549 @@
+.pedidos-admin {
+    min-height: 80vh;
+    padding: 60px 6%;
+    background: #07111f;
+    color: #eef5fb;
+}
+
+.pedidos-admin-header {
+    max-width: 1350px;
+    margin: 0 auto 36px;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.pedidos-eyebrow {
+    display: block;
+
+    margin-bottom: 10px;
+
+    color: #6f93b6;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    letter-spacing: 3px;
+}
+
+.pedidos-admin-header h1 {
+    margin: 0;
+
+    font-size: clamp(
+        38px,
+        5vw,
+        70px
+    );
+
+    line-height: 1;
+}
+
+.pedidos-admin-header p {
+    margin: 16px 0 0;
+
+    color: #8ca3b8;
+}
+
+.pedidos-count {
+    padding: 12px 18px;
+
+    color: #0a315e;
+    background: #eef5fb;
+
+    border-radius: 999px;
+
+    font-weight: 800;
+}
+
+.pedidos-list {
+    max-width: 1350px;
+    margin: auto;
+
+    display: grid;
+    gap: 24px;
+}
+
+.pedido-card {
+    padding: 28px;
+
+    color: #082d58;
+    background: #f7fafc;
+
+    border: 1px solid #dbe7f0;
+    border-radius: 22px;
+
+    box-shadow:
+        0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+.pedido-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.pedido-numero {
+    color: #718ba3;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    letter-spacing: 1px;
+}
+
+.pedido-card h2 {
+    margin: 6px 0;
+
+    font-size: 26px;
+}
+
+.pedido-fecha {
+    color: #7b91a4;
+
+    font-size: 13px;
+}
+
+.pedido-total {
+    font-size: 28px;
+
+    white-space: nowrap;
+}
+
+.pedido-estados {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    margin: 24px 0;
+}
+
+.estado-badge {
+    padding: 7px 11px;
+
+    background: #e8f0f6;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.estado-badge.pago.aprobado {
+    color: #17653b;
+    background: #dff5e8;
+}
+
+.estado-badge.pago.rechazado {
+    color: #9d3131;
+    background: #ffe6e6;
+}
+
+.estado-badge.pago.pendiente {
+    color: #87621b;
+    background: #fff2ce;
+}
+
+.pedido-cliente-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+
+    gap: 12px;
+}
+
+.pedido-cliente-grid > div {
+    padding: 15px;
+
+    background: #edf4f8;
+
+    border-radius: 12px;
+}
+
+.pedido-cliente-grid span,
+.pedido-cliente-grid strong {
+    display: block;
+}
+
+.pedido-cliente-grid span {
+    margin-bottom: 5px;
+
+    color: #71869a;
+
+    font-size: 11px;
+}
+
+.pedido-productos {
+    margin-top: 24px;
+
+    padding-top: 22px;
+
+    border-top: 1px solid #dce6ee;
+}
+
+.pedido-productos h3,
+.pedido-comprobante h3 {
+    margin: 0 0 14px;
+}
+
+.pedido-producto {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+
+    padding: 14px 0;
+
+    border-bottom:
+        1px solid #e2eaf0;
+}
+
+.pedido-producto span {
+    display: inline-block;
+
+    margin-top: 7px;
+    margin-right: 12px;
+
+    color: #71869a;
+
+    font-size: 12px;
+}
+
+.pedido-comprobante {
+    margin-top: 24px;
+
+    padding: 20px;
+
+    background: #edf4f8;
+
+    border-radius: 14px;
+}
+
+.comprobante-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn-comprobante,
+.btn-aprobar,
+.btn-rechazar {
+    padding: 11px 16px;
+
+    border: 0;
+    border-radius: 9px;
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-comprobante {
+    color: #ffffff;
+    background: #0c4f8f;
+}
+
+.btn-aprobar {
+    color: #ffffff;
+    background: #218052;
+}
+
+.btn-rechazar {
+    color: #ffffff;
+    background: #a54343;
+}
+
+.sin-comprobante {
+    margin: 0;
+
+    color: #71869a;
+}
+
+.pedidos-state {
+    max-width: 1350px;
+
+    margin: auto;
+    padding: 45px;
+
+    text-align: center;
+
+    color: #68839a;
+    background: #f4f8fb;
+
+    border-radius: 18px;
+}
+
+.pedidos-state.error {
+    color: #a83f3f;
+}
+
+@media (max-width: 850px) {
+
+    .pedidos-admin-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .pedido-cliente-grid {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+}
+
+@media (max-width: 520px) {
+
+    .pedidos-admin {
+        padding: 35px 18px;
+    }
+
+    .pedido-card-top {
+        flex-direction: column;
+    }
+
+    .pedido-cliente-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .comprobante-actions {
+        flex-direction: column;
+    }
+}
+
+/* =====================================================
+   FILTROS
+===================================================== */
+
+.pedidos-filtros {
+    max-width: 1350px;
+    margin: 0 auto 28px;
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pedidos-filtros button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 16px;
+
+    color: #70869b;
+    background: #f2f6f9;
+
+    border: 1px solid #d9e4ed;
+    border-radius: 999px;
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+
+    cursor: pointer;
+}
+
+.pedidos-filtros button.active {
+    color: #ffffff;
+    background: #073a70;
+    border-color: #073a70;
+}
+
+.pedidos-filtros button span {
+    min-width: 21px;
+
+    padding: 2px 6px;
+
+    text-align: center;
+
+    background: rgba(255, 255, 255, 0.18);
+
+    border-radius: 999px;
+
+    font-size: 11px;
+}
+
+.pedido-mensaje-accion {
+    max-width: 1350px;
+
+    margin: 0 auto 22px;
+    padding: 14px 18px;
+
+    color: #185d3c;
+    background: #e7f7ee;
+
+    border: 1px solid #c8ead6;
+    border-radius: 10px;
+}
+
+/* =====================================================
+   DETALLE
+===================================================== */
+
+.pedido-detalle-completo {
+    padding: 5px 0 25px;
+}
+
+/* =====================================================
+   DISEÑOS
+===================================================== */
+
+.pedido-disenos {
+    margin-top: 20px;
+}
+
+.pedido-disenos h4 {
+    margin: 0 0 14px;
+
+    color: #173d62;
+}
+
+.pedido-disenos-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(240px, 1fr)
+        );
+
+    gap: 16px;
+}
+
+.pedido-diseno-card {
+    overflow: hidden;
+
+    padding: 14px;
+
+    background: #ffffff;
+
+    border: 1px solid #dce6ed;
+    border-radius: 14px;
+}
+
+.pedido-diseno-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 10px;
+}
+
+.pedido-diseno-header span {
+    padding: 4px 8px;
+
+    color: #53708c;
+    background: #edf4f8;
+
+    border-radius: 999px;
+
+    font-size: 10px;
+    font-weight: 750;
+}
+
+/* =====================================================
+   MOCKUP
+===================================================== */
+
+.pedido-mockup {
+    position: relative;
+
+    width: 100%;
+    aspect-ratio: 1 / 1;
+
+    overflow: hidden;
+
+    background: #eaf1f6;
+
+    border-radius: 10px;
+}
+
+.pedido-mockup-base {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+}
+
+.pedido-mockup-diseno {
+    position: absolute;
+
+    object-fit: contain;
+
+    pointer-events: none;
+}
+
+.pedido-original-solo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    aspect-ratio: 1 / 1;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+
+    background: #edf3f7;
+
+    border-radius: 10px;
+}
+
+.pedido-original-solo img {
+    max-width: 100%;
+    max-height: 100%;
+
+    object-fit: contain;
+}
+
+/* =====================================================
+   ARCHIVOS
+===================================================== */
+
+.pedido-diseno-actions {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 7px;
+
+    margin-top: 12px;
+}
+
+.pedido-diseno-actions a {
+    padding: 8px 10px;
+
+    color: #0a4d89;
+    background: #edf5fa;
+
+    border: 1px solid #d9e7f0;
+    border-radius: 7px;
+
+    text-decoration: none;
+
+    font-size: 11px;
+    font-weight: 750;
+}
+
+.pedido-diseno-actions a:hover {
+    background: #dfeef7;
+}
+
+.pedido-diseno-observaciones {
+    margin: 10px 0 0;
+
+    color: #70869a;
+
+    font-size: 12px;
+}
