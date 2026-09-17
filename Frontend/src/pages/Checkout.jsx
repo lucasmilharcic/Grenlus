@@ -322,6 +322,37 @@ export default function Checkout() {
                 data
             );
 
+            /*
+             * El backend ya devuelve únicamente Correo Argentino
+             * y ordena las opciones de menor a mayor precio.
+             *
+             * Seleccionamos automáticamente la más barata.
+             */
+            if (
+                data?.opciones?.length > 0
+            ) {
+
+                const masBarata =
+                    [...data.opciones]
+                        .sort(
+                            (a, b) =>
+                                Number(a.precio) -
+                                Number(b.precio)
+                        )[0];
+
+                setOpcionEnvio(
+                    masBarata
+                );
+
+            } else {
+
+                setOpcionEnvio(null);
+
+                setError(
+                    "Correo Argentino no tiene opciones disponibles para ese destino."
+                );
+            }
+
         } catch (err) {
 
             console.error(err);
@@ -535,11 +566,11 @@ export default function Checkout() {
             }
 
             if (
-                !cotizacion?.tarifaId
+                !opcionEnvio?.opcionId
             ) {
 
                 setError(
-                    "Primero calculá el costo de envío."
+                    "Calculá el envío y seleccioná una opción."
                 );
 
                 return;
@@ -590,10 +621,10 @@ export default function Checkout() {
 
                     metodoEntrega,
 
-                    tarifaEnvioId:
+                    opcionEnvioId:
                         metodoEntrega ===
                             "ENVIO_DOMICILIO"
-                            ? cotizacion.tarifaId
+                            ? opcionEnvio.opcionId
                             : null,
 
                     metodoPago,
@@ -1521,7 +1552,7 @@ export default function Checkout() {
                                     {metodoEntrega ===
                                         "RETIRO"
                                         ? "Gratis"
-                                        : cotizacion
+                                        : opcionEnvio
                                             ? formatearPrecio(
                                                 costoEnvio
                                             )
@@ -1547,7 +1578,7 @@ export default function Checkout() {
 
                         <small>
                             El servidor verificará nuevamente
-                            los precios y la tarifa al crear
+                            los precios y la opción de envío al crear
                             el pedido.
                         </small>
 

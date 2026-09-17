@@ -27,543 +27,887 @@ import com.grenlus.backend.Repository.ProductoRepository;
 @Service
 public class ZipnovaService {
 
-        private final ProductoRepository productoRepository;
+    private final ProductoRepository productoRepository;
 
-        private final RestClient restClient;
+    private final RestClient restClient;
 
-        private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-        @Value("${zipnova.api-key}")
-        private String apiKey;
+    @Value("${zipnova.api-key}")
+    private String apiKey;
 
-        @Value("${zipnova.api-secret}")
-        private String apiSecret;
+    @Value("${zipnova.api-secret}")
+    private String apiSecret;
 
-        @Value("${zipnova.account-id}")
-        private Long accountId;
+    @Value("${zipnova.account-id}")
+    private Long accountId;
 
-        @Value("${zipnova.origin-id}")
-        private Long originId;
+    @Value("${zipnova.origin-id}")
+    private Long originId;
 
-        public ZipnovaService(
-                        ProductoRepository productoRepository,
-                        ObjectMapper objectMapper,
-                        RestClient.Builder restClientBuilder,
-                        @Value("${zipnova.api-url}") String apiUrl) {
+    public ZipnovaService(
+            ProductoRepository productoRepository,
+            ObjectMapper objectMapper,
+            RestClient.Builder restClientBuilder,
+            @Value("${zipnova.api-url}") String apiUrl
+    ) {
 
-                this.productoRepository = productoRepository;
+        this.productoRepository =
+                productoRepository;
 
-                this.objectMapper = objectMapper;
+        this.objectMapper =
+                objectMapper;
 
-                this.restClient = restClientBuilder
-                                .baseUrl(apiUrl)
-                                .build();
+        this.restClient =
+                restClientBuilder
+                        .baseUrl(apiUrl)
+                        .build();
+    }
+
+    // =========================================================
+    // COTIZAR
+    // =========================================================
+
+    public CotizacionEnvioResponseDTO cotizar(
+            CotizarEnvioDTO dto
+    ) {
+
+        validarConfiguracion();
+
+        validarSolicitud(dto);
+
+        List<Map<String, Object>> itemsZipnova =
+                construirItems(
+                        dto.getItems()
+                );
+
+        Map<String, Object> destination =
+                new LinkedHashMap<>();
+
+        destination.put(
+                "city",
+                dto.getLocalidad().trim()
+        );
+
+        destination.put(
+                "state",
+                dto.getProvincia().trim()
+        );
+
+        destination.put(
+                "zipcode",
+                dto.getCodigoPostal().trim()
+        );
+
+        destination.put(
+                "country",
+                "AR"
+        );
+
+        Map<String, Object> body =
+                new LinkedHashMap<>();
+
+        body.put(
+                "account_id",
+                accountId
+        );
+
+        body.put(
+                "origin_id",
+                originId
+        );
+
+        body.put(
+                "declared_value",
+                obtenerValorDeclarado(dto)
+        );
+
+        body.put(
+                "destination",
+                destination
+        );
+
+        body.put(
+                "items",
+                itemsZipnova
+        );
+
+        body.put(
+                "type_packaging",
+                "dynamic"
+        );
+
+        body.put(
+                "source",
+                "grenlus"
+        );
+
+        String respuesta;
+
+        try {
+
+            respuesta =
+                    restClient
+                            .post()
+                            .uri(
+                                    "/shipments/quote"
+                            )
+                            .header(
+                                    HttpHeaders.AUTHORIZATION,
+                                    crearBasicAuth()
+                            )
+                            .contentType(
+                                    MediaType.APPLICATION_JSON
+                            )
+                            .accept(
+                                    MediaType.APPLICATION_JSON
+                            )
+                            .body(body)
+                            .retrieve()
+                            .body(String.class);
+
+        } catch (Exception e) {
+
+            throw new BadRequestException(
+                    "No se pudo obtener la cotización de envío de Zipnova."
+            );
         }
 
-        // =========================================================
-        // COTIZAR
-        // =========================================================
+        if (
+                respuesta == null ||
+                respuesta.isBlank()
+        ) {
 
-        public CotizacionEnvioResponseDTO cotizar(
-                        CotizarEnvioDTO dto) {
-
-                validarConfiguracion();
-
-                validarSolicitud(dto);
-
-                List<Map<String, Object>> itemsZipnova = construirItems(
-                                dto.getItems());
-
-                Map<String, Object> destination = new LinkedHashMap<>();
-
-                destination.put(
-                                "city",
-                                dto.getLocalidad().trim());
-
-                destination.put(
-                                "state",
-                                dto.getProvincia().trim());
-
-                destination.put(
-                                "zipcode",
-                                dto.getCodigoPostal().trim());
-
-                destination.put(
-                                "country",
-                                "AR");
-
-                Map<String, Object> body = new LinkedHashMap<>();
-
-                body.put(
-                                "account_id",
-                                accountId);
-
-                body.put(
-                                "origin_id",
-                                originId);
-
-                body.put(
-                                "declared_value",
-                                obtenerValorDeclarado(dto));
-
-                body.put(
-                                "destination",
-                                destination);
-
-                body.put(
-                                "items",
-                                itemsZipnova);
-
-                body.put(
-                                "type_packaging",
-                                "dynamic");
-
-                body.put(
-                                "source",
-                                "grenlus");
-
-                String respuesta;
-
-                try {
-
-                        respuesta = restClient
-                                        .post()
-                                        .uri("/shipments/quote")
-                                        .header(
-                                                        HttpHeaders.AUTHORIZATION,
-                                                        crearBasicAuth())
-                                        .contentType(
-                                                        MediaType.APPLICATION_JSON)
-                                        .accept(
-                                                        MediaType.APPLICATION_JSON)
-                                        .body(body)
-                                        .retrieve()
-                                        .body(String.class);
-
-                } catch (Exception e) {
-
-                        throw new BadRequestException(
-                                        "No se pudo obtener la cotización de envío de Zipnova.");
-                }
-
-                if (respuesta == null ||
-                                respuesta.isBlank()) {
-
-                        throw new BadRequestException(
-                                        "Zipnova no devolvió una cotización.");
-                }
-
-                return convertirRespuesta(
-                                respuesta,
-                                dto);
+            throw new BadRequestException(
+                    "Zipnova no devolvió una cotización."
+            );
         }
 
-        // =========================================================
-        // ITEMS
-        // =========================================================
+        return convertirRespuesta(
+                respuesta,
+                dto
+        );
+    }
 
-        private List<Map<String, Object>> construirItems(
-                        List<ItemCotizacionEnvioDTO> items) {
+    // =========================================================
+    // ITEMS
+    // =========================================================
 
-                List<Map<String, Object>> resultado = new ArrayList<>();
+    private List<Map<String, Object>> construirItems(
+            List<ItemCotizacionEnvioDTO> items
+    ) {
 
-                for (ItemCotizacionEnvioDTO item : items) {
+        List<Map<String, Object>> resultado =
+                new ArrayList<>();
 
-                        if (item == null ||
-                                        item.getProductoId() == null) {
+        for (
+                ItemCotizacionEnvioDTO item :
+                items
+        ) {
 
-                                throw new BadRequestException(
-                                                "Hay un producto inválido en el carrito.");
-                        }
+            if (
+                    item == null ||
+                    item.getProductoId() == null
+            ) {
 
-                        int cantidad = item.getCantidad() == null
-                                        ? 1
-                                        : item.getCantidad();
+                throw new BadRequestException(
+                        "Hay un producto inválido en el carrito."
+                );
+            }
 
-                        if (cantidad <= 0) {
+            int cantidad =
+                    item.getCantidad() == null
+                            ? 1
+                            : item.getCantidad();
 
-                                throw new BadRequestException(
-                                                "La cantidad del producto debe ser mayor a cero.");
-                        }
+            if (cantidad <= 0) {
 
-                        Producto producto = productoRepository
-                                        .findById(
-                                                        item.getProductoId())
-                                        .orElseThrow(() -> new BadRequestException(
-                                                        "Producto no encontrado: "
-                                                                        + item.getProductoId()));
+                throw new BadRequestException(
+                        "La cantidad del producto debe ser mayor a cero."
+                );
+            }
 
-                        validarDatosLogisticos(
-                                        producto);
+            Producto producto =
+                    productoRepository
+                            .findById(
+                                    item.getProductoId()
+                            )
+                            .orElseThrow(
+                                    () ->
+                                            new BadRequestException(
+                                                    "Producto no encontrado: "
+                                                            + item.getProductoId()
+                                            )
+                            );
+
+            validarDatosLogisticos(
+                    producto
+            );
+
+            /*
+             * Mandamos una entrada por unidad.
+             *
+             * Zipnova hace el empaquetado dinámico.
+             */
+            for (
+                    int unidad = 0;
+                    unidad < cantidad;
+                    unidad++
+            ) {
+
+                Map<String, Object> itemZipnova =
+                        new LinkedHashMap<>();
+
+                itemZipnova.put(
+                        "sku",
+                        "GRENLUS-"
+                                + producto.getId()
+                                + "-"
+                                + (unidad + 1)
+                );
+
+                itemZipnova.put(
+                        "description",
+                        producto.getNombre()
+                );
+
+                itemZipnova.put(
+                        "weight",
+                        producto.getPesoGramos()
+                );
+
+                itemZipnova.put(
+                        "length",
+                        producto.getLargoEnvioCm()
+                );
+
+                itemZipnova.put(
+                        "width",
+                        producto.getAnchoEnvioCm()
+                );
+
+                itemZipnova.put(
+                        "height",
+                        producto.getAltoEnvioCm()
+                );
+
+                /*
+                 * 1 = clasificación General.
+                 */
+                itemZipnova.put(
+                        "classification_id",
+                        1
+                );
+
+                resultado.add(
+                        itemZipnova
+                );
+            }
+        }
+
+        return resultado;
+    }
+
+    // =========================================================
+    // RESPUESTA ZIPNOVA
+    // =========================================================
+
+    private CotizacionEnvioResponseDTO convertirRespuesta(
+            String respuesta,
+            CotizarEnvioDTO dto
+    ) {
+
+        try {
+
+            JsonNode root =
+                    objectMapper.readTree(
+                            respuesta
+                    );
+
+            JsonNode allResults =
+                    root.path(
+                            "all_results"
+                    );
+
+            CotizacionEnvioResponseDTO response =
+                    new CotizacionEnvioResponseDTO();
+
+            JsonNode destination =
+                    root.path(
+                            "destination"
+                    );
+
+            response.setCodigoPostal(
+                    destination
+                            .path("zipcode")
+                            .asText(
+                                    dto.getCodigoPostal()
+                            )
+            );
+
+            response.setLocalidad(
+                    destination
+                            .path("city")
+                            .asText(
+                                    dto.getLocalidad()
+                            )
+            );
+
+            response.setProvincia(
+                    destination
+                            .path("state")
+                            .asText(
+                                    dto.getProvincia()
+                            )
+            );
+
+            /*
+             * Zipnova puede devolver varias tarifas para:
+             *
+             * pickup_point
+             * standard_delivery
+             *
+             * Nosotros solamente vamos a conservar
+             * la más barata de cada tipo.
+             */
+            OpcionEnvioDTO mejorPickupPoint =
+                    null;
+
+            OpcionEnvioDTO mejorDomicilio =
+                    null;
+
+            if (allResults.isArray()) {
+
+                for (
+                        JsonNode result :
+                        allResults
+                ) {
+
+                    if (
+                            !result
+                                    .path("selectable")
+                                    .asBoolean(false)
+                    ) {
+
+                        continue;
+                    }
+
+                    JsonNode carrier =
+                            result.path(
+                                    "carrier"
+                            );
+
+                    String carrierNombre =
+                            carrier
+                                    .path("name")
+                                    .asText("");
+
+                    // =================================================
+                    // SOLO CORREO ARGENTINO
+                    // =================================================
+
+                    if (
+                            !carrierNombre
+                                    .toLowerCase()
+                                    .contains(
+                                            "correo argentino"
+                                    )
+                    ) {
+
+                        continue;
+                    }
+
+                    JsonNode service =
+                            result.path(
+                                    "service_type"
+                            );
+
+                    JsonNode delivery =
+                            result.path(
+                                    "delivery_time"
+                            );
+
+                    JsonNode amounts =
+                            result.path(
+                                    "amounts"
+                            );
+
+                    Long carrierId =
+                            carrier
+                                    .path("id")
+                                    .isNumber()
+                                    ? carrier
+                                            .path("id")
+                                            .asLong()
+                                    : null;
+
+                    String carrierLogo =
+                            carrier
+                                    .path("logo")
+                                    .asText(null);
+
+                    String logisticType =
+                            result
+                                    .path("logistic_type")
+                                    .asText("");
+
+                    String serviceType =
+                            service
+                                    .path("code")
+                                    .asText("");
+
+                    String serviceNombreOriginal =
+                            service
+                                    .path("name")
+                                    .asText("");
+
+                    // =================================================
+                    // NOMBRE MOSTRADO
+                    // =================================================
+
+                    String serviceNombre;
+
+                    if (
+                            "pickup_point"
+                                    .equalsIgnoreCase(
+                                            serviceType
+                                    )
+                    ) {
+
+                        serviceNombre =
+                                "Retiro en punto de Correo Argentino";
+
+                    } else if (
+                            "standard_delivery"
+                                    .equalsIgnoreCase(
+                                            serviceType
+                                    )
+                    ) {
+
+                        serviceNombre =
+                                "Envío a domicilio";
+
+                    } else {
 
                         /*
-                         * Mandamos una entrada por unidad.
-                         *
-                         * Esto permite que Zipnova haga el
-                         * empaquetado dinámico.
+                         * Si Zipnova incorpora otro servicio,
+                         * no lo mostramos por ahora.
                          */
-                        for (int unidad = 0; unidad < cantidad; unidad++) {
+                        continue;
+                    }
 
-                                Map<String, Object> itemZipnova = new LinkedHashMap<>();
+                    // =================================================
+                    // PRECIO
+                    // =================================================
 
-                                itemZipnova.put(
-                                                "sku",
-                                                "GRENLUS-"
-                                                                + producto.getId()
-                                                                + "-"
-                                                                + (unidad + 1));
+                    BigDecimal precio =
+                            obtenerPrecioFinal(
+                                    amounts
+                            );
 
-                                itemZipnova.put(
-                                                "description",
-                                                producto.getNombre());
+                    if (
+                            precio == null ||
+                            precio.compareTo(
+                                    BigDecimal.ZERO
+                            ) < 0
+                    ) {
 
-                                itemZipnova.put(
-                                                "weight",
-                                                producto.getPesoGramos());
+                        continue;
+                    }
 
-                                itemZipnova.put(
-                                                "length",
-                                                producto.getLargoEnvioCm());
+                    // =================================================
+                    // DÍAS
+                    // =================================================
 
-                                itemZipnova.put(
-                                                "width",
-                                                producto.getAnchoEnvioCm());
+                    Integer diasMin =
+                            delivery
+                                    .path("min")
+                                    .isNumber()
+                                    ? delivery
+                                            .path("min")
+                                            .asInt()
+                                    : null;
 
-                                itemZipnova.put(
-                                                "height",
-                                                producto.getAltoEnvioCm());
+                    Integer diasMax =
+                            delivery
+                                    .path("max")
+                                    .isNumber()
+                                    ? delivery
+                                            .path("max")
+                                            .asInt()
+                                    : null;
 
-                                /*
-                                 * 1 = clasificación General.
-                                 */
-                                itemZipnova.put(
-                                                "classification_id",
-                                                1);
+                    // =================================================
+                    // ID ÚNICO
+                    // =================================================
 
-                                resultado.add(
-                                                itemZipnova);
-                        }
-                }
+                    String opcionId =
+                            String.valueOf(
+                                    carrierId
+                            )
+                                    + ":"
+                                    + logisticType
+                                    + ":"
+                                    + serviceType;
 
-                return resultado;
-        }
+                    OpcionEnvioDTO opcion =
+                            new OpcionEnvioDTO(
+                                    opcionId,
+                                    carrierId,
+                                    "Correo Argentino",
+                                    carrierLogo,
+                                    logisticType,
+                                    serviceType,
+                                    serviceNombre,
+                                    precio,
+                                    diasMin,
+                                    diasMax
+                            );
 
-        // =========================================================
-        // RESPUESTA ZIPNOVA
-        // =========================================================
+                    // =================================================
+                    // ELEGIR LA MÁS BARATA
+                    // =================================================
 
-        private CotizacionEnvioResponseDTO convertirRespuesta(
-                        String respuesta,
-                        CotizarEnvioDTO dto) {
+                    if (
+                            "pickup_point"
+                                    .equalsIgnoreCase(
+                                            serviceType
+                                    )
+                    ) {
 
-                try {
+                        if (
+                                mejorPickupPoint == null ||
+                                opcion
+                                        .getPrecio()
+                                        .compareTo(
+                                                mejorPickupPoint
+                                                        .getPrecio()
+                                        ) < 0
+                        ) {
 
-                        JsonNode root = objectMapper.readTree(
-                                        respuesta);
-
-                        JsonNode allResults = root.path(
-                                        "all_results");
-
-                        CotizacionEnvioResponseDTO response = new CotizacionEnvioResponseDTO();
-
-                        JsonNode destination = root.path(
-                                        "destination");
-
-                        response.setCodigoPostal(
-                                        destination
-                                                        .path("zipcode")
-                                                        .asText(
-                                                                        dto.getCodigoPostal()));
-
-                        response.setLocalidad(
-                                        destination
-                                                        .path("city")
-                                                        .asText(
-                                                                        dto.getLocalidad()));
-
-                        response.setProvincia(
-                                        destination
-                                                        .path("state")
-                                                        .asText(
-                                                                        dto.getProvincia()));
-
-                        List<OpcionEnvioDTO> opciones = new ArrayList<>();
-
-                        if (allResults.isArray()) {
-
-                                for (JsonNode result : allResults) {
-
-                                        /*
-                                         * Zipnova puede devolver resultados
-                                         * no seleccionables.
-                                         */
-                                        if (!result
-                                                        .path("selectable")
-                                                        .asBoolean(false)) {
-
-                                                continue;
-                                        }
-
-                                        JsonNode carrier = result.path(
-                                                        "carrier");
-
-                                        JsonNode service = result.path(
-                                                        "service_type");
-
-                                        JsonNode delivery = result.path(
-                                                        "delivery_time");
-
-                                        JsonNode amounts = result.path(
-                                                        "amounts");
-
-                                        System.out.println(
-                                                        "\n================ ZIPNOVA ================");
-
-                                        System.out.println(
-                                                        "CARRIER: " +
-                                                                        carrier.path("name").asText());
-
-                                        System.out.println(
-                                                        "LOGISTIC TYPE: " +
-                                                                        result.path("logistic_type").asText());
-
-                                        System.out.println(
-                                                        "SERVICE: " +
-                                                                        service.path("name").asText());
-
-                                        System.out.println(
-                                                        "AMOUNTS:");
-
-                                        System.out.println(
-                                                        amounts.toPrettyString());
-
-                                        System.out.println(
-                                                        "=========================================\n");
-
-                                        Long carrierId = carrier
-                                                        .path("id")
-                                                        .isNumber()
-                                                                        ? carrier
-                                                                                        .path("id")
-                                                                                        .asLong()
-                                                                        : null;
-
-                                        String carrierNombre = carrier
-                                                        .path("name")
-                                                        .asText("");
-
-                                        String carrierLogo = carrier
-                                                        .path("logo")
-                                                        .asText(null);
-
-                                        String logisticType = result
-                                                        .path("logistic_type")
-                                                        .asText("");
-
-                                        String serviceType = service
-                                                        .path("code")
-                                                        .asText("");
-
-                                        String serviceNombre = service
-                                                        .path("name")
-                                                        .asText("");
-
-                                        BigDecimal precio = amounts
-                                                        .path("price_incl_tax")
-                                                        .decimalValue();
-
-                                        Integer diasMin = delivery
-                                                        .path("min")
-                                                        .isNumber()
-                                                                        ? delivery
-                                                                                        .path("min")
-                                                                                        .asInt()
-                                                                        : null;
-
-                                        Integer diasMax = delivery
-                                                        .path("max")
-                                                        .isNumber()
-                                                                        ? delivery
-                                                                                        .path("max")
-                                                                                        .asInt()
-                                                                        : null;
-
-                                        String opcionId = String.valueOf(
-                                                        carrierId)
-                                                        + ":"
-                                                        + logisticType
-                                                        + ":"
-                                                        + serviceType;
-
-                                        OpcionEnvioDTO opcion = new OpcionEnvioDTO(
-                                                        opcionId,
-                                                        carrierId,
-                                                        carrierNombre,
-                                                        carrierLogo,
-                                                        logisticType,
-                                                        serviceType,
-                                                        serviceNombre,
-                                                        precio,
-                                                        diasMin,
-                                                        diasMax);
-
-                                        opciones.add(
-                                                        opcion);
-                                }
+                            mejorPickupPoint =
+                                    opcion;
                         }
 
-                        if (opciones.isEmpty()) {
+                    } else if (
+                            "standard_delivery"
+                                    .equalsIgnoreCase(
+                                            serviceType
+                                    )
+                    ) {
 
-                                throw new BadRequestException(
-                                                "No hay opciones de envío disponibles para ese destino.");
+                        if (
+                                mejorDomicilio == null ||
+                                opcion
+                                        .getPrecio()
+                                        .compareTo(
+                                                mejorDomicilio
+                                                        .getPrecio()
+                                        ) < 0
+                        ) {
+
+                            mejorDomicilio =
+                                    opcion;
                         }
-
-                        response.setOpciones(
-                                        opciones);
-
-                        return response;
-
-                } catch (BadRequestException e) {
-
-                        throw e;
-
-                } catch (Exception e) {
-
-                        throw new BadRequestException(
-                                        "No se pudo interpretar la respuesta de Zipnova.");
+                    }
                 }
+            }
+
+            // =========================================================
+            // RESPUESTA FINAL
+            // =========================================================
+
+            List<OpcionEnvioDTO> opciones =
+                    new ArrayList<>();
+
+            if (
+                    mejorPickupPoint != null
+            ) {
+
+                opciones.add(
+                        mejorPickupPoint
+                );
+            }
+
+            if (
+                    mejorDomicilio != null
+            ) {
+
+                opciones.add(
+                        mejorDomicilio
+                );
+            }
+
+            opciones.sort(
+                    (a, b) ->
+                            a.getPrecio()
+                                    .compareTo(
+                                            b.getPrecio()
+                                    )
+            );
+
+            if (
+                    opciones.isEmpty()
+            ) {
+
+                throw new BadRequestException(
+                        "Correo Argentino no tiene opciones disponibles para ese destino."
+                );
+            }
+
+            response.setOpciones(
+                    opciones
+            );
+
+            return response;
+
+        } catch (BadRequestException e) {
+
+            throw e;
+
+        } catch (Exception e) {
+
+            throw new BadRequestException(
+                    "No se pudo interpretar la respuesta de Zipnova."
+            );
+        }
+    }
+
+    // =========================================================
+    // PRECIO FINAL
+    // =========================================================
+
+    private BigDecimal obtenerPrecioFinal(
+            JsonNode amounts
+    ) {
+
+        if (
+                amounts == null ||
+                amounts.isMissingNode()
+        ) {
+
+            return null;
         }
 
-        // =========================================================
-        // VALIDACIONES
-        // =========================================================
+        JsonNode priceInclTax =
+                amounts.path(
+                        "price_incl_tax"
+                );
 
-        private void validarSolicitud(
-                        CotizarEnvioDTO dto) {
+        if (
+                priceInclTax.isNumber()
+        ) {
 
-                if (dto == null) {
-
-                        throw new BadRequestException(
-                                        "Los datos de envío son obligatorios.");
-                }
-
-                if (dto.getCodigoPostal() == null ||
-                                dto.getCodigoPostal().isBlank()) {
-
-                        throw new BadRequestException(
-                                        "Ingresá el código postal.");
-                }
-
-                if (dto.getProvincia() == null ||
-                                dto.getProvincia().isBlank()) {
-
-                        throw new BadRequestException(
-                                        "Ingresá la provincia.");
-                }
-
-                if (dto.getLocalidad() == null ||
-                                dto.getLocalidad().isBlank()) {
-
-                        throw new BadRequestException(
-                                        "Ingresá la localidad.");
-                }
-
-                if (dto.getItems() == null ||
-                                dto.getItems().isEmpty()) {
-
-                        throw new BadRequestException(
-                                        "El carrito no tiene productos para cotizar.");
-                }
+            return priceInclTax
+                    .decimalValue();
         }
 
-        private void validarDatosLogisticos(
-                        Producto producto) {
+        JsonNode sellerPriceInclTax =
+                amounts.path(
+                        "seller_price_incl_tax"
+                );
 
-                if (producto.getPesoGramos() == null ||
-                                producto.getPesoGramos() <= 0) {
+        if (
+                sellerPriceInclTax.isNumber()
+        ) {
 
-                        throw new BadRequestException(
-                                        "El producto "
-                                                        + producto.getNombre()
-                                                        + " no tiene un peso de envío configurado.");
-                }
-
-                if (producto.getLargoEnvioCm() == null ||
-                                producto.getLargoEnvioCm() <= 0 ||
-                                producto.getAnchoEnvioCm() == null ||
-                                producto.getAnchoEnvioCm() <= 0 ||
-                                producto.getAltoEnvioCm() == null ||
-                                producto.getAltoEnvioCm() <= 0) {
-
-                        throw new BadRequestException(
-                                        "El producto "
-                                                        + producto.getNombre()
-                                                        + " no tiene dimensiones de envío configuradas.");
-                }
+            return sellerPriceInclTax
+                    .decimalValue();
         }
 
-        private void validarConfiguracion() {
+        JsonNode price =
+                amounts.path(
+                        "price"
+                );
 
-                if (apiKey == null ||
-                                apiKey.isBlank()) {
+        if (
+                price.isNumber()
+        ) {
 
-                        throw new BadRequestException(
-                                        "ZIPNOVA_API_KEY no está configurada.");
-                }
-
-                if (apiSecret == null ||
-                                apiSecret.isBlank()) {
-
-                        throw new BadRequestException(
-                                        "ZIPNOVA_API_SECRET no está configurada.");
-                }
-
-                if (accountId == null ||
-                                accountId <= 0) {
-
-                        throw new BadRequestException(
-                                        "ZIPNOVA_ACCOUNT_ID no está configurado.");
-                }
-
-                if (originId == null ||
-                                originId <= 0) {
-
-                        throw new BadRequestException(
-                                        "ZIPNOVA_ORIGIN_ID no está configurado.");
-                }
+            return price
+                    .decimalValue();
         }
 
-        // =========================================================
-        // AUTH
-        // =========================================================
+        return null;
+    }
 
-        private String crearBasicAuth() {
+    // =========================================================
+    // VALIDACIONES
+    // =========================================================
 
-                String credenciales = apiKey
-                                + ":"
-                                + apiSecret;
+    private void validarSolicitud(
+            CotizarEnvioDTO dto
+    ) {
 
-                String encoded = Base64
-                                .getEncoder()
-                                .encodeToString(
-                                                credenciales
-                                                                .getBytes(
-                                                                                StandardCharsets.UTF_8));
+        if (
+                dto == null
+        ) {
 
-                return "Basic " + encoded;
+            throw new BadRequestException(
+                    "Los datos de envío son obligatorios."
+            );
         }
 
-        private BigDecimal obtenerValorDeclarado(
-                        CotizarEnvioDTO dto) {
+        if (
+                dto.getCodigoPostal() == null ||
+                dto.getCodigoPostal().isBlank()
+        ) {
 
-                if (dto.getValorDeclarado() == null ||
-                                dto.getValorDeclarado()
-                                                .compareTo(
-                                                                BigDecimal.ZERO) < 0) {
-
-                        return BigDecimal.ZERO;
-                }
-
-                return dto.getValorDeclarado();
+            throw new BadRequestException(
+                    "Ingresá el código postal."
+            );
         }
+
+        if (
+                dto.getProvincia() == null ||
+                dto.getProvincia().isBlank()
+        ) {
+
+            throw new BadRequestException(
+                    "Ingresá la provincia."
+            );
+        }
+
+        if (
+                dto.getLocalidad() == null ||
+                dto.getLocalidad().isBlank()
+        ) {
+
+            throw new BadRequestException(
+                    "Ingresá la localidad."
+            );
+        }
+
+        if (
+                dto.getItems() == null ||
+                dto.getItems().isEmpty()
+        ) {
+
+            throw new BadRequestException(
+                    "El carrito no tiene productos para cotizar."
+            );
+        }
+    }
+
+    private void validarDatosLogisticos(
+            Producto producto
+    ) {
+
+        if (
+                producto.getPesoGramos() == null ||
+                producto.getPesoGramos() <= 0
+        ) {
+
+            throw new BadRequestException(
+                    "El producto "
+                            + producto.getNombre()
+                            + " no tiene un peso de envío configurado."
+            );
+        }
+
+        if (
+                producto.getLargoEnvioCm() == null ||
+                producto.getLargoEnvioCm() <= 0 ||
+                producto.getAnchoEnvioCm() == null ||
+                producto.getAnchoEnvioCm() <= 0 ||
+                producto.getAltoEnvioCm() == null ||
+                producto.getAltoEnvioCm() <= 0
+        ) {
+
+            throw new BadRequestException(
+                    "El producto "
+                            + producto.getNombre()
+                            + " no tiene dimensiones de envío configuradas."
+            );
+        }
+    }
+
+    private void validarConfiguracion() {
+
+        if (
+                apiKey == null ||
+                apiKey.isBlank()
+        ) {
+
+            throw new BadRequestException(
+                    "ZIPNOVA_API_KEY no está configurada."
+            );
+        }
+
+        if (
+                apiSecret == null ||
+                apiSecret.isBlank()
+        ) {
+
+            throw new BadRequestException(
+                    "ZIPNOVA_API_SECRET no está configurada."
+            );
+        }
+
+        if (
+                accountId == null ||
+                accountId <= 0
+        ) {
+
+            throw new BadRequestException(
+                    "ZIPNOVA_ACCOUNT_ID no está configurado."
+            );
+        }
+
+        if (
+                originId == null ||
+                originId <= 0
+        ) {
+
+            throw new BadRequestException(
+                    "ZIPNOVA_ORIGIN_ID no está configurado."
+            );
+        }
+    }
+
+    // =========================================================
+    // AUTH
+    // =========================================================
+
+    private String crearBasicAuth() {
+
+        String credenciales =
+                apiKey
+                        + ":"
+                        + apiSecret;
+
+        String encoded =
+                Base64
+                        .getEncoder()
+                        .encodeToString(
+                                credenciales
+                                        .getBytes(
+                                                StandardCharsets.UTF_8
+                                        )
+                        );
+
+        return "Basic " + encoded;
+    }
+
+    // =========================================================
+    // VALOR DECLARADO
+    // =========================================================
+
+    private BigDecimal obtenerValorDeclarado(
+            CotizarEnvioDTO dto
+    ) {
+
+        if (
+                dto.getValorDeclarado() == null ||
+                dto.getValorDeclarado()
+                        .compareTo(
+                                BigDecimal.ZERO
+                        ) < 0
+        ) {
+
+            return BigDecimal.ZERO;
+        }
+
+        return dto.getValorDeclarado();
+    }
 }

@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8081/auth";
+const API_URL = "http://127.0.0.1:8081/auth";
 
 const TOKEN_KEY = "token";
 const USER_KEY = "grenlus_usuario";

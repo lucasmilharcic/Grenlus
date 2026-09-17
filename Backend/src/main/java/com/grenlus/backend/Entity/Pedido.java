@@ -37,11 +37,17 @@ public class Pedido {
     private Usuario usuario;
 
     private String nombreCliente;
+
     private String telefono;
+
     private String email;
+
     private String direccion;
+
     private String ciudad;
+
     private String provincia;
+
     private String codigoPostal;
 
     @Enumerated(EnumType.STRING)
@@ -50,15 +56,44 @@ public class Pedido {
     @Enumerated(EnumType.STRING)
     private EstadoEnvio estadoEnvio;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tarifa_envio_id")
-    private TarifaEnvio tarifaEnvio;
+    // =========================================================
+    // ENVÍO ZIPNOVA
+    // =========================================================
+
+    /*
+     * Guardamos un snapshot de la opción seleccionada.
+     *
+     * No guardamos una relación con TarifaEnvio porque
+     * las tarifas ahora vienen dinámicamente desde Zipnova.
+     */
+
+    private String opcionEnvioId;
+
+    private Long carrierEnvioId;
+
+    private String carrierEnvioNombre;
+
+    private String logisticTypeEnvio;
+
+    private String serviceTypeEnvio;
+
+    private String serviceNombreEnvio;
 
     private BigDecimal costoEnvio;
+
     private String codigoSeguimiento;
 
+    // =========================================================
+    // TOTALES
+    // =========================================================
+
     private BigDecimal subtotalProductos;
+
     private BigDecimal total;
+
+    // =========================================================
+    // ESTADOS
+    // =========================================================
 
     @Enumerated(EnumType.STRING)
     private EstadoPedido estado;
@@ -69,13 +104,31 @@ public class Pedido {
     @Enumerated(EnumType.STRING)
     private MetodoPago metodoPago;
 
+    // =========================================================
+    // MERCADO PAGO
+    // =========================================================
+
     private String mercadoPagoUrl;
+
     private String mercadoPagoPreferenceId;
+
     private String mercadoPagoPaymentId;
+
+    // =========================================================
+    // TRANSFERENCIA
+    // =========================================================
 
     private String comprobanteTransferencia;
 
+    // =========================================================
+    // FECHA
+    // =========================================================
+
     private LocalDateTime fechaPedido;
+
+    // =========================================================
+    // DETALLES
+    // =========================================================
 
     @OneToMany(
             mappedBy = "pedido",
@@ -84,6 +137,10 @@ public class Pedido {
     )
     private List<DetallePedido> detalles =
             new ArrayList<>();
+
+    // =========================================================
+    // PRE PERSIST
+    // =========================================================
 
     @PrePersist
     public void prePersist() {
@@ -118,18 +175,32 @@ public class Pedido {
 
         if (estadoEnvio == null) {
 
-            if (metodoEntrega == MetodoEntrega.ENVIO_DOMICILIO) {
-                estadoEnvio = EstadoEnvio.PENDIENTE;
+            if (
+                    metodoEntrega ==
+                            MetodoEntrega.ENVIO_DOMICILIO
+            ) {
+
+                estadoEnvio =
+                        EstadoEnvio.PENDIENTE;
+
             } else {
-                estadoEnvio = EstadoEnvio.NO_CORRESPONDE;
+
+                estadoEnvio =
+                        EstadoEnvio.NO_CORRESPONDE;
             }
         }
     }
 
+    // =========================================================
+    // AGREGAR DETALLE
+    // =========================================================
+
     public void agregarDetalle(
-            DetallePedido detalle) {
+            DetallePedido detalle
+    ) {
 
         detalles.add(detalle);
+
         detalle.setPedido(this);
     }
 }
