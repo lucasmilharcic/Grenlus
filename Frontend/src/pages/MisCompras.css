@@ -203,3 +203,178 @@
         flex-direction: column;
     }
 }
+/* =====================================================
+   SEGUIMIENTO DEL ENVÍO
+===================================================== */
+
+.mi-compra-envio {
+    margin-top: 14px;
+    padding: 16px 18px;
+
+    background: #f6f9fb;
+
+    border: 1px solid #e3ecf2;
+    border-radius: 12px;
+}
+
+.mi-compra-envio-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 16px;
+}
+
+.mi-compra-envio-titulo {
+    color: #6d89a2;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.mi-compra-envio-estado {
+    padding: 6px 12px;
+
+    color: #4b5f72;
+    background: #ffffff;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.mi-compra-envio-estado.PENDIENTE {
+    color: #8a6a12;
+    background: #fdf3da;
+}
+
+.mi-compra-envio-estado.PREPARANDO {
+    color: #0a4f86;
+    background: #dcecfb;
+}
+
+.mi-compra-envio-estado.DESPACHADO {
+    color: #5b3ba8;
+    background: #eae3fb;
+}
+
+.mi-compra-envio-estado.ENTREGADO {
+    color: #17613c;
+    background: #e4f6ec;
+}
+
+.mi-compra-envio-nota {
+    margin: 10px 0 0;
+
+    color: #74899b;
+
+    font-size: 13px;
+}
+
+/* PASOS */
+
+.mi-compra-pasos {
+    display: flex;
+
+    margin: 0 0 16px;
+    padding: 0;
+
+    list-style: none;
+}
+
+.mi-compra-pasos li {
+    position: relative;
+
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 7px;
+
+    color: #9aaec0;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-align: center;
+}
+
+/* línea que une los pasos */
+.mi-compra-pasos li::before {
+    content: "";
+
+    position: absolute;
+    top: 5px;
+    left: -50%;
+
+    width: 100%;
+    height: 2px;
+
+    background: #dde7ee;
+}
+
+.mi-compra-pasos li:first-child::before {
+    display: none;
+}
+
+.mi-compra-pasos li > span {
+    position: relative;
+    z-index: 1;
+
+    width: 12px;
+    height: 12px;
+
+    background: #dde7ee;
+
+    border-radius: 50%;
+}
+
+.mi-compra-pasos li.completo {
+    color: #07509a;
+}
+
+.mi-compra-pasos li.completo > span {
+    background: #07509a;
+}
+
+.mi-compra-pasos li.completo::before {
+    background: #07509a;
+}
+
+/* DATOS */
+
+.mi-compra-envio-datos {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+.mi-compra-envio-datos span {
+    color: #74899b;
+
+    font-size: 13px;
+
+    overflow-wrap: anywhere;
+}
+
+.mi-compra-envio-datos strong {
+    color: #082d58;
+}
+
+@media (max-width: 600px) {
+
+    .mi-compra-pasos li {
+        font-size: 10px;
+    }
+}

@@ -129,10 +129,12 @@ public class SecurityConfig {
                                                                 // ENVÍOS
                                                                 // =========================
 
-                                                                // =========================
-                                                                // ENVÍOS
-                                                                // =========================
-
+                                                                /*
+                                                                 * Cotizar tiene que funcionar
+                                                                 * también sin cuenta, porque el
+                                                                 * checkout permite comprar como
+                                                                 * invitado.
+                                                                 */
                                                                 .requestMatchers(
                                                                                 HttpMethod.POST,
                                                                                 "/envios/cotizar")
@@ -143,8 +145,24 @@ public class SecurityConfig {
                                                                                 "/envios/correo/test")
                                                                 .permitAll()
 
+                                                                /*
+                                                                 * El seguimiento propio va antes
+                                                                 * que las reglas de admin para que
+                                                                 * no lo tape /envios/**.
+                                                                 */
                                                                 .requestMatchers(
-                                                                                "/envios/tarifas/**")
+                                                                                HttpMethod.GET,
+                                                                                "/envios/mis-envios")
+                                                                .authenticated()
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.GET,
+                                                                                "/envios/**")
+                                                                .hasRole("ADMIN")
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.PUT,
+                                                                                "/envios/**")
                                                                 .hasRole("ADMIN")
 
                                                                 // =========================
@@ -188,6 +206,21 @@ public class SecurityConfig {
                                                                                 HttpMethod.PUT,
                                                                                 "/pagos/transferencia/*/rechazar")
                                                                 .hasRole("ADMIN")
+
+                                                                // =========================
+                                                                // MIS COMPRAS
+                                                                // =========================
+
+                                                                /*
+                                                                 * Tiene que quedar antes del bloque
+                                                                 * de admin, si no /pedidos/** deja
+                                                                 * al cliente sin sus propias
+                                                                 * compras.
+                                                                 */
+                                                                .requestMatchers(
+                                                                                HttpMethod.GET,
+                                                                                "/pedidos/mis-compras")
+                                                                .authenticated()
 
                                                                 // =========================
                                                                 // ADMIN PEDIDOS

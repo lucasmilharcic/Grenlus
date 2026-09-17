@@ -62,6 +62,21 @@ export default function Dashboard() {
                     </Link>
 
                     <Link
+                        to="/admin/envios"
+                        className="dashboard-card"
+                    >
+
+                        <h2>
+                            Envíos
+                        </h2>
+
+                        <p>
+                            Preparar, despachar y seguir entregas.
+                        </p>
+
+                    </Link>
+
+                    <Link
                         to="/admin/solicitudes"
                         className="dashboard-card"
                     >
