@@ -1227,6 +1227,18 @@ public class PedidoService {
                                         nombreEnvio);
                 }
 
+                dto.setCarrierEnvioNombre(
+                                pedido.getCarrierEnvioNombre());
+
+                dto.setServiceNombreEnvio(
+                                pedido.getServiceNombreEnvio());
+
+                dto.setFechaDespacho(
+                                pedido.getFechaDespacho());
+
+                dto.setFechaEntrega(
+                                pedido.getFechaEntrega());
+
                 dto.setTotal(
                                 pedido.getTotal());
 

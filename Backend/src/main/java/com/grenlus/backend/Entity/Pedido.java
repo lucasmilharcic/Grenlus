@@ -83,6 +83,17 @@ public class Pedido {
 
     private String codigoSeguimiento;
 
+    /*
+     * Fechas reales del ciclo logístico.
+     *
+     * Las completa el panel de envíos cuando el pedido
+     * pasa a DESPACHADO y cuando pasa a ENTREGADO.
+     */
+
+    private LocalDateTime fechaDespacho;
+
+    private LocalDateTime fechaEntrega;
+
     // =========================================================
     // TOTALES
     // =========================================================

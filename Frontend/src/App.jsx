@@ -26,6 +26,7 @@ import MisCompras from "./pages/MisCompras";
 import Dashboard from "./pages/admin/Dashboard";
 import ProductosAdmin from "./pages/admin/ProductosAdmin";
 import PedidosAdmin from "./pages/admin/PedidosAdmin";
+import EnviosAdmin from "./pages/admin/EnviosAdmin";
 import SolicitudesAdmin from "./pages/admin/SolicitudesAdmin";
 import UsuariosAdmin from "./pages/admin/UsuariosAdmin";
 
@@ -107,6 +108,11 @@ export default function App() {
                     <Route
                         path="/admin/pedidos"
                         element={<PedidosAdmin />}
+                    />
+
+                    <Route
+                        path="/admin/envios"
+                        element={<EnviosAdmin />}
                     />
 
                     <Route

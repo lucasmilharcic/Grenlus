@@ -1,5 +1,6 @@
 import {
     useEffect,
+    useMemo,
     useState
 } from "react";
 
@@ -7,15 +8,61 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 
 import {
-    getTarifasEnvio,
-    actualizarTarifaEnvio
+    getEnvios,
+    actualizarEnvio
 } from "../../services/envioService";
 
 import "./EnviosAdmin.css";
 
-function formatearPrecio(
-    valor
+// =====================================================
+// CIRCUITO
+// =====================================================
+
+const ESTADOS = [
+    "PENDIENTE",
+    "PREPARANDO",
+    "DESPACHADO",
+    "ENTREGADO"
+];
+
+const ETIQUETA_SIGUIENTE = {
+    PENDIENTE: "Marcar en preparación",
+    PREPARANDO: "Marcar despachado",
+    DESPACHADO: "Marcar entregado"
+};
+
+/*
+ * Cómo contamos el cambio en el cartel de éxito.
+ */
+const ETIQUETA_MENSAJE = {
+    PREPARANDO: "pasó a preparación",
+    DESPACHADO: "quedó despachado",
+    ENTREGADO: "quedó entregado"
+};
+
+function siguienteEstado(
+    estado
 ) {
+
+    const indice =
+        ESTADOS.indexOf(estado);
+
+    if (
+        indice < 0 ||
+        indice === ESTADOS.length - 1
+    ) {
+
+        return null;
+    }
+
+    return ESTADOS[indice + 1];
+}
+
+// =====================================================
+// FORMATO
+// =====================================================
+
+function moneda(valor) {
 
     return new Intl.NumberFormat(
         "es-AR",
@@ -29,11 +76,51 @@ function formatearPrecio(
     );
 }
 
+function formatearFecha(valor) {
+
+    if (!valor) {
+        return "";
+    }
+
+    try {
+
+        return new Intl.DateTimeFormat(
+            "es-AR",
+            {
+                dateStyle: "medium",
+                timeStyle: "short"
+            }
+        ).format(
+            new Date(valor)
+        );
+
+    } catch {
+
+        return valor;
+    }
+}
+
+function textoEstado(valor) {
+
+    if (!valor) {
+        return "Sin estado";
+    }
+
+    return String(valor)
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .replace(
+            /^\w/,
+            letra =>
+                letra.toUpperCase()
+        );
+}
+
 export default function EnviosAdmin() {
 
     const [
-        tarifas,
-        setTarifas
+        envios,
+        setEnvios
     ] = useState([]);
 
     const [
@@ -52,15 +139,29 @@ export default function EnviosAdmin() {
     ] = useState("");
 
     const [
-        guardandoId,
-        setGuardandoId
+        procesandoId,
+        setProcesandoId
     ] = useState(null);
+
+    const [
+        filtro,
+        setFiltro
+    ] = useState("TODOS");
+
+    /*
+     * Código de seguimiento que el admin está
+     * tipeando, separado por pedido.
+     */
+    const [
+        seguimientos,
+        setSeguimientos
+    ] = useState({});
 
     // =====================================================
     // CARGAR
     // =====================================================
 
-    async function cargarTarifas() {
+    async function cargarEnvios() {
 
         try {
 
@@ -68,12 +169,24 @@ export default function EnviosAdmin() {
             setError("");
 
             const data =
-                await getTarifasEnvio();
+                await getEnvios();
 
-            setTarifas(
+            const lista =
                 Array.isArray(data)
                     ? data
-                    : []
+                    : [];
+
+            setEnvios(lista);
+
+            setSeguimientos(
+                lista.reduce(
+                    (acumulado, envio) => ({
+                        ...acumulado,
+                        [envio.pedidoId]:
+                            envio.codigoSeguimiento || ""
+                    }),
+                    {}
+                )
             );
 
         } catch (err) {
@@ -82,7 +195,7 @@ export default function EnviosAdmin() {
 
             setError(
                 err.message ||
-                "No se pudieron cargar las tarifas."
+                "No se pudieron cargar los envíos."
             );
 
         } finally {
@@ -93,109 +206,89 @@ export default function EnviosAdmin() {
 
     useEffect(() => {
 
-        cargarTarifas();
+        cargarEnvios();
 
     }, []);
 
     // =====================================================
-    // CAMBIOS
+    // FILTRO
     // =====================================================
 
-    function actualizarCampo(
-        id,
-        campo,
-        valor
+    const enviosFiltrados =
+        useMemo(() => {
+
+            if (filtro === "TODOS") {
+                return envios;
+            }
+
+            return envios.filter(
+                envio =>
+                    envio.estadoEnvio === filtro
+            );
+
+        }, [
+            envios,
+            filtro
+        ]);
+
+    function contarPorEstado(
+        estado
     ) {
 
-        setTarifas(
-            actuales =>
-                actuales.map(
-                    tarifa =>
-                        tarifa.id === id
-                            ? {
-                                ...tarifa,
-                                [campo]:
-                                    valor
-                            }
-                            : tarifa
-                )
-        );
-
-        setMensaje("");
+        return envios.filter(
+            envio =>
+                envio.estadoEnvio === estado
+        ).length;
     }
 
     // =====================================================
     // GUARDAR
     // =====================================================
 
-    async function guardarTarifa(
-        tarifa
+    /*
+     * Un único camino para los dos botones.
+     *
+     * estadoEnvio null = solamente guardamos
+     * el código de seguimiento.
+     */
+    async function guardar(
+        pedidoId,
+        estadoEnvio
     ) {
-
-        const precio =
-            Number(
-                tarifa.precio
-            );
-
-        if (
-            Number.isNaN(precio) ||
-            precio < 0
-        ) {
-
-            setError(
-                "El precio debe ser válido."
-            );
-
-            return;
-        }
 
         try {
 
-            setGuardandoId(
-                tarifa.id
-            );
-
+            setProcesandoId(pedidoId);
             setError("");
             setMensaje("");
 
-            const actualizada =
-                await actualizarTarifaEnvio(
-                    tarifa.id,
+            const actualizado =
+                await actualizarEnvio(
+                    pedidoId,
                     {
-                        nombre:
-                            tarifa.nombre,
+                        estadoEnvio,
 
-                        descripcion:
-                            tarifa.descripcion,
-
-                        precio,
-
-                        activo:
-                            tarifa.activo,
-
-                        /*
-                         * El backend ignora
-                         * cambios de codigoZona,
-                         * pero lo mandamos igual.
-                         */
-                        codigoZona:
-                            tarifa.codigoZona
+                        codigoSeguimiento:
+                            seguimientos[pedidoId] || null
                     }
                 );
 
-            setTarifas(
+            setEnvios(
                 actuales =>
                     actuales.map(
-                        item =>
-                            item.id ===
-                            tarifa.id
-                                ? actualizada
-                                : item
+                        envio =>
+                            envio.pedidoId === pedidoId
+                                ? actualizado
+                                : envio
                     )
             );
 
             setMensaje(
-                `Tarifa ${tarifa.nombre} actualizada correctamente.`
+                estadoEnvio
+                    ? `Pedido #${pedidoId}: el envío ${
+                        ETIQUETA_MENSAJE[estadoEnvio]
+                    }.`
+                    : `Pedido #${pedidoId}: seguimiento guardado.`
             );
 
         } catch (err) {
@@ -204,14 +297,12 @@ export default function EnviosAdmin() {
 
             setError(
                 err.message ||
-                "No se pudo actualizar la tarifa."
+                "No se pudo actualizar el envío."
             );
 
         } finally {
 
-            setGuardandoId(
-                null
-            );
+            setProcesandoId(null);
         }
     }
 
@@ -226,7 +317,7 @@ export default function EnviosAdmin() {
                     <div>
 
                         <span className="envios-eyebrow">
-                            ADMINISTRACIÓN
+                            LOGÍSTICA
                         </span>
 
                         <h1>
@@ -234,21 +325,58 @@ export default function EnviosAdmin() {
                         </h1>
 
                         <p>
-                            Configurá las tarifas que
-                            Grenlus utiliza en el checkout.
+                            Seguimiento de los pedidos
+                            con envío a domicilio.
                         </p>
 
                     </div>
 
                     <div className="envios-count">
-
-                        {tarifas.length}
-                        {" "}
-                        zonas
-
+                        {envios.length}{" "}
+                        {envios.length === 1
+                            ? "envío"
+                            : "envíos"}
                     </div>
 
                 </header>
+
+                <div className="envios-filtros">
+
+                    <button
+                        type="button"
+                        className={
+                            filtro === "TODOS"
+                                ? "activo"
+                                : ""
+                        }
+                        onClick={() =>
+                            setFiltro("TODOS")
+                        }
+                    >
+                        Todos ({envios.length})
+                    </button>
+
+                    {ESTADOS.map(
+                        estado => (
+
+                        <button
+                            key={estado}
+                            type="button"
+                            className={
+                                filtro === estado
+                                    ? "activo"
+                                    : ""
+                            }
+                            onClick={() =>
+                                setFiltro(estado)
+                            }
+                        >
+                            {textoEstado(estado)}{" "}
+                            ({contarPorEstado(estado)})
+                        </button>
+                    ))}
+
+                </div>
 
                 {mensaje && (
 
@@ -264,203 +392,301 @@ export default function EnviosAdmin() {
                     </div>
                 )}
 
-                {loading ? (
+                {loading && (
 
                     <div className="envios-state">
-                        Cargando tarifas...
+                        Cargando envíos...
                     </div>
+                )}
 
-                ) : (
+                {!loading &&
+                    enviosFiltrados.length === 0 && (
+
+                    <div className="envios-state">
+                        No hay envíos en este estado.
+                    </div>
+                )}
+
+                {!loading &&
+                    enviosFiltrados.length > 0 && (
 
                     <section className="envios-grid">
 
-                        {tarifas.map(
-                            tarifa => (
+                        {enviosFiltrados.map(
+                            envio => {
 
-                            <article
-                                key={
-                                    tarifa.id
-                                }
-                                className={
-                                    `envio-tarifa-card ${
-                                        !tarifa.activo
-                                            ? "inactiva"
-                                            : ""
-                                    }`
-                                }
-                            >
+                            const siguiente =
+                                siguienteEstado(
+                                    envio.estadoEnvio
+                                );
 
-                                <div className="envio-tarifa-top">
+                            const pagoAprobado =
+                                envio.estadoPago ===
+                                "APROBADO";
 
-                                    <div>
+                            const procesando =
+                                procesandoId ===
+                                envio.pedidoId;
 
-                                        <span className="envio-zona">
-                                            {tarifa.codigoZona}
-                                        </span>
+                            return (
 
-                                        <h2>
-                                            {tarifa.nombre}
-                                        </h2>
+                                <article
+                                    key={envio.pedidoId}
+                                    className="envio-card"
+                                >
 
-                                    </div>
+                                    <div className="envio-card-top">
 
-                                    <label className="envio-activo">
+                                        <div>
 
-                                        <input
-                                            type="checkbox"
-                                            checked={
-                                                Boolean(
-                                                    tarifa.activo
-                                                )
-                                            }
-                                            onChange={(e) =>
-                                                actualizarCampo(
-                                                    tarifa.id,
-                                                    "activo",
-                                                    e.target.checked
-                                                )
-                                            }
-                                        />
-
-                                        <span>
-                                            {tarifa.activo
-                                                ? "Activo"
-                                                : "Inactivo"}
-                                        </span>
-
-                                    </label>
-
-                                </div>
-
-                                <div className="envio-form">
-
-                                    <div className="envio-field">
-
-                                        <label>
-                                            Nombre
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            value={
-                                                tarifa.nombre ||
-                                                ""
-                                            }
-                                            onChange={(e) =>
-                                                actualizarCampo(
-                                                    tarifa.id,
-                                                    "nombre",
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-
-                                    </div>
-
-                                    <div className="envio-field">
-
-                                        <label>
-                                            Descripción
-                                        </label>
-
-                                        <textarea
-                                            value={
-                                                tarifa.descripcion ||
-                                                ""
-                                            }
-                                            onChange={(e) =>
-                                                actualizarCampo(
-                                                    tarifa.id,
-                                                    "descripcion",
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-
-                                    </div>
-
-                                    <div className="envio-field">
-
-                                        <label>
-                                            Código de zona
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            value={
-                                                tarifa.codigoZona
-                                            }
-                                            disabled
-                                        />
-
-                                        <small>
-                                            Este valor no se puede modificar.
-                                        </small>
-
-                                    </div>
-
-                                    <div className="envio-field">
-
-                                        <label>
-                                            Precio
-                                        </label>
-
-                                        <div className="envio-precio-input">
-
-                                            <span>
-                                                $
+                                            <span className="envio-numero">
+                                                PEDIDO #
+                                                {envio.pedidoId}
                                             </span>
 
+                                            <h2>
+                                                {envio.nombreCliente ||
+                                                    "Sin nombre"}
+                                            </h2>
+
+                                            <small>
+                                                {formatearFecha(
+                                                    envio.fechaPedido
+                                                )}
+                                            </small>
+
+                                        </div>
+
+                                        <span
+                                            className={`envio-estado ${envio.estadoEnvio}`}
+                                        >
+                                            {textoEstado(
+                                                envio.estadoEnvio
+                                            )}
+                                        </span>
+
+                                    </div>
+
+                                    <div className="envio-datos">
+
+                                        <div className="envio-dato">
+
+                                            <span>
+                                                Destino
+                                            </span>
+
+                                            <strong>
+                                                {[
+                                                    envio.direccion,
+                                                    envio.ciudad,
+                                                    envio.provincia
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(", ") ||
+                                                    "Sin dirección"}
+                                            </strong>
+
+                                            {envio.codigoPostal && (
+
+                                                <small>
+                                                    CP{" "}
+                                                    {envio.codigoPostal}
+                                                </small>
+                                            )}
+
+                                        </div>
+
+                                        <div className="envio-dato">
+
+                                            <span>
+                                                Transporte
+                                            </span>
+
+                                            <strong>
+                                                {envio.carrierEnvioNombre ||
+                                                    "Sin transporte"}
+                                            </strong>
+
+                                            {envio.serviceNombreEnvio && (
+
+                                                <small>
+                                                    {envio.serviceNombreEnvio}
+                                                </small>
+                                            )}
+
+                                        </div>
+
+                                        <div className="envio-dato">
+
+                                            <span>
+                                                Costo del envío
+                                            </span>
+
+                                            <strong>
+                                                {moneda(
+                                                    envio.costoEnvio
+                                                )}
+                                            </strong>
+
+                                            <small>
+                                                Total del pedido:{" "}
+                                                {moneda(envio.total)}
+                                            </small>
+
+                                        </div>
+
+                                        <div className="envio-dato">
+
+                                            <span>
+                                                Contacto
+                                            </span>
+
+                                            <strong>
+                                                {envio.telefono ||
+                                                    "Sin teléfono"}
+                                            </strong>
+
+                                            {envio.email && (
+
+                                                <small>
+                                                    {envio.email}
+                                                </small>
+                                            )}
+
+                                        </div>
+
+                                    </div>
+
+                                    {(envio.fechaDespacho ||
+                                        envio.fechaEntrega) && (
+
+                                        <div className="envio-fechas">
+
+                                            {envio.fechaDespacho && (
+
+                                                <span>
+                                                    Despachado:{" "}
+                                                    {formatearFecha(
+                                                        envio.fechaDespacho
+                                                    )}
+                                                </span>
+                                            )}
+
+                                            {envio.fechaEntrega && (
+
+                                                <span>
+                                                    Entregado:{" "}
+                                                    {formatearFecha(
+                                                        envio.fechaEntrega
+                                                    )}
+                                                </span>
+                                            )}
+
+                                        </div>
+                                    )}
+
+                                    <div className="envio-seguimiento">
+
+                                        <label
+                                            htmlFor={`seguimiento-${envio.pedidoId}`}
+                                        >
+                                            Código de seguimiento
+                                        </label>
+
+                                        <div className="envio-seguimiento-fila">
+
                                             <input
-                                                type="number"
-                                                min="0"
-                                                step="100"
+                                                id={`seguimiento-${envio.pedidoId}`}
+                                                type="text"
+                                                placeholder="Ej: 1234567890"
                                                 value={
-                                                    tarifa.precio
+                                                    seguimientos[
+                                                        envio.pedidoId
+                                                    ] ?? ""
                                                 }
-                                                onChange={(e) =>
-                                                    actualizarCampo(
-                                                        tarifa.id,
-                                                        "precio",
-                                                        e.target.value
+                                                disabled={procesando}
+                                                onChange={evento =>
+                                                    setSeguimientos(
+                                                        actuales => ({
+                                                            ...actuales,
+                                                            [envio.pedidoId]:
+                                                                evento
+                                                                    .target
+                                                                    .value
+                                                        })
                                                     )
                                                 }
                                             />
 
-                                        </div>
+                                            <button
+                                                type="button"
+                                                className="envio-guardar"
+                                                disabled={procesando}
+                                                onClick={() =>
+                                                    guardar(
+                                                        envio.pedidoId,
+                                                        null
+                                                    )
+                                                }
+                                            >
+                                                {procesando
+                                                    ? "Guardando..."
+                                                    : "Guardar"}
+                                            </button>
 
-                                        <small>
-                                            Actualmente:{" "}
-                                            {formatearPrecio(
-                                                tarifa.precio
-                                            )}
-                                        </small>
+                                        </div>
 
                                     </div>
 
-                                </div>
+                                    <div className="envio-acciones">
 
-                                <button
-                                    type="button"
-                                    className="envio-guardar"
-                                    disabled={
-                                        guardandoId ===
-                                        tarifa.id
-                                    }
-                                    onClick={() =>
-                                        guardarTarifa(
-                                            tarifa
-                                        )
-                                    }
-                                >
-                                    {guardandoId ===
-                                    tarifa.id
-                                        ? "Guardando..."
-                                        : "Guardar cambios"}
-                                </button>
+                                        {!pagoAprobado && (
 
-                            </article>
-                        ))}
+                                            <p className="envio-aviso">
+                                                El pago está en{" "}
+                                                {textoEstado(
+                                                    envio.estadoPago
+                                                ).toLowerCase()}
+                                                . No se puede avanzar
+                                                el envío hasta aprobarlo.
+                                            </p>
+                                        )}
+
+                                        {pagoAprobado &&
+                                            siguiente && (
+
+                                            <button
+                                                type="button"
+                                                className="envio-avanzar"
+                                                disabled={procesando}
+                                                onClick={() =>
+                                                    guardar(
+                                                        envio.pedidoId,
+                                                        siguiente
+                                                    )
+                                                }
+                                            >
+                                                {procesando
+                                                    ? "Actualizando..."
+                                                    : ETIQUETA_SIGUIENTE[
+                                                        envio.estadoEnvio
+                                                    ]}
+                                            </button>
+                                        )}
+
+                                        {pagoAprobado &&
+                                            !siguiente && (
+
+                                            <p className="envio-aviso ok">
+                                                Envío finalizado.
+                                            </p>
+                                        )}
+
+                                    </div>
+
+                                </article>
+                            );
+                        })}
 
                     </section>
                 )}

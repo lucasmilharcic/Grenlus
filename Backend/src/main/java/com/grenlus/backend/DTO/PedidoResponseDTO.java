@@ -38,6 +38,15 @@ public class PedidoResponseDTO {
     private BigDecimal costoEnvio;
     private String codigoSeguimiento;
 
+    /*
+     * Snapshot del transporte elegido y fechas reales
+     * del envío. Lo usa la pantalla de mis compras.
+     */
+    private String carrierEnvioNombre;
+    private String serviceNombreEnvio;
+    private LocalDateTime fechaDespacho;
+    private LocalDateTime fechaEntrega;
+
     private BigDecimal subtotalProductos;
     private BigDecimal total;
 
