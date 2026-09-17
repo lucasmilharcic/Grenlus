@@ -1,43 +1,28 @@
 package com.grenlus.backend.Service;
 
-import java.math.BigDecimal;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.grenlus.backend.DTO.CotizacionEnvioResponseDTO;
 import com.grenlus.backend.DTO.CotizarEnvioDTO;
-import com.grenlus.backend.Entity.TarifaEnvio;
+import com.grenlus.backend.DTO.OpcionEnvioDTO;
 import com.grenlus.backend.Exception.BadRequestException;
-import com.grenlus.backend.Repository.TarifaEnvioRepository;
 
 @Service
 public class EnvioService {
 
     private final ZipnovaService zipnovaService;
 
-    /*
-     * TEMPORAL.
-     *
-     * PedidoService todavía depende de TarifaEnvio
-     * hasta que migremos Pedido a Zipnova.
-     */
-    private final TarifaEnvioRepository tarifaEnvioRepository;
-
     public EnvioService(
-            ZipnovaService zipnovaService,
-            TarifaEnvioRepository tarifaEnvioRepository
+            ZipnovaService zipnovaService
     ) {
 
         this.zipnovaService =
                 zipnovaService;
-
-        this.tarifaEnvioRepository =
-                tarifaEnvioRepository;
     }
 
     // =========================================================
-    // NUEVO - COTIZACIÓN ZIPNOVA
+    // COTIZAR ENVÍO
     // =========================================================
 
     @Transactional(readOnly = true)
@@ -50,64 +35,63 @@ public class EnvioService {
     }
 
     // =========================================================
-    // LEGACY TEMPORAL - PEDIDO
+    // OBTENER OPCIÓN ACTUAL
     // =========================================================
 
+    /*
+     * Cuando el usuario confirma el pedido NO confiamos
+     * en el precio que llegó desde React.
+     *
+     * Volvemos a cotizar contra Zipnova y buscamos
+     * nuevamente la opción que había seleccionado.
+     */
+
     @Transactional(readOnly = true)
-    public TarifaEnvio obtenerTarifa(
-            Long tarifaId
+    public OpcionEnvioDTO obtenerOpcionActual(
+            CotizarEnvioDTO dto,
+            String opcionId
     ) {
 
-        if (tarifaId == null) {
-
-            throw new BadRequestException(
-                    "La tarifa de envío es obligatoria."
-            );
-        }
-
-        TarifaEnvio tarifa =
-                tarifaEnvioRepository
-                        .findById(tarifaId)
-                        .orElseThrow(() ->
-                                new BadRequestException(
-                                        "Tarifa de envío no encontrada."
-                                )
-                        );
-
-        if (!tarifa.isActivo()) {
-
-            throw new BadRequestException(
-                    "La tarifa de envío ya no está disponible."
-            );
-        }
-
         if (
-                tarifa.getPrecio() == null ||
-                tarifa.getPrecio()
-                        .compareTo(
-                                BigDecimal.ZERO
-                        ) < 0
+                opcionId == null ||
+                opcionId.isBlank()
         ) {
 
             throw new BadRequestException(
-                    "La tarifa de envío tiene un precio inválido."
+                    "Debés seleccionar una opción de envío."
             );
         }
 
-        return tarifa;
-    }
+        CotizacionEnvioResponseDTO cotizacion =
+                zipnovaService.cotizar(dto);
 
-    // =========================================================
-    // LEGACY TEMPORAL - PRECIO
-    // =========================================================
+        if (
+                cotizacion == null ||
+                cotizacion.getOpciones() == null ||
+                cotizacion.getOpciones().isEmpty()
+        ) {
 
-    @Transactional(readOnly = true)
-    public BigDecimal obtenerPrecioTarifa(
-            Long tarifaId
-    ) {
+            throw new BadRequestException(
+                    "No hay opciones de envío disponibles."
+            );
+        }
 
-        return obtenerTarifa(
-                tarifaId
-        ).getPrecio();
+        return cotizacion
+                .getOpciones()
+                .stream()
+                .filter(
+                        opcion ->
+                                opcion != null &&
+                                opcionId.equals(
+                                        opcion.getOpcionId()
+                                )
+                )
+                .findFirst()
+                .orElseThrow(
+                        () ->
+                                new BadRequestException(
+                                        "La opción de envío seleccionada ya no está disponible. Volvé a calcular el envío."
+                                )
+                );
     }
 }

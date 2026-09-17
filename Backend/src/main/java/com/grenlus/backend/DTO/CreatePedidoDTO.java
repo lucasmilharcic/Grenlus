@@ -17,15 +17,28 @@ import lombok.Setter;
 public class CreatePedidoDTO {
 
     private String nombreCliente;
+
     private String telefono;
+
     private String email;
+
     private String direccion;
+
     private String ciudad;
+
     private String provincia;
+
     private String codigoPostal;
 
     private MetodoEntrega metodoEntrega;
-    private Long tarifaEnvioId;
+
+    /*
+     * ID de la opción real devuelta por Zipnova.
+     *
+     * Ya no usamos tarifaEnvioId porque pertenecía
+     * al sistema viejo de tarifas guardadas en BD.
+     */
+    private String opcionEnvioId;
 
     private MetodoPago metodoPago;
 

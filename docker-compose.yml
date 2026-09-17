@@ -31,21 +31,60 @@ services:
       - postgres
 
     environment:
+
+      # =========================================================
+      # DATABASE
+      # =========================================================
+
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/grenlus
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 
+
+      # =========================================================
+      # MERCADO PAGO
+      # =========================================================
+
       MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN}
+
+
+      # =========================================================
+      # TRANSFERENCIA
+      # =========================================================
 
       TRANSFERENCIA_ALIAS: ${TRANSFERENCIA_ALIAS}
       TRANSFERENCIA_CBU: ${TRANSFERENCIA_CBU}
       TRANSFERENCIA_TITULAR: ${TRANSFERENCIA_TITULAR}
 
+
+      # =========================================================
+      # BACKEND PUBLIC URL
+      # =========================================================
+
       BACKEND_PUBLIC_URL: ${BACKEND_PUBLIC_URL}
+
+
+      # =========================================================
+      # ZIPNOVA
+      #
+      # Lo mantenemos mientras hacemos la migración
+      # hacia Correo Argentino.
+      # =========================================================
+
       ZIPNOVA_API_KEY: ${ZIPNOVA_API_KEY}
       ZIPNOVA_API_SECRET: ${ZIPNOVA_API_SECRET}
       ZIPNOVA_ACCOUNT_ID: ${ZIPNOVA_ACCOUNT_ID}
       ZIPNOVA_ORIGIN_ID: ${ZIPNOVA_ORIGIN_ID}
+
+
+      # =========================================================
+      # CORREO ARGENTINO - PAQ.AR
+      # =========================================================
+
+      CORREO_ARGENTINO_API_URL: ${CORREO_ARGENTINO_API_URL}
+      CORREO_ARGENTINO_API_KEY: ${CORREO_ARGENTINO_API_KEY}
+      CORREO_ARGENTINO_AGREEMENT: ${CORREO_ARGENTINO_AGREEMENT}
+
 
     volumes:
       - uploads_data:/app/uploads

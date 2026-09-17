@@ -21,3 +21,6 @@ Backend/uploads/
 # SISTEMA
 .DS_Store
 Thumbs.db
+.env
+.env.*
+!.env.example

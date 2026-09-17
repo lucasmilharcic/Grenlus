@@ -13,6 +13,9 @@ import com.grenlus.backend.DTO.DetallePedidoResponseDTO;
 import com.grenlus.backend.DTO.DisenoPedidoDTO;
 import com.grenlus.backend.DTO.DisenoPedidoResponseDTO;
 import com.grenlus.backend.DTO.PedidoResponseDTO;
+import com.grenlus.backend.DTO.CotizarEnvioDTO;
+import com.grenlus.backend.DTO.ItemCotizacionEnvioDTO;
+import com.grenlus.backend.DTO.OpcionEnvioDTO;
 
 import com.grenlus.backend.Entity.AreaPersonalizacion;
 import com.grenlus.backend.Entity.Carteleria;
@@ -24,7 +27,6 @@ import com.grenlus.backend.Entity.MetodoEntrega;
 import com.grenlus.backend.Entity.Pedido;
 import com.grenlus.backend.Entity.Producto;
 import com.grenlus.backend.Entity.TamanoEstampa;
-import com.grenlus.backend.Entity.TarifaEnvio;
 import com.grenlus.backend.Entity.Usuario;
 import com.grenlus.backend.Repository.UsuarioRepository;
 
@@ -168,7 +170,7 @@ public class PedidoService {
 
                 if (metodoEntrega == MetodoEntrega.RETIRO) {
 
-                        pedido.setTarifaEnvio(null);
+                        limpiarDatosEnvioZipnova(pedido);
                         pedido.setCostoEnvio(BigDecimal.ZERO);
                         pedido.setEstadoEnvio(EstadoEnvio.NO_CORRESPONDE);
 
@@ -177,25 +179,56 @@ public class PedidoService {
                         validarProductosParaEnvio(pedido);
                         validarDatosEnvio(dto);
 
-                        if (dto.getTarifaEnvioId() == null) {
+                        if (dto.getOpcionEnvioId() == null ||
+                                        dto.getOpcionEnvioId().isBlank()) {
 
                                 throw new BadRequestException(
-                                                "Debés seleccionar una tarifa de envío.");
+                                                "Debés seleccionar una opción de envío.");
                         }
 
-                        TarifaEnvio tarifa = envioService.obtenerTarifa(
-                                        dto.getTarifaEnvioId());
+                        /*
+                         * Nunca confiamos en el precio enviado por React.
+                         *
+                         * Volvemos a cotizar contra Zipnova con los datos
+                         * reales del pedido y buscamos la misma opción.
+                         */
+                        CotizarEnvioDTO cotizacionDTO =
+                                        construirCotizacionPedido(
+                                                        dto,
+                                                        subtotalProductos);
+
+                        OpcionEnvioDTO opcionActual =
+                                        envioService.obtenerOpcionActual(
+                                                        cotizacionDTO,
+                                                        dto.getOpcionEnvioId());
 
                         costoEnvio = normalizarPrecio(
-                                        tarifa.getPrecio());
+                                        opcionActual.getPrecio());
 
-                        pedido.setTarifaEnvio(tarifa);
+                        pedido.setOpcionEnvioId(
+                                        opcionActual.getOpcionId());
+
+                        pedido.setCarrierEnvioId(
+                                        opcionActual.getCarrierId());
+
+                        pedido.setCarrierEnvioNombre(
+                                        opcionActual.getCarrierNombre());
+
+                        pedido.setLogisticTypeEnvio(
+                                        opcionActual.getLogisticType());
+
+                        pedido.setServiceTypeEnvio(
+                                        opcionActual.getServiceType());
+
+                        pedido.setServiceNombreEnvio(
+                                        opcionActual.getServiceNombre());
+
                         pedido.setCostoEnvio(costoEnvio);
                         pedido.setEstadoEnvio(EstadoEnvio.PENDIENTE);
 
                 } else if (metodoEntrega == MetodoEntrega.COORDINAR) {
 
-                        pedido.setTarifaEnvio(null);
+                        limpiarDatosEnvioZipnova(pedido);
                         pedido.setCostoEnvio(BigDecimal.ZERO);
                         pedido.setEstadoEnvio(EstadoEnvio.NO_CORRESPONDE);
 
@@ -873,6 +906,68 @@ public class PedidoService {
         }
 
         // =========================================================
+        // COTIZACIÓN ZIPNOVA DESDE PEDIDO
+        // =========================================================
+
+        private CotizarEnvioDTO construirCotizacionPedido(
+                        CreatePedidoDTO dto,
+                        BigDecimal valorDeclarado) {
+
+                CotizarEnvioDTO cotizacion =
+                                new CotizarEnvioDTO();
+
+                cotizacion.setCodigoPostal(
+                                limpiarTexto(
+                                                dto.getCodigoPostal()));
+
+                cotizacion.setProvincia(
+                                limpiarTexto(
+                                                dto.getProvincia()));
+
+                cotizacion.setLocalidad(
+                                limpiarTexto(
+                                                dto.getCiudad()));
+
+                cotizacion.setValorDeclarado(
+                                valorDeclarado != null
+                                                ? valorDeclarado
+                                                : BigDecimal.ZERO);
+
+                List<ItemCotizacionEnvioDTO> itemsCotizacion =
+                                new ArrayList<>();
+
+                for (DetallePedidoDTO detalle : dto.getDetalles()) {
+
+                        ItemCotizacionEnvioDTO item =
+                                        new ItemCotizacionEnvioDTO();
+
+                        item.setProductoId(
+                                        detalle.getProductoId());
+
+                        item.setCantidad(
+                                        detalle.getCantidad());
+
+                        itemsCotizacion.add(item);
+                }
+
+                cotizacion.setItems(
+                                itemsCotizacion);
+
+                return cotizacion;
+        }
+
+        private void limpiarDatosEnvioZipnova(
+                        Pedido pedido) {
+
+                pedido.setOpcionEnvioId(null);
+                pedido.setCarrierEnvioId(null);
+                pedido.setCarrierEnvioNombre(null);
+                pedido.setLogisticTypeEnvio(null);
+                pedido.setServiceTypeEnvio(null);
+                pedido.setServiceNombreEnvio(null);
+        }
+
+        // =========================================================
         // VALIDAR PRODUCTOS PARA ENVÍO
         // =========================================================
 
@@ -1106,13 +1201,30 @@ public class PedidoService {
                 dto.setCodigoSeguimiento(
                                 pedido.getCodigoSeguimiento());
 
-                if (pedido.getTarifaEnvio() != null) {
+                /*
+                 * PedidoResponseDTO todavía conserva estos campos por
+                 * compatibilidad con pantallas existentes.
+                 *
+                 * tarifaEnvioId queda null porque ya no usamos la tabla
+                 * TarifaEnvio. tarifaEnvioNombre muestra el transporte
+                 * y servicio guardados como snapshot de Zipnova.
+                 */
+                dto.setTarifaEnvioId(null);
 
-                        dto.setTarifaEnvioId(
-                                        pedido.getTarifaEnvio().getId());
+                if (pedido.getCarrierEnvioNombre() != null) {
+
+                        String nombreEnvio =
+                                        pedido.getCarrierEnvioNombre();
+
+                        if (pedido.getServiceNombreEnvio() != null &&
+                                        !pedido.getServiceNombreEnvio().isBlank()) {
+
+                                nombreEnvio += " - "
+                                                + pedido.getServiceNombreEnvio();
+                        }
 
                         dto.setTarifaEnvioNombre(
-                                        pedido.getTarifaEnvio().getNombre());
+                                        nombreEnvio);
                 }
 
                 dto.setTotal(

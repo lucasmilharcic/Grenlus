@@ -129,9 +129,18 @@ public class SecurityConfig {
                                                                 // ENVÍOS
                                                                 // =========================
 
+                                                                // =========================
+                                                                // ENVÍOS
+                                                                // =========================
+
                                                                 .requestMatchers(
                                                                                 HttpMethod.POST,
                                                                                 "/envios/cotizar")
+                                                                .permitAll()
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.GET,
+                                                                                "/envios/correo/test")
                                                                 .permitAll()
 
                                                                 .requestMatchers(
