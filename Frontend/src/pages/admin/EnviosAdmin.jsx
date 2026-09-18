@@ -400,6 +400,7 @@ export default function EnviosAdmin() {
                 )}
 
                 {!loading &&
+                    !error &&
                     enviosFiltrados.length === 0 && (
 
                     <div className="envios-state">
