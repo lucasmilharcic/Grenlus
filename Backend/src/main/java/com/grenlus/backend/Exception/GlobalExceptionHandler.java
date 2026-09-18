@@ -33,6 +33,19 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(PagoNoDisponibleException.class)
+    @ResponseBody
+    public ResponseEntity<ApiErrorResponse> handlePagoNoDisponible(PagoNoDisponibleException ex) {
+        // La causa original (respuesta de Mercado Pago, timeout, etc.) queda en el log
+        ex.printStackTrace();
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
+                ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {

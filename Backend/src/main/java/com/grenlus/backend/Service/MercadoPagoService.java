@@ -11,15 +11,19 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grenlus.backend.Entity.DetallePedido;
 import com.grenlus.backend.Entity.EstadoPago;
 import com.grenlus.backend.Entity.EstadoPedido;
 import com.grenlus.backend.Entity.MetodoPago;
 import com.grenlus.backend.Entity.Pedido;
 import com.grenlus.backend.Exception.BadRequestException;
+import com.grenlus.backend.Exception.PagoNoDisponibleException;
 import com.grenlus.backend.Exception.ResourceNotFoundException;
 import com.grenlus.backend.Repository.PedidoRepository;
 
@@ -292,15 +296,15 @@ public class MercadoPagoService {
 
         } catch (Exception e) {
 
-            throw new RuntimeException(
-                    "No se pudo crear la preferencia de Mercado Pago.",
+            throw errorDeMercadoPago(
+                    "No se pudo crear el pago en Mercado Pago",
                     e
             );
         }
 
         if (respuesta == null) {
 
-            throw new RuntimeException(
+            throw new PagoNoDisponibleException(
                     "Mercado Pago devolvió una respuesta vacía."
             );
         }
@@ -320,7 +324,7 @@ public class MercadoPagoService {
         if (preferenceId == null ||
                 initPoint == null) {
 
-            throw new RuntimeException(
+            throw new PagoNoDisponibleException(
                     "Mercado Pago no devolvió los datos necesarios para iniciar el pago."
             );
         }
@@ -385,15 +389,15 @@ public class MercadoPagoService {
 
         } catch (Exception e) {
 
-            throw new RuntimeException(
-                    "No se pudo consultar el pago en Mercado Pago.",
+            throw errorDeMercadoPago(
+                    "No se pudo consultar el pago en Mercado Pago",
                     e
             );
         }
 
         if (pago == null) {
 
-            throw new RuntimeException(
+            throw new PagoNoDisponibleException(
                     "Mercado Pago devolvió un pago vacío."
             );
         }
@@ -556,9 +560,99 @@ public class MercadoPagoService {
         if (accessToken == null ||
                 accessToken.isBlank()) {
 
-            throw new IllegalStateException(
-                    "Falta configurar MP_ACCESS_TOKEN."
+            throw new PagoNoDisponibleException(
+                    "Mercado Pago no está configurado: falta el token de acceso (MP_ACCESS_TOKEN)."
             );
+        }
+    }
+
+    // =========================================================
+    // ERRORES DE LA API
+    // =========================================================
+
+    /*
+     * Traduce el fallo de una llamada a Mercado Pago a un
+     * mensaje que diga qué pasó, en vez del error genérico.
+     *
+     * Si MP respondió, usamos su código y su "message"
+     * (ej: 401 "invalid access token"). Si ni respondió,
+     * es un problema de conexión.
+     */
+    private PagoNoDisponibleException errorDeMercadoPago(
+            String accion,
+            Exception e) {
+
+        if (e instanceof RestClientResponseException respuestaError) {
+
+            int status =
+                    respuestaError.getStatusCode().value();
+
+            String detalle =
+                    leerMensajeDeError(
+                            respuestaError.getResponseBodyAsString()
+                    );
+
+            if (status == 401 || status == 403) {
+
+                return new PagoNoDisponibleException(
+                        accion + ": Mercado Pago rechazó el token de acceso ("
+                                + status + (detalle != null ? " - " + detalle : "")
+                                + "). Revisá MP_ACCESS_TOKEN.",
+                        e
+                );
+            }
+
+            return new PagoNoDisponibleException(
+                    accion + ": Mercado Pago respondió "
+                            + status
+                            + (detalle != null ? " - " + detalle : "")
+                            + ".",
+                    e
+            );
+        }
+
+        if (e instanceof ResourceAccessException) {
+
+            return new PagoNoDisponibleException(
+                    accion + ": no se pudo conectar con Mercado Pago.",
+                    e
+            );
+        }
+
+        return new PagoNoDisponibleException(
+                accion + ".",
+                e
+        );
+    }
+
+    private String leerMensajeDeError(
+            String cuerpo) {
+
+        if (cuerpo == null ||
+                cuerpo.isBlank()) {
+
+            return null;
+        }
+
+        try {
+
+            JsonNode json =
+                    new ObjectMapper().readTree(cuerpo);
+
+            String mensaje =
+                    leerTexto(
+                            json,
+                            "message"
+                    );
+
+            return mensaje != null && !mensaje.isBlank()
+                    ? mensaje
+                    : null;
+
+        } catch (Exception ignorado) {
+
+            // Cuerpo que no es JSON: no lo mostramos al cliente
+            return null;
         }
     }
 
