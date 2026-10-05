@@ -2155,29 +2155,25 @@ export default function PersonalizadorProducto({
                                 Elegir talle
                             </option>
 
-                            <option value="XS">
-                                XS
-                            </option>
+                            <optgroup label="Infantil">
+                                <option value="4">4</option>
+                                <option value="6">6</option>
+                                <option value="8">8</option>
+                                <option value="10">10</option>
+                                <option value="12">12</option>
+                                <option value="14">14</option>
+                                <option value="16">16</option>
+                                <option value="18">18</option>
+                            </optgroup>
 
-                            <option value="S">
-                                S
-                            </option>
-
-                            <option value="M">
-                                M
-                            </option>
-
-                            <option value="L">
-                                L
-                            </option>
-
-                            <option value="XL">
-                                XL
-                            </option>
-
-                            <option value="XXL">
-                                XXL
-                            </option>
+                            <optgroup label="Adulto">
+                                <option value="XS">XS</option>
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                                <option value="XXL">XXL</option>
+                            </optgroup>
 
                         </select>
 
