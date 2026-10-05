@@ -1,5 +1,6 @@
-const API_URL =
-    "http://127.0.0.1:8081/solicitudes";
+import { API_BASE_URL } from "./apiConfig";
+
+const API_URL = `${API_BASE_URL}/solicitudes`;
 
 // =====================================================
 // HEADERS

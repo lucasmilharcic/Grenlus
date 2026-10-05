@@ -1,8 +1,13 @@
 package com.grenlus.backend.Service;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,9 +18,6 @@ import com.grenlus.backend.DTO.DetallePedidoResponseDTO;
 import com.grenlus.backend.DTO.DisenoPedidoDTO;
 import com.grenlus.backend.DTO.DisenoPedidoResponseDTO;
 import com.grenlus.backend.DTO.PedidoResponseDTO;
-import com.grenlus.backend.DTO.CotizarEnvioDTO;
-import com.grenlus.backend.DTO.ItemCotizacionEnvioDTO;
-import com.grenlus.backend.DTO.OpcionEnvioDTO;
 
 import com.grenlus.backend.Entity.AreaPersonalizacion;
 import com.grenlus.backend.Entity.Carteleria;
@@ -23,7 +25,10 @@ import com.grenlus.backend.Entity.DetallePedido;
 import com.grenlus.backend.Entity.DisenoPedido;
 import com.grenlus.backend.Entity.Indumentaria;
 import com.grenlus.backend.Entity.EstadoEnvio;
+import com.grenlus.backend.Entity.EstadoPago;
+import com.grenlus.backend.Entity.EstadoPedido;
 import com.grenlus.backend.Entity.MetodoEntrega;
+import com.grenlus.backend.Entity.MetodoPago;
 import com.grenlus.backend.Entity.Pedido;
 import com.grenlus.backend.Entity.Producto;
 import com.grenlus.backend.Entity.TamanoEstampa;
@@ -77,6 +82,12 @@ public class PedidoService {
                         CreatePedidoDTO dto,
                         String username) {
 
+                if (username == null || username.isBlank()
+                                || "anonymousUser".equalsIgnoreCase(username)) {
+                        throw new BadRequestException(
+                                        "Iniciá sesión para registrar tu pedido.");
+                }
+
                 validarPedido(dto);
 
                 Pedido pedido = new Pedido();
@@ -129,7 +140,7 @@ public class PedidoService {
                 if (dto.getMetodoPago() == null) {
 
                         throw new BadRequestException(
-                                        "Debés seleccionar un medio de pago.");
+                                        "DebÃ©s seleccionar un medio de pago.");
                 }
 
                 pedido.setMetodoPago(dto.getMetodoPago());
@@ -140,9 +151,23 @@ public class PedidoService {
 
                 BigDecimal subtotalProductos = BigDecimal.ZERO;
 
+                Map<Long, Long> cantidadesPorProducto = new HashMap<>();
+
                 for (DetallePedidoDTO detalleDTO : dto.getDetalles()) {
 
-                        DetallePedido detalle = crearDetalle(detalleDTO);
+                        validarDetalle(detalleDTO);
+
+                        cantidadesPorProducto.merge(
+                                        detalleDTO.getProductoId(),
+                                        detalleDTO.getCantidad().longValue(),
+                                        Long::sum);
+                }
+
+                for (DetallePedidoDTO detalleDTO : dto.getDetalles()) {
+
+                        DetallePedido detalle = crearDetalle(
+                                        detalleDTO,
+                                        cantidadesPorProducto);
 
                         pedido.agregarDetalle(detalle);
 
@@ -161,7 +186,7 @@ public class PedidoService {
                 if (metodoEntrega == null) {
 
                         throw new BadRequestException(
-                                        "Debés seleccionar una forma de entrega.");
+                                        "DebÃ©s seleccionar una forma de entrega.");
                 }
 
                 pedido.setMetodoEntrega(metodoEntrega);
@@ -170,8 +195,9 @@ public class PedidoService {
 
                 if (metodoEntrega == MetodoEntrega.RETIRO) {
 
-                        limpiarDatosEnvioZipnova(pedido);
+                        limpiarDatosEnvio(pedido);
                         pedido.setCostoEnvio(BigDecimal.ZERO);
+                        pedido.setEnvioCotizado(true);
                         pedido.setEstadoEnvio(EstadoEnvio.NO_CORRESPONDE);
 
                 } else if (metodoEntrega == MetodoEntrega.ENVIO_DOMICILIO) {
@@ -179,63 +205,21 @@ public class PedidoService {
                         validarProductosParaEnvio(pedido);
                         validarDatosEnvio(dto);
 
-                        if (dto.getOpcionEnvioId() == null ||
-                                        dto.getOpcionEnvioId().isBlank()) {
-
-                                throw new BadRequestException(
-                                                "Debés seleccionar una opción de envío.");
-                        }
-
-                        /*
-                         * Nunca confiamos en el precio enviado por React.
-                         *
-                         * Volvemos a cotizar contra Zipnova con los datos
-                         * reales del pedido y buscamos la misma opción.
-                         */
-                        CotizarEnvioDTO cotizacionDTO =
-                                        construirCotizacionPedido(
-                                                        dto,
-                                                        subtotalProductos);
-
-                        OpcionEnvioDTO opcionActual =
-                                        envioService.obtenerOpcionActual(
-                                                        cotizacionDTO,
-                                                        dto.getOpcionEnvioId());
-
-                        costoEnvio = normalizarPrecio(
-                                        opcionActual.getPrecio());
-
-                        pedido.setOpcionEnvioId(
-                                        opcionActual.getOpcionId());
-
-                        pedido.setCarrierEnvioId(
-                                        opcionActual.getCarrierId());
-
-                        pedido.setCarrierEnvioNombre(
-                                        opcionActual.getCarrierNombre());
-
-                        pedido.setLogisticTypeEnvio(
-                                        opcionActual.getLogisticType());
-
-                        pedido.setServiceTypeEnvio(
-                                        opcionActual.getServiceType());
-
-                        pedido.setServiceNombreEnvio(
-                                        opcionActual.getServiceNombre());
-
                         pedido.setCostoEnvio(costoEnvio);
+                        pedido.setEnvioCotizado(false);
                         pedido.setEstadoEnvio(EstadoEnvio.PENDIENTE);
 
                 } else if (metodoEntrega == MetodoEntrega.COORDINAR) {
 
-                        limpiarDatosEnvioZipnova(pedido);
+                        limpiarDatosEnvio(pedido);
                         pedido.setCostoEnvio(BigDecimal.ZERO);
+                        pedido.setEnvioCotizado(true);
                         pedido.setEstadoEnvio(EstadoEnvio.NO_CORRESPONDE);
 
                 } else {
 
                         throw new BadRequestException(
-                                        "Método de entrega inválido.");
+                                        "MÃ©todo de entrega invÃ¡lido.");
                 }
 
                 // =====================================================
@@ -252,7 +236,155 @@ public class PedidoService {
 
                 Pedido guardado = pedidoRepository.save(pedido);
 
-                return convertirADTO(guardado);
+                PedidoResponseDTO respuesta = convertirADTO(guardado);
+                return respuesta;
+        }
+
+        @Transactional(readOnly = true)
+        public PedidoResponseDTO obtenerPedidoInvitado(
+                        Long pedidoId,
+                        String tokenAcceso) {
+
+                return convertirADTO(
+                                obtenerPedidoInvitadoAutorizado(pedidoId, tokenAcceso));
+        }
+
+        @Transactional
+        public PedidoResponseDTO actualizarMetodoPagoInvitado(
+                        Long pedidoId,
+                        String tokenAcceso,
+                        MetodoPago metodoPago) {
+
+                Pedido pedido = obtenerPedidoInvitadoAutorizado(pedidoId, tokenAcceso);
+
+                if (metodoPago == null) {
+                        throw new BadRequestException(
+                                        "Seleccioná un medio de pago.");
+                }
+
+                if (pedido.getMetodoEntrega() != MetodoEntrega.ENVIO_DOMICILIO
+                                || !pedido.isEnvioCotizado()) {
+                        throw new BadRequestException(
+                                        "El pago estará disponible cuando el envío esté cotizado.");
+                }
+
+                if (pedido.getEstadoPago() != EstadoPago.PENDIENTE
+                                || pedido.getEstado() == EstadoPedido.CANCELADO) {
+                        throw new BadRequestException(
+                                        "Este pedido ya no está disponible para pagar.");
+                }
+
+                if (pedido.getMetodoPago() != metodoPago) {
+                        pedido.setMetodoPago(metodoPago);
+                        pedido.setMercadoPagoPreferenceId(null);
+                        pedido.setMercadoPagoUrl(null);
+                }
+
+                return convertirADTO(pedidoRepository.save(pedido));
+        }
+
+        @Transactional
+        public PedidoResponseDTO actualizarMetodoPagoCuenta(
+                        Long pedidoId,
+                        String username,
+                        MetodoPago metodoPago) {
+
+                Pedido pedido = obtenerPedidoDeUsuario(pedidoId, username);
+
+                if (metodoPago == null) {
+                        throw new BadRequestException(
+                                        "Seleccioná un medio de pago.");
+                }
+
+                if (pedido.getMetodoEntrega() != MetodoEntrega.ENVIO_DOMICILIO
+                                || !pedido.isEnvioCotizado()) {
+                        throw new BadRequestException(
+                                        "El pago estará disponible cuando el envío esté cotizado.");
+                }
+
+                if (pedido.getEstadoPago() != EstadoPago.PENDIENTE
+                                || pedido.getEstado() == EstadoPedido.CANCELADO) {
+                        throw new BadRequestException(
+                                        "Este pedido ya no está disponible para pagar.");
+                }
+
+                if (pedido.getMetodoPago() != metodoPago) {
+                        pedido.setMetodoPago(metodoPago);
+                        pedido.setMercadoPagoPreferenceId(null);
+                        pedido.setMercadoPagoUrl(null);
+                }
+
+                return convertirADTO(pedidoRepository.save(pedido));
+        }
+
+        @Transactional(readOnly = true)
+        public void validarPropiedadPedido(
+                        Long pedidoId,
+                        String username) {
+
+                obtenerPedidoDeUsuario(pedidoId, username);
+        }
+
+        private Pedido obtenerPedidoDeUsuario(
+                        Long pedidoId,
+                        String username) {
+
+                Pedido pedido = pedidoRepository.findById(pedidoId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Pedido no encontrado"));
+
+                if (pedido.getUsuario() == null
+                                || username == null
+                                || !username.equals(pedido.getUsuario().getUsername())) {
+                        throw new ResourceNotFoundException(
+                                        "Pedido no encontrado");
+                }
+
+                return pedido;
+        }
+
+        @Transactional(readOnly = true)
+        public void validarAccesoPedidoInvitado(
+                        Long pedidoId,
+                        String tokenAcceso) {
+
+                obtenerPedidoInvitadoAutorizado(pedidoId, tokenAcceso);
+        }
+
+        private Pedido obtenerPedidoInvitadoAutorizado(
+                        Long pedidoId,
+                        String tokenAcceso) {
+
+                Pedido pedido = pedidoRepository
+                                .findById(pedidoId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Pedido no encontrado"));
+
+                String hashGuardado = pedido.getGuestAccessTokenHash();
+                if (pedido.getUsuario() != null
+                                || tokenAcceso == null
+                                || tokenAcceso.isBlank()
+                                || hashGuardado == null
+                                || !MessageDigest.isEqual(
+                                                hashGuardado.getBytes(StandardCharsets.US_ASCII),
+                                                hashTokenAcceso(tokenAcceso).getBytes(StandardCharsets.US_ASCII))) {
+                        throw new ResourceNotFoundException(
+                                        "Pedido no encontrado");
+                }
+
+                return pedido;
+        }
+
+        private String hashTokenAcceso(String token) {
+                try {
+                        byte[] hash = MessageDigest.getInstance("SHA-256")
+                                        .digest(token.getBytes(StandardCharsets.UTF_8));
+                        return java.util.HexFormat.of().formatHex(hash);
+                } catch (NoSuchAlgorithmException ex) {
+                        throw new IllegalStateException(
+                                        "No se pudo validar el acceso al pedido.",
+                                        ex);
+                }
         }
 
         // =========================================================
@@ -260,7 +392,8 @@ public class PedidoService {
         // =========================================================
 
         private DetallePedido crearDetalle(
-                        DetallePedidoDTO detalleDTO) {
+                        DetallePedidoDTO detalleDTO,
+                        Map<Long, Long> cantidadesPorProducto) {
 
                 validarDetalle(
                                 detalleDTO);
@@ -277,11 +410,11 @@ public class PedidoService {
                         throw new BadRequestException(
                                         "El producto \""
                                                         + producto.getNombre()
-                                                        + "\" no está disponible.");
+                                                        + "\" no estÃ¡ disponible.");
                 }
 
                 /*
-                 * Cartelería a cotizar jamás entra
+                 * CartelerÃ­a a cotizar jamÃ¡s entra
                  * en pedido/carrito.
                  */
                 if (producto instanceof Carteleria carteleria) {
@@ -291,7 +424,7 @@ public class PedidoService {
                                 throw new BadRequestException(
                                                 "El producto \""
                                                                 + producto.getNombre()
-                                                                + "\" requiere cotización y no puede agregarse al carrito.");
+                                                                + "\" requiere cotizaciÃ³n y no puede agregarse al carrito.");
                         }
                 }
 
@@ -319,6 +452,12 @@ public class PedidoService {
                 BigDecimal precioBase = obtenerPrecioBase(
                                 producto);
 
+                BigDecimal precioBaseMayorista =
+                                producto.calcularPrecioBaseMayorista(
+                                                cantidadesPorProducto.getOrDefault(
+                                                                producto.getId(),
+                                                                0L));
+
                 TamanoEstampa tamanoEstampa = obtenerTamanoEstampa(
                                 detalleDTO);
 
@@ -326,7 +465,7 @@ public class PedidoService {
                                 producto,
                                 tamanoEstampa);
 
-                BigDecimal precioUnitario = precioBase.add(
+                BigDecimal precioUnitario = precioBaseMayorista.add(
                                 precioEstampa);
 
                 BigDecimal subtotal = precioUnitario.multiply(
@@ -350,7 +489,7 @@ public class PedidoService {
                                 tamanoEstampa);
 
                 // =====================================================
-                // DISEÑOS
+                // DISEÃ‘OS
                 // =====================================================
 
                 if (detalleDTO.getDisenos() != null) {
@@ -360,10 +499,10 @@ public class PedidoService {
                                 /*
                                  * IMPORTANTE:
                                  *
-                                 * Ahora también enviamos el COLOR elegido
+                                 * Ahora tambiÃ©n enviamos el COLOR elegido
                                  * en este detalle.
                                  *
-                                 * Así podemos encontrar:
+                                 * AsÃ­ podemos encontrar:
                                  *
                                  * Frente + Negro
                                  * Frente + Blanco
@@ -385,7 +524,7 @@ public class PedidoService {
         }
 
         // =========================================================
-        // CREAR DISEÑO
+        // CREAR DISEÃ‘O
         // =========================================================
 
         private DisenoPedido crearDiseno(
@@ -399,20 +538,20 @@ public class PedidoService {
                 if (dto == null) {
 
                         throw new BadRequestException(
-                                        "El diseño no puede ser nulo.");
+                                        "El diseÃ±o no puede ser nulo.");
                 }
 
                 if (dto.getRutaImagen() == null ||
                                 dto.getRutaImagen().isBlank()) {
 
                         throw new BadRequestException(
-                                        "El diseño debe tener una imagen.");
+                                        "El diseÃ±o debe tener una imagen.");
                 }
 
                 if (dto.getPosicion() == null) {
 
                         throw new BadRequestException(
-                                        "El diseño debe indicar su posición.");
+                                        "El diseÃ±o debe indicar su posiciÃ³n.");
                 }
 
                 DisenoPedido diseno = new DisenoPedido();
@@ -460,9 +599,9 @@ public class PedidoService {
                  * INDUMENTARIA
                  * =====================================================
                  *
-                 * Ahora el área se busca por:
+                 * Ahora el Ã¡rea se busca por:
                  *
-                 * PRODUCTO + POSICIÓN + COLOR
+                 * PRODUCTO + POSICIÃ“N + COLOR
                  *
                  * Ej:
                  *
@@ -471,7 +610,7 @@ public class PedidoService {
                  * + Negro
                  *
                  * Si el producto no trabaja con colores,
-                 * buscamos el área genérica con color NULL.
+                 * buscamos el Ã¡rea genÃ©rica con color NULL.
                  */
                 if (producto instanceof Indumentaria indumentaria) {
 
@@ -492,7 +631,7 @@ public class PedidoService {
                                                                 dto.getPosicion(),
                                                                 colorNormalizado)
                                                 .orElseThrow(() -> new BadRequestException(
-                                                                "No existe un área de personalización configurada para "
+                                                                "No existe un Ã¡rea de personalizaciÃ³n configurada para "
                                                                                 + dto.getPosicion().name()
                                                                                 + " en el color "
                                                                                 + colorNormalizado
@@ -501,7 +640,7 @@ public class PedidoService {
                         } else {
 
                                 // =============================================
-                                // PRODUCTO SIN COLOR / ÁREA GENÉRICA
+                                // PRODUCTO SIN COLOR / ÃREA GENÃ‰RICA
                                 // =============================================
 
                                 area = areaRepository
@@ -509,13 +648,13 @@ public class PedidoService {
                                                                 indumentaria.getId(),
                                                                 dto.getPosicion())
                                                 .orElseThrow(() -> new BadRequestException(
-                                                                "No existe un área de personalización configurada para "
+                                                                "No existe un Ã¡rea de personalizaciÃ³n configurada para "
                                                                                 + dto.getPosicion().name()
                                                                                 + "."));
                         }
 
                         // =================================================
-                        // VALIDAR QUE EL DISEÑO QUEDE DENTRO DEL ÁREA
+                        // VALIDAR QUE EL DISEÃ‘O QUEDE DENTRO DEL ÃREA
                         // =================================================
 
                         validarDisenoDentroDelArea(
@@ -527,10 +666,10 @@ public class PedidoService {
                          * SNAPSHOT
                          * =================================================
                          *
-                         * Guardamos en el pedido el mockup y el área
+                         * Guardamos en el pedido el mockup y el Ã¡rea
                          * tal como estaban en el momento de la compra.
                          *
-                         * Esto es importante porque después vos podés
+                         * Esto es importante porque despuÃ©s vos podÃ©s
                          * modificar el producto desde Admin sin alterar
                          * pedidos viejos.
                          */
@@ -577,7 +716,7 @@ public class PedidoService {
         }
 
         // =========================================================
-        // VALIDACIÓN VISUAL
+        // VALIDACIÃ“N VISUAL
         // =========================================================
 
         private void validarDisenoDentroDelArea(
@@ -592,7 +731,7 @@ public class PedidoService {
                                 dto.getAlto() == null) {
 
                         throw new BadRequestException(
-                                        "El diseño debe informar posición y tamaño.");
+                                        "El diseÃ±o debe informar posiciÃ³n y tamaÃ±o.");
                 }
 
                 double x = dto.getPosicionX();
@@ -607,7 +746,7 @@ public class PedidoService {
                                 height <= 0) {
 
                         throw new BadRequestException(
-                                        "El diseño debe tener un tamaño válido.");
+                                        "El diseÃ±o debe tener un tamaÃ±o vÃ¡lido.");
                 }
 
                 double margen = 0.01;
@@ -632,7 +771,7 @@ public class PedidoService {
                                 saleAbajo) {
 
                         throw new BadRequestException(
-                                        "El diseño está fuera del área de estampado permitida.");
+                                        "El diseÃ±o estÃ¡ fuera del Ã¡rea de estampado permitida.");
                 }
         }
 
@@ -652,33 +791,33 @@ public class PedidoService {
                                 dto.getAltoCm() == null) {
 
                         throw new BadRequestException(
-                                        "El diseño debe informar sus medidas reales.");
+                                        "El diseÃ±o debe informar sus medidas reales.");
                 }
 
                 if (dto.getAnchoCm() <= 0 ||
                                 dto.getAltoCm() <= 0) {
 
                         throw new BadRequestException(
-                                        "Las medidas reales del diseño deben ser mayores a cero.");
+                                        "Las medidas reales del diseÃ±o deben ser mayores a cero.");
                 }
 
                 if (anchoMax != null &&
                                 dto.getAnchoCm() > anchoMax + 0.01) {
 
                         throw new BadRequestException(
-                                        "El diseño supera el ancho máximo permitido.");
+                                        "El diseÃ±o supera el ancho mÃ¡ximo permitido.");
                 }
 
                 if (altoMax != null &&
                                 dto.getAltoCm() > altoMax + 0.01) {
 
                         throw new BadRequestException(
-                                        "El diseño supera el alto máximo permitido.");
+                                        "El diseÃ±o supera el alto mÃ¡ximo permitido.");
                 }
         }
 
         // =========================================================
-        // MEDIDAS SEGÚN TAMAÑO
+        // MEDIDAS SEGÃšN TAMAÃ‘O
         // =========================================================
 
         private Double obtenerAnchoMax(
@@ -745,14 +884,14 @@ public class PedidoService {
                         Producto producto) {
 
                 /*
-                 * Cartelería precio fijo.
+                 * CartelerÃ­a precio fijo.
                  */
                 if (producto instanceof Carteleria carteleria) {
 
                         if (carteleria.isEsCotizable()) {
 
                                 throw new BadRequestException(
-                                                "Esta cartelería requiere cotización.");
+                                                "Esta cartelerÃ­a requiere cotizaciÃ³n.");
                         }
 
                         if (carteleria.getPrecioFijo() != null) {
@@ -770,7 +909,7 @@ public class PedidoService {
         }
 
         // =========================================================
-        // OBTENER TAMAÑO DEL DETALLE
+        // OBTENER TAMAÃ‘O DEL DETALLE
         // =========================================================
 
         private TamanoEstampa obtenerTamanoEstampa(
@@ -816,7 +955,7 @@ public class PedidoService {
                 } catch (IllegalArgumentException e) {
 
                         throw new BadRequestException(
-                                        "Tamaño de estampa inválido: "
+                                        "TamaÃ±o de estampa invÃ¡lido: "
                                                         + valor
                                                         + ". Valores permitidos: CHICA, MEDIA o GRANDE.");
                 }
@@ -838,7 +977,7 @@ public class PedidoService {
                 }
 
                 /*
-                 * Cartelería:
+                 * CartelerÃ­a:
                  * no suma estampa.
                  */
                 if (producto instanceof Carteleria) {
@@ -848,7 +987,7 @@ public class PedidoService {
 
                 /*
                  * Validamos que el admin tenga ese
-                 * tamaño habilitado.
+                 * tamaÃ±o habilitado.
                  */
                 if (producto instanceof Indumentaria indumentaria) {
 
@@ -905,70 +1044,13 @@ public class PedidoService {
                 };
         }
 
-        // =========================================================
-        // COTIZACIÓN ZIPNOVA DESDE PEDIDO
-        // =========================================================
-
-        private CotizarEnvioDTO construirCotizacionPedido(
-                        CreatePedidoDTO dto,
-                        BigDecimal valorDeclarado) {
-
-                CotizarEnvioDTO cotizacion =
-                                new CotizarEnvioDTO();
-
-                cotizacion.setCodigoPostal(
-                                limpiarTexto(
-                                                dto.getCodigoPostal()));
-
-                cotizacion.setProvincia(
-                                limpiarTexto(
-                                                dto.getProvincia()));
-
-                cotizacion.setLocalidad(
-                                limpiarTexto(
-                                                dto.getCiudad()));
-
-                cotizacion.setValorDeclarado(
-                                valorDeclarado != null
-                                                ? valorDeclarado
-                                                : BigDecimal.ZERO);
-
-                List<ItemCotizacionEnvioDTO> itemsCotizacion =
-                                new ArrayList<>();
-
-                for (DetallePedidoDTO detalle : dto.getDetalles()) {
-
-                        ItemCotizacionEnvioDTO item =
-                                        new ItemCotizacionEnvioDTO();
-
-                        item.setProductoId(
-                                        detalle.getProductoId());
-
-                        item.setCantidad(
-                                        detalle.getCantidad());
-
-                        itemsCotizacion.add(item);
-                }
-
-                cotizacion.setItems(
-                                itemsCotizacion);
-
-                return cotizacion;
-        }
-
-        private void limpiarDatosEnvioZipnova(
+        private void limpiarDatosEnvio(
                         Pedido pedido) {
 
-                pedido.setOpcionEnvioId(null);
-                pedido.setCarrierEnvioId(null);
-                pedido.setCarrierEnvioNombre(null);
-                pedido.setLogisticTypeEnvio(null);
-                pedido.setServiceTypeEnvio(null);
-                pedido.setServiceNombreEnvio(null);
         }
 
         // =========================================================
-        // VALIDAR PRODUCTOS PARA ENVÍO
+        // VALIDAR PRODUCTOS PARA ENVÃO
         // =========================================================
 
         private void validarProductosParaEnvio(
@@ -999,46 +1081,53 @@ public class PedidoService {
                                         throw new BadRequestException(
                                                         "El producto \""
                                                                         + producto.getNombre()
-                                                                        + "\" no admite envío a domicilio. "
-                                                                        + "Seleccioná retiro o quitá este producto.");
+                                                                        + "\" no admite envÃ­o a domicilio. "
+                                                                        + "SeleccionÃ¡ retiro o quitÃ¡ este producto.");
                                 }
                         }
                 }
         }
 
         // =========================================================
-        // VALIDAR DATOS DE ENVÍO
+        // VALIDAR DATOS DE ENVÃO
         // =========================================================
 
         private void validarDatosEnvio(
                         CreatePedidoDTO dto) {
 
+                if (dto.getEmail() == null ||
+                                dto.getEmail().isBlank()) {
+
+                        throw new BadRequestException(
+                                        "El email es obligatorio para recibir la cotización del envío.");
+                }
+
                 if (dto.getDireccion() == null ||
                                 dto.getDireccion().isBlank()) {
 
                         throw new BadRequestException(
-                                        "La dirección es obligatoria para el envío.");
+                                        "La direcciÃ³n es obligatoria para el envÃ­o.");
                 }
 
                 if (dto.getCiudad() == null ||
                                 dto.getCiudad().isBlank()) {
 
                         throw new BadRequestException(
-                                        "La ciudad es obligatoria para el envío.");
+                                        "La ciudad es obligatoria para el envÃ­o.");
                 }
 
                 if (dto.getProvincia() == null ||
                                 dto.getProvincia().isBlank()) {
 
                         throw new BadRequestException(
-                                        "La provincia es obligatoria para el envío.");
+                                        "La provincia es obligatoria para el envÃ­o.");
                 }
 
                 if (dto.getCodigoPostal() == null ||
                                 dto.getCodigoPostal().isBlank()) {
 
                         throw new BadRequestException(
-                                        "El código postal es obligatorio para el envío.");
+                                        "El cÃ³digo postal es obligatorio para el envÃ­o.");
                 }
         }
 
@@ -1073,7 +1162,7 @@ public class PedidoService {
                                 dto.getTelefono().isBlank()) {
 
                         throw new BadRequestException(
-                                        "El teléfono del cliente es obligatorio.");
+                                        "El telÃ©fono del cliente es obligatorio.");
                 }
         }
 
@@ -1083,7 +1172,7 @@ public class PedidoService {
                 if (dto == null) {
 
                         throw new BadRequestException(
-                                        "Hay un producto inválido en el carrito.");
+                                        "Hay un producto invÃ¡lido en el carrito.");
                 }
 
                 if (dto.getProductoId() == null) {
@@ -1107,12 +1196,31 @@ public class PedidoService {
         @Transactional(readOnly = true)
         public List<PedidoResponseDTO> listarPedidos() {
 
+                return listarPedidos(false);
+        }
+
+        @Transactional(readOnly = true)
+        public List<PedidoResponseDTO> listarPedidos(
+                        boolean archivado) {
+
                 return pedidoRepository
-                                .findAll()
+                                .findByArchivadoOrderByFechaPedidoDesc(
+                                                archivado)
                                 .stream()
                                 .map(
                                                 this::convertirADTO)
                                 .toList();
+        }
+
+        @Transactional
+        public void actualizarArchivado(
+                        Long id,
+                        boolean archivado) {
+
+                if (pedidoRepository.actualizarArchivado(id, archivado) == 0) {
+                        throw new ResourceNotFoundException(
+                                        "Pedido no encontrado");
+                }
         }
 
         // =========================================================
@@ -1198,40 +1306,17 @@ public class PedidoService {
                 dto.setCostoEnvio(
                                 pedido.getCostoEnvio());
 
+                dto.setEnvioCotizado(
+                                pedido.isEnvioCotizado()
+                                                || (pedido.getCostoEnvio() != null
+                                                                && pedido.getCostoEnvio()
+                                                                                .compareTo(BigDecimal.ZERO) > 0));
+
+                dto.setArchivado(
+                                pedido.isArchivado());
+
                 dto.setCodigoSeguimiento(
                                 pedido.getCodigoSeguimiento());
-
-                /*
-                 * PedidoResponseDTO todavía conserva estos campos por
-                 * compatibilidad con pantallas existentes.
-                 *
-                 * tarifaEnvioId queda null porque ya no usamos la tabla
-                 * TarifaEnvio. tarifaEnvioNombre muestra el transporte
-                 * y servicio guardados como snapshot de Zipnova.
-                 */
-                dto.setTarifaEnvioId(null);
-
-                if (pedido.getCarrierEnvioNombre() != null) {
-
-                        String nombreEnvio =
-                                        pedido.getCarrierEnvioNombre();
-
-                        if (pedido.getServiceNombreEnvio() != null &&
-                                        !pedido.getServiceNombreEnvio().isBlank()) {
-
-                                nombreEnvio += " - "
-                                                + pedido.getServiceNombreEnvio();
-                        }
-
-                        dto.setTarifaEnvioNombre(
-                                        nombreEnvio);
-                }
-
-                dto.setCarrierEnvioNombre(
-                                pedido.getCarrierEnvioNombre());
-
-                dto.setServiceNombreEnvio(
-                                pedido.getServiceNombreEnvio());
 
                 dto.setFechaDespacho(
                                 pedido.getFechaDespacho());
@@ -1338,6 +1423,17 @@ public class PedidoService {
                 dto.setSubtotal(
                                 detalle.getSubtotal());
 
+                if (detalle.getProducto() != null) {
+                        dto.setPesoGramos(
+                                        detalle.getProducto().getPesoGramos());
+                        dto.setLargoEnvioCm(
+                                        detalle.getProducto().getLargoEnvioCm());
+                        dto.setAnchoEnvioCm(
+                                        detalle.getProducto().getAnchoEnvioCm());
+                        dto.setAltoEnvioCm(
+                                        detalle.getProducto().getAltoEnvioCm());
+                }
+
                 List<DisenoPedidoResponseDTO> disenos = new ArrayList<>();
 
                 if (detalle.getDisenos() != null) {
@@ -1357,7 +1453,7 @@ public class PedidoService {
         }
 
         // =========================================================
-        // DISEÑO -> DTO
+        // DISEÃ‘O -> DTO
         // =========================================================
 
         private DisenoPedidoResponseDTO convertirDisenoADTO(

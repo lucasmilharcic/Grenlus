@@ -9,10 +9,25 @@ import {
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { isAuthenticated } from "../services/authService";
 
 import {
-    getMisCompras
+    consultarPedidoInvitado,
+    getMisCompras,
+    getMisComprasInvitado,
+    guardarAccesoPedidoInvitado,
+    obtenerTokenPedidoInvitado,
+    actualizarMetodoPagoPedidoInvitado,
+    actualizarMetodoPagoPedidoCuenta
 } from "../services/pedidoService";
+
+import {
+    crearPreferenciaMercadoPagoCuenta,
+    crearPreferenciaMercadoPagoInvitado,
+    getDatosTransferencia,
+    subirComprobanteTransferenciaCuenta,
+    subirComprobanteTransferenciaInvitado
+} from "../services/pagoService";
 
 import "./MisCompras.css";
 
@@ -145,6 +160,42 @@ function SeguimientoEnvio({
                 pedido.estadoEnvio
         );
 
+    if (!pedido.envioCotizado) {
+
+        return (
+            <div className="mi-compra-envio">
+
+                <span className="mi-compra-envio-titulo">
+                    Envío a cotizar por email
+                </span>
+
+                <p className="mi-compra-envio-nota">
+                    Te enviaremos el costo y el total final antes de que pagues.
+                </p>
+
+                {pedido.direccion && (
+                    <span>
+                        Destino:{" "}
+                        <strong>
+                            {[
+                                pedido.direccion,
+                                pedido.ciudad,
+                                pedido.provincia
+                            ]
+                                .filter(Boolean)
+                                .join(", ")}
+                        </strong>
+                    </span>
+                )}
+
+                <span>
+                    Costo del envío: <strong>A cotizar</strong>
+                </span>
+
+            </div>
+        );
+    }
+
     return (
 
         <div className="mi-compra-envio">
@@ -187,18 +238,10 @@ function SeguimientoEnvio({
 
             <div className="mi-compra-envio-datos">
 
-                {pedido.carrierEnvioNombre && (
-
-                    <span>
-                        Transporte:{" "}
-                        <strong>
-                            {pedido.carrierEnvioNombre}
-                            {pedido.serviceNombreEnvio
-                                ? ` - ${pedido.serviceNombreEnvio}`
-                                : ""}
-                        </strong>
-                    </span>
-                )}
+                <span>
+                    Gestión:{" "}
+                    <strong>MiCorreo</strong>
+                </span>
 
                 {pedido.direccion && (
 
@@ -219,9 +262,9 @@ function SeguimientoEnvio({
                 <span>
                     Costo del envío:{" "}
                     <strong>
-                        {moneda(
-                            pedido.costoEnvio
-                        )}
+                        {pedido.envioCotizado
+                            ? moneda(pedido.costoEnvio)
+                            : "A cotizar"}
                     </strong>
                 </span>
 
@@ -272,6 +315,8 @@ export default function MisCompras() {
         setPedidos
     ] = useState([]);
 
+    const [pedidosDeCuenta, setPedidosDeCuenta] = useState([]);
+
     const [
         loading,
         setLoading
@@ -281,6 +326,34 @@ export default function MisCompras() {
         error,
         setError
     ] = useState("");
+
+    const [
+        pedidoInvitadoId,
+        setPedidoInvitadoId
+    ] = useState("");
+
+    const [
+        tokenInvitado,
+        setTokenInvitado
+    ] = useState("");
+
+    const [
+        consultandoInvitado,
+        setConsultandoInvitado
+    ] = useState(false);
+
+    const [
+        errorInvitado,
+        setErrorInvitado
+    ] = useState("");
+
+    const [procesandoPagoId, setProcesandoPagoId] = useState(null);
+    const [errorPago, setErrorPago] = useState("");
+    const [mensajePago, setMensajePago] = useState("");
+    const [enlacesPago, setEnlacesPago] = useState({});
+    const [datosTransferencia, setDatosTransferencia] = useState({});
+    const [comprobantes, setComprobantes] = useState({});
+    const usuarioAutenticado = isAuthenticated();
 
     useEffect(() => {
 
@@ -295,13 +368,29 @@ export default function MisCompras() {
             setLoading(true);
             setError("");
 
-            const data =
-                await getMisCompras();
+            const usuarioTieneSesion = isAuthenticated();
+            const comprasCuenta = usuarioTieneSesion
+                ? await getMisCompras()
+                : [];
+            const comprasInvitado = usuarioTieneSesion
+                ? []
+                : await getMisComprasInvitado();
+
+            const comprasPorId = new Map();
+            const cuenta = Array.isArray(comprasCuenta) ? comprasCuenta : [];
+            setPedidosDeCuenta(cuenta.map(pedido => pedido.id));
+            [
+                ...cuenta,
+                ...comprasInvitado
+            ].forEach(pedido => {
+                comprasPorId.set(pedido.id, pedido);
+            });
 
             setPedidos(
-                Array.isArray(data)
-                    ? data
-                    : []
+                [...comprasPorId.values()]
+                    .sort((a, b) =>
+                        Number(b.id || 0) - Number(a.id || 0)
+                    )
             );
 
         } catch (err) {
@@ -319,6 +408,186 @@ export default function MisCompras() {
         }
     }
 
+    async function buscarPedidoInvitado(evento) {
+        evento.preventDefault();
+        setErrorInvitado("");
+
+        if (!pedidoInvitadoId.trim() || !tokenInvitado.trim()) {
+            setErrorInvitado("Ingresá el número del pedido y su código de acceso.");
+            return;
+        }
+
+        if (!/^\d+$/.test(pedidoInvitadoId.trim())) {
+            setErrorInvitado("El número del pedido debe contener solo números.");
+            return;
+        }
+
+        try {
+            setConsultandoInvitado(true);
+            const pedido = await consultarPedidoInvitado(
+                pedidoInvitadoId.trim(),
+                tokenInvitado.trim()
+            );
+
+            let guardadoEnEsteNavegador = true;
+            try {
+                guardarAccesoPedidoInvitado({
+                    id: pedido.id,
+                    guestAccessToken: tokenInvitado.trim()
+                });
+            } catch (errorAlGuardar) {
+                guardadoEnEsteNavegador = false;
+                console.error(errorAlGuardar);
+                setErrorInvitado(errorAlGuardar.message);
+            }
+
+            setPedidos(actuales => [
+                pedido,
+                ...actuales.filter(item => item.id !== pedido.id)
+            ]);
+            if (guardadoEnEsteNavegador) {
+                setPedidoInvitadoId("");
+                setTokenInvitado("");
+            }
+        } catch (err) {
+            console.error(err);
+            setErrorInvitado(
+                err.message ||
+                "No se pudo consultar el pedido."
+            );
+        } finally {
+            setConsultandoInvitado(false);
+        }
+    }
+
+    function reemplazarPedido(actualizado) {
+        setPedidos(actuales =>
+            actuales.map(pedido =>
+                pedido.id === actualizado.id ? actualizado : pedido
+            )
+        );
+    }
+
+    async function elegirMedioPago(pedido, metodoPago) {
+        const pedidoDeCuenta = pedidosDeCuenta.includes(pedido.id);
+        const tokenAcceso = pedidoDeCuenta
+            ? null
+            : obtenerTokenPedidoInvitado(pedido.id);
+        if (!pedidoDeCuenta && !tokenAcceso) {
+            setErrorPago(
+                `No se encontró el código privado del pedido #${pedido.id} en este navegador. Volvé a consultarlo con el número y el código.`
+            );
+            return;
+        }
+
+        try {
+            setProcesandoPagoId(pedido.id);
+            setErrorPago("");
+            setMensajePago("");
+
+            const actualizado = pedidoDeCuenta
+                ? await actualizarMetodoPagoPedidoCuenta(
+                    pedido.id,
+                    metodoPago
+                )
+                : await actualizarMetodoPagoPedidoInvitado(
+                    pedido.id,
+                    metodoPago,
+                    tokenAcceso
+                );
+            reemplazarPedido(actualizado);
+
+            if (metodoPago === "MERCADO_PAGO") {
+                const preferencia = pedidoDeCuenta
+                    ? await crearPreferenciaMercadoPagoCuenta(pedido.id)
+                    : await crearPreferenciaMercadoPagoInvitado(
+                        pedido.id,
+                        tokenAcceso
+                    );
+                setEnlacesPago(actuales => ({
+                    ...actuales,
+                    [pedido.id]: preferencia.url
+                }));
+                setMensajePago(
+                    `El pago del pedido #${pedido.id} está listo. Podés elegir tarjeta de crédito, débito u otros medios en Mercado Pago.`
+                );
+                return;
+            }
+
+            const datos = await getDatosTransferencia();
+            setDatosTransferencia(actuales => ({
+                ...actuales,
+                [pedido.id]: datos
+            }));
+            setMensajePago(
+                `El pedido #${pedido.id} quedó configurado para transferencia.`
+            );
+        } catch (err) {
+            console.error(err);
+            setErrorPago(
+                err.message || "No se pudo preparar el medio de pago."
+            );
+        } finally {
+            setProcesandoPagoId(null);
+        }
+    }
+
+    async function enviarComprobante(pedido) {
+        const archivo = comprobantes[pedido.id];
+        const pedidoDeCuenta = pedidosDeCuenta.includes(pedido.id);
+        const tokenAcceso = pedidoDeCuenta
+            ? null
+            : obtenerTokenPedidoInvitado(pedido.id);
+
+        if (!archivo || (!pedidoDeCuenta && !tokenAcceso)) {
+            setErrorPago("Seleccioná el comprobante y volvé a consultar el pedido con su código privado.");
+            return;
+        }
+
+        try {
+            setProcesandoPagoId(pedido.id);
+            setErrorPago("");
+            setMensajePago("");
+
+            if (pedidoDeCuenta) {
+                await subirComprobanteTransferenciaCuenta(
+                    pedido.id,
+                    archivo
+                );
+            } else {
+                await subirComprobanteTransferenciaInvitado(
+                    pedido.id,
+                    archivo,
+                    tokenAcceso
+                );
+            }
+            const actualizado = pedidoDeCuenta
+                ? (await getMisCompras()).find(item => item.id === pedido.id)
+                : await consultarPedidoInvitado(
+                    pedido.id,
+                    tokenAcceso
+                );
+            if (!actualizado) {
+                throw new Error("No se pudo actualizar el estado del pedido.");
+            }
+            reemplazarPedido(actualizado);
+            setComprobantes(actuales => ({
+                ...actuales,
+                [pedido.id]: null
+            }));
+            setMensajePago(
+                `Recibimos el comprobante del pedido #${pedido.id}. El pago quedará pendiente hasta que lo verifiquemos.`
+            );
+        } catch (err) {
+            console.error(err);
+            setErrorPago(
+                err.message || "No se pudo enviar el comprobante."
+            );
+        } finally {
+            setProcesandoPagoId(null);
+        }
+    }
+
     return (
         <>
             <Navbar />
@@ -328,7 +597,7 @@ export default function MisCompras() {
                 <header className="mis-compras-header">
 
                     <span>
-                        TU CUENTA
+                        TUS PEDIDOS
                     </span>
 
                     <h1>
@@ -336,11 +605,84 @@ export default function MisCompras() {
                     </h1>
 
                     <p>
-                        Revisá el estado de tus pedidos
-                        y pagos.
+                        {usuarioAutenticado
+                            ? "Revisá el estado de tus pedidos y pagos."
+                            : "Consultá tus pedidos anteriores como invitado con el número y el código de acceso."}
                     </p>
 
                 </header>
+
+                {!usuarioAutenticado && (
+                    <form
+                        className="mis-compras-invitado"
+                        onSubmit={buscarPedidoInvitado}
+                    >
+                        <div>
+                            <h2>Consultar pedido como invitado</h2>
+                            <p>
+                                Los pedidos anteriores hechos como invitado pueden consultarse
+                                con su número y código de acceso. Para ver las compras hechas
+                                con tu cuenta, <Link to="/login">iniciá sesión</Link>.
+                            </p>
+                            <button
+                                type="button"
+                                className="mis-compras-actualizar"
+                                onClick={cargar}
+                                disabled={loading}
+                            >
+                                {loading ? "Actualizando..." : "Actualizar pedidos"}
+                            </button>
+                        </div>
+
+                        <label>
+                            Número de pedido
+                            <input
+                                id="guest-order-number"
+                                name="guest-order-number"
+                                type="text"
+                                inputMode="numeric"
+                                value={pedidoInvitadoId}
+                                onChange={evento =>
+                                    setPedidoInvitadoId(evento.target.value)
+                                }
+                                autoComplete="off"
+                                spellCheck="false"
+                            />
+                        </label>
+
+                        <label>
+                            Código de acceso
+                            <input
+                                id="guest-order-access-code"
+                                name="guest-order-access-code"
+                                type="password"
+                                value={tokenInvitado}
+                                onChange={evento =>
+                                    setTokenInvitado(evento.target.value)
+                                }
+                                autoComplete="new-password"
+                            />
+                        </label>
+
+                        <button
+                            type="submit"
+                            disabled={consultandoInvitado}
+                        >
+                            {consultandoInvitado
+                                ? "Buscando..."
+                                : "Consultar pedido"}
+                        </button>
+
+                        {errorInvitado && (
+                            <p
+                                className="mis-compras-invitado-error"
+                                role="alert"
+                            >
+                                {errorInvitado}
+                            </p>
+                        )}
+                    </form>
+                )}
 
                 {loading && (
 
@@ -378,8 +720,9 @@ export default function MisCompras() {
                         </h2>
 
                         <p>
-                            Cuando hagas un pedido
-                            aparecerá acá.
+                            {usuarioAutenticado
+                                ? "Cuando hagas una compra con esta cuenta, aparecerá acá."
+                                : "Los pedidos guardados en este navegador aparecerán acá. Si compraste desde otro dispositivo, consultalo con el número y el código de acceso."}
                         </p>
 
                         <Link
@@ -422,9 +765,10 @@ export default function MisCompras() {
                                     </div>
 
                                     <strong>
-                                        {moneda(
-                                            pedido.total
-                                        )}
+                                        {pedido.metodoEntrega === "ENVIO_DOMICILIO" &&
+                                            !pedido.envioCotizado
+                                            ? `Subtotal ${moneda(pedido.total)}`
+                                            : moneda(pedido.total)}
                                     </strong>
 
                                 </div>
@@ -443,9 +787,9 @@ export default function MisCompras() {
                                     <span>
                                         Pedido:{" "}
                                         <strong>
-                                            {textoEstado(
-                                                pedido.estado
-                                            )}
+                                            {pedido.estado === "PAGADO"
+                                                ? "Aprobado · Pagado"
+                                                : textoEstado(pedido.estado)}
                                         </strong>
                                     </span>
 
@@ -454,6 +798,106 @@ export default function MisCompras() {
                                 <SeguimientoEnvio
                                     pedido={pedido}
                                 />
+
+                                {pedido.metodoEntrega === "ENVIO_DOMICILIO" &&
+                                    pedido.envioCotizado &&
+                                    pedido.estadoPago === "PENDIENTE" &&
+                                    pedido.estado !== "CANCELADO" &&
+                                    (
+                                        pedidosDeCuenta.includes(pedido.id) ||
+                                        obtenerTokenPedidoInvitado(pedido.id)
+                                    ) && (
+                                        <section className="mi-compra-pago">
+                                            <h3>Ya está cotizado: elegí cómo pagar</h3>
+                                            <p>
+                                                El total actualizado incluye el envío. Para pagar con tarjeta, se abrirá el checkout seguro de Mercado Pago.
+                                            </p>
+                                            <div className="mi-compra-pago-opciones">
+                                                <button
+                                                    type="button"
+                                                    disabled={procesandoPagoId === pedido.id}
+                                                    onClick={() => elegirMedioPago(pedido, "MERCADO_PAGO")}
+                                                >
+                                                    {procesandoPagoId === pedido.id
+                                                        ? "Preparando..."
+                                                        : "Pagar con Mercado Pago"}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="secundario"
+                                                    disabled={procesandoPagoId === pedido.id}
+                                                    onClick={() => elegirMedioPago(pedido, "TRANSFERENCIA")}
+                                                >
+                                                    Elegir transferencia
+                                                </button>
+                                            </div>
+
+                                            {(enlacesPago[pedido.id] || pedido.mercadoPagoUrl) &&
+                                                pedido.metodoPago === "MERCADO_PAGO" && (
+                                                    <a
+                                                        href={enlacesPago[pedido.id] || pedido.mercadoPagoUrl}
+                                                        className="continuar-pago"
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        Ir a Mercado Pago · pagar con tarjeta
+                                                    </a>
+                                                )}
+
+                                            {pedido.metodoPago === "TRANSFERENCIA" &&
+                                                datosTransferencia[pedido.id] && (
+                                                    <div className="mi-compra-transferencia">
+                                                        <strong>Datos para transferir</strong>
+                                                        <span>Alias: {datosTransferencia[pedido.id].alias || "No configurado"}</span>
+                                                        <span>CBU: {datosTransferencia[pedido.id].cbu || "No configurado"}</span>
+                                                        <span>Titular: {datosTransferencia[pedido.id].titular || "No configurado"}</span>
+                                                        {pedido.comprobanteTransferencia ? (
+                                                            <p>Comprobante enviado. Estamos verificando el pago.</p>
+                                                        ) : (
+                                                            <>
+                                                                <label>
+                                                                    Comprobante (imagen)
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        disabled={procesandoPagoId === pedido.id}
+                                                                        onChange={evento =>
+                                                                            setComprobantes(actuales => ({
+                                                                                ...actuales,
+                                                                                [pedido.id]: evento.target.files?.[0] || null
+                                                                            }))
+                                                                        }
+                                                                    />
+                                                                </label>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={
+                                                                        procesandoPagoId === pedido.id ||
+                                                                        !comprobantes[pedido.id]
+                                                                    }
+                                                                    onClick={() => enviarComprobante(pedido)}
+                                                                >
+                                                                    {procesandoPagoId === pedido.id
+                                                                        ? "Enviando..."
+                                                                        : "Enviar comprobante"}
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                            {errorPago && (
+                                                <p className="mi-compra-pago-error" role="alert">
+                                                    {errorPago}
+                                                </p>
+                                            )}
+                                            {mensajePago && (
+                                                <p className="mi-compra-pago-mensaje" role="status">
+                                                    {mensajePago}
+                                                </p>
+                                            )}
+                                        </section>
+                                    )}
 
                                 <div className="mi-compra-productos">
 

@@ -32,14 +32,6 @@ public class CreatePedidoDTO {
 
     private MetodoEntrega metodoEntrega;
 
-    /*
-     * ID de la opción real devuelta por Zipnova.
-     *
-     * Ya no usamos tarifaEnvioId porque pertenecía
-     * al sistema viejo de tarifas guardadas en BD.
-     */
-    private String opcionEnvioId;
-
     private MetodoPago metodoPago;
 
     private List<DetallePedidoDTO> detalles;

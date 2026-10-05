@@ -7,22 +7,28 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.grenlus.backend.Service.MercadoPagoService;
+import com.grenlus.backend.Service.PedidoService;
 
 @RestController
 @RequestMapping("/pagos/mercadopago")
 public class MercadoPagoController {
 
     private final MercadoPagoService mercadoPagoService;
+    private final PedidoService pedidoService;
 
     public MercadoPagoController(
-            MercadoPagoService mercadoPagoService) {
+            MercadoPagoService mercadoPagoService,
+            PedidoService pedidoService) {
 
         this.mercadoPagoService =
                 mercadoPagoService;
+        this.pedidoService = pedidoService;
     }
 
     // =========================================================
@@ -41,6 +47,32 @@ public class MercadoPagoController {
                         .crearPreferencia(
                                 pedidoId
                         )
+        );
+    }
+
+    @PostMapping("/preferencia-invitado")
+    public ResponseEntity<Map<String, String>> crearPreferenciaInvitado(
+            @RequestParam Long pedidoId,
+            @RequestHeader("X-Guest-Order-Token") String tokenAcceso
+    ) {
+
+        pedidoService.validarAccesoPedidoInvitado(pedidoId, tokenAcceso);
+
+        return ResponseEntity.ok(
+                mercadoPagoService.crearPreferencia(pedidoId)
+        );
+    }
+
+    @PostMapping("/preferencia-cuenta")
+    public ResponseEntity<Map<String, String>> crearPreferenciaCuenta(
+            @RequestParam Long pedidoId,
+            Authentication authentication
+    ) {
+
+        pedidoService.validarPropiedadPedido(pedidoId, authentication.getName());
+
+        return ResponseEntity.ok(
+                mercadoPagoService.crearPreferencia(pedidoId)
         );
     }
 

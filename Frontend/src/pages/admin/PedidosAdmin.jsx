@@ -9,7 +9,9 @@ import Footer from "../../components/Footer";
 
 import {
     getPedidos,
+    actualizarArchivoPedido,
     aprobarTransferencia,
+    aprobarPagoManualmente,
     rechazarTransferencia,
     obtenerUrlArchivoPedido
 } from "../../services/pedidoService";
@@ -159,6 +161,15 @@ function MockupDiseno({
     );
 }
 
+function ordenarPedidos(data) {
+    return (Array.isArray(data) ? [...data] : [])
+        .sort(
+            (a, b) =>
+                Number(b.id || 0) -
+                Number(a.id || 0)
+        );
+}
+
 export default function PedidosAdmin() {
 
     const [
@@ -187,6 +198,11 @@ export default function PedidosAdmin() {
     ] = useState("TODOS");
 
     const [
+        verArchivados,
+        setVerArchivados
+    ] = useState(false);
+
+    const [
         mensajeAccion,
         setMensajeAccion
     ] = useState("");
@@ -203,20 +219,9 @@ export default function PedidosAdmin() {
             setError("");
 
             const data =
-                await getPedidos();
+                await getPedidos(verArchivados);
 
-            const lista =
-                Array.isArray(data)
-                    ? [...data]
-                    : [];
-
-            lista.sort(
-                (a, b) =>
-                    Number(b.id || 0) -
-                    Number(a.id || 0)
-            );
-
-            setPedidos(lista);
+            setPedidos(ordenarPedidos(data));
 
         } catch (err) {
 
@@ -235,9 +240,36 @@ export default function PedidosAdmin() {
 
     useEffect(() => {
 
-        cargarPedidos();
+        let activo = true;
 
-    }, []);
+        getPedidos(verArchivados)
+            .then(data => {
+                if (activo) {
+                    setPedidos(ordenarPedidos(data));
+                }
+            })
+            .catch(err => {
+                if (!activo) {
+                    return;
+                }
+
+                console.error(err);
+                setError(
+                    err.message ||
+                    "No se pudieron cargar los pedidos."
+                );
+            })
+            .finally(() => {
+                if (activo) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            activo = false;
+        };
+
+    }, [verArchivados]);
 
     // =====================================================
     // FILTROS
@@ -309,12 +341,15 @@ export default function PedidosAdmin() {
     // =====================================================
 
     async function handleAprobar(
-        pedido
+        pedido,
+        manual = false
     ) {
 
         const confirmar =
             window.confirm(
-                `¿Aprobar el pago del pedido #${pedido.id}?`
+                manual
+                    ? `¿Confirmás que verificaste el ingreso real del dinero y querés aprobar manualmente el pago del pedido #${pedido.id}?`
+                    : `¿Aprobar el pago del pedido #${pedido.id}?`
             );
 
         if (!confirmar) {
@@ -329,9 +364,11 @@ export default function PedidosAdmin() {
 
             setMensajeAccion("");
 
-            await aprobarTransferencia(
-                pedido.id
-            );
+            if (manual) {
+                await aprobarPagoManualmente(pedido.id);
+            } else {
+                await aprobarTransferencia(pedido.id);
+            }
 
             setMensajeAccion(
                 `Pago del pedido #${pedido.id} aprobado correctamente.`
@@ -404,6 +441,45 @@ export default function PedidosAdmin() {
         }
     }
 
+    async function handleArchivo(pedido) {
+
+        const archivar = !verArchivados;
+        const accion = archivar ? "archivar" : "restaurar";
+        const confirmar = window.confirm(
+            archivar
+                ? `¿Archivar el pedido #${pedido.id}? Se conservará en el historial y podrás restaurarlo.`
+                : `¿Restaurar el pedido #${pedido.id} en la lista activa?`
+        );
+
+        if (!confirmar) {
+            return;
+        }
+
+        try {
+            setProcesandoId(pedido.id);
+            setMensajeAccion("");
+
+            await actualizarArchivoPedido(
+                pedido.id,
+                archivar
+            );
+
+            setMensajeAccion(
+                `Pedido #${pedido.id}: ${accion === "archivar" ? "archivado" : "restaurado"}.`
+            );
+
+            await cargarPedidos();
+        } catch (err) {
+            console.error(err);
+            setMensajeAccion(
+                err.message ||
+                "No se pudo actualizar el archivo del pedido."
+            );
+        } finally {
+            setProcesandoId(null);
+        }
+    }
+
     // =====================================================
     // RENDER
     // =====================================================
@@ -436,6 +512,7 @@ export default function PedidosAdmin() {
 
                     <div className="pedidos-count">
                         {pedidos.length} pedidos
+                        {verArchivados ? " archivados" : ""}
                     </div>
 
                 </header>
@@ -445,6 +522,32 @@ export default function PedidosAdmin() {
                 ================================================= */}
 
                 <div className="pedidos-filtros">
+
+                    <button
+                        type="button"
+                        className={!verArchivados ? "active" : ""}
+                        onClick={() => {
+                            setFiltro("TODOS");
+                            setLoading(true);
+                            setError("");
+                            setVerArchivados(false);
+                        }}
+                    >
+                        Activos
+                    </button>
+
+                    <button
+                        type="button"
+                        className={verArchivados ? "active" : ""}
+                        onClick={() => {
+                            setFiltro("TODOS");
+                            setLoading(true);
+                            setError("");
+                            setVerArchivados(true);
+                        }}
+                    >
+                        Archivados
+                    </button>
 
                     <button
                         type="button"
@@ -1047,15 +1150,51 @@ export default function PedidosAdmin() {
 
                                                 ) : (
 
-                                                    <p className="sin-comprobante">
+                                                    <>
+                                                        <p className="sin-comprobante">
+                                                            El cliente todavía no envió comprobante.
+                                                        </p>
 
-                                                        El cliente todavía no envió comprobante.
-
-                                                    </p>
+                                                        {pedido.estadoPago === "PENDIENTE" && (
+                                                            <div className="comprobante-actions">
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn-aprobar"
+                                                                    disabled={
+                                                                        procesandoId === pedido.id
+                                                                    }
+                                                                    onClick={() =>
+                                                                        handleAprobar(pedido, true)
+                                                                    }
+                                                                >
+                                                                    {procesandoId === pedido.id
+                                                                        ? "Procesando..."
+                                                                        : "Aprobar pago manualmente"}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
 
                                             </div>
                                         )}
+
+                                        <div className="pedido-archivo-actions">
+                                            <button
+                                                type="button"
+                                                className={verArchivados
+                                                    ? "pedido-archivar restaurar"
+                                                    : "pedido-archivar"}
+                                                disabled={procesandoId === pedido.id}
+                                                onClick={() => handleArchivo(pedido)}
+                                            >
+                                                {procesandoId === pedido.id
+                                                    ? "Guardando..."
+                                                    : verArchivados
+                                                        ? "Restaurar pedido"
+                                                        : "Archivar pedido"}
+                                            </button>
+                                        </div>
 
                                     </article>
                                 );

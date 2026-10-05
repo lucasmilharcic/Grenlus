@@ -2,6 +2,7 @@ package com.grenlus.backend.DTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.grenlus.backend.Entity.EstadoEnvio;
 import com.grenlus.backend.Entity.EstadoPago;
@@ -56,19 +57,11 @@ public class EnvioResponseDTO {
 
     private EstadoEnvio estadoEnvio;
 
-    // =========================================================
-    // SNAPSHOT DEL TRANSPORTE
-    // =========================================================
-
-    private String opcionEnvioId;
-
-    private String carrierEnvioNombre;
-
-    private String serviceNombreEnvio;
-
-    private String logisticTypeEnvio;
-
     private BigDecimal costoEnvio;
+
+    private boolean envioCotizado;
+
+    private boolean archivado;
 
     private String codigoSeguimiento;
 
@@ -89,4 +82,8 @@ public class EnvioResponseDTO {
     private BigDecimal total;
 
     private Integer cantidadItems;
+
+    private BigDecimal subtotalProductos;
+
+    private List<DetallePedidoResponseDTO> detalles;
 }

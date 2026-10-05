@@ -7,60 +7,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.grenlus.backend.Service.CorreoArgentinoService;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/envios/correo")
 public class CorreoArgentinoController {
 
-    private final CorreoArgentinoService correoArgentinoService;
+    private final String portalUrl;
 
     public CorreoArgentinoController(
-            CorreoArgentinoService correoArgentinoService
+            @Value("${correo-argentino.portal-url}") String portalUrl
     ) {
-
-        this.correoArgentinoService =
-                correoArgentinoService;
+        this.portalUrl = portalUrl;
     }
 
-    // =========================================================
-    // TEST DE CREDENCIALES
-    // =========================================================
-
-    @GetMapping("/test")
-    public ResponseEntity<Map<String, Object>>
-            probarConexion() {
-
-        boolean conectado =
-                correoArgentinoService
-                        .validarCredenciales();
-
-        Map<String, Object> respuesta =
-                new LinkedHashMap<>();
-
-        respuesta.put(
-                "proveedor",
-                "Correo Argentino"
-        );
-
-        respuesta.put(
-                "servicio",
-                "PAQ.AR"
-        );
-
-        respuesta.put(
-                "conectado",
-                conectado
-        );
-
-        respuesta.put(
-                "mensaje",
-                "Credenciales PAQ.AR válidas."
-        );
-
+    @GetMapping("/portal")
+    public ResponseEntity<Map<String, String>> portal() {
         return ResponseEntity.ok(
-                respuesta
+                Map.of(
+                        "proveedor", "Correo Argentino",
+                        "nombre", "MiCorreo",
+                        "url", portalUrl
+                )
         );
     }
+
 }

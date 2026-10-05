@@ -236,72 +236,19 @@
     border-radius: 12px;
 }
 
-.checkout-cotizar-envio {
-    margin-top: 14px;
+.checkout-envio-aviso {
+    margin: 16px 0 0;
 
-    padding: 10px 15px;
+    padding: 14px 16px;
 
-    color: #ffffff;
-    background: #0b4f8f;
+    color: #72540c;
+    background: #fff8e5;
 
-    border: 0;
-    border-radius: 8px;
+    border: 1px solid #f1dda4;
+    border-radius: 10px;
 
-    font: inherit;
-    font-weight: 750;
-
-    cursor: pointer;
-
-    transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease;
-}
-
-.checkout-cotizar-envio:hover:not(:disabled) {
-    transform: translateY(-1px);
-
-    box-shadow:
-        0 8px 18px
-        rgba(11, 79, 143, 0.16);
-}
-
-.checkout-cotizar-envio:disabled {
-    opacity: 0.65;
-
-    cursor: wait;
-}
-
-.checkout-cotizacion-ok {
-    margin-top: 14px;
-
-    padding: 14px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 16px;
-
-    color: #174f34;
-    background: #e8f7ef;
-
-    border: 1px solid #ccebd9;
-    border-radius: 9px;
-}
-
-.checkout-cotizacion-ok span,
-.checkout-cotizacion-ok small {
-    display: block;
-}
-
-.checkout-cotizacion-ok span {
-    font-weight: 700;
-}
-
-.checkout-cotizacion-ok small {
-    margin-top: 3px;
-
-    opacity: 0.75;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .checkout-envio-resumen-final {
@@ -319,6 +266,42 @@
     background: #f5f9fc;
 
     border-radius: 10px;
+}
+
+.checkout-codigo-invitado {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    margin: 18px 0;
+    padding: 16px;
+
+    color: #082d58;
+    background: #eef6fc;
+    border: 1px solid #cddce8;
+    border-radius: 10px;
+}
+
+.checkout-codigo-invitado strong {
+    font-size: 13px;
+}
+
+.checkout-codigo-invitado code {
+    padding: 10px;
+
+    color: #032a5b;
+    background: #ffffff;
+    border: 1px solid #d8e2eb;
+    border-radius: 7px;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
+.checkout-codigo-invitado span {
+    color: #536b80;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 /* =====================================================
@@ -587,6 +570,7 @@
 ===================================================== */
 
 .checkout-transferencia-final,
+.checkout-cotizacion-final,
 .checkout-empty {
     width: 100%;
     max-width: 650px;
@@ -608,6 +592,7 @@
 }
 
 .checkout-transferencia-final h1,
+.checkout-cotizacion-final h1,
 .checkout-empty h1 {
     margin: 0 0 10px;
 
@@ -622,6 +607,24 @@
     line-height: 1.6;
 
     font-size: 14px;
+}
+
+.checkout-cotizacion-final > p {
+    margin: 0 0 20px;
+
+    color: #647d94;
+
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.checkout-cotizacion-final .checkout-envio-resumen-final {
+    margin: 12px 0;
+}
+
+.checkout-cotizacion-contacto strong {
+    color: #173d62;
+    overflow-wrap: anywhere;
 }
 
 .transferencia-total {
@@ -780,7 +783,8 @@
         font-size: 31px;
     }
 
-    .checkout-transferencia-final {
+    .checkout-transferencia-final,
+    .checkout-cotizacion-final {
         padding: 25px 19px;
     }
 
@@ -792,8 +796,4 @@
         padding: 15px;
     }
 
-    .checkout-cotizacion-ok {
-        align-items: flex-start;
-        flex-direction: column;
-    }
 }

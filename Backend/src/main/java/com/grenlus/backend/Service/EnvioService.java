@@ -1,16 +1,16 @@
 package com.grenlus.backend.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.grenlus.backend.DTO.ActualizarEnvioDTO;
-import com.grenlus.backend.DTO.CotizacionEnvioResponseDTO;
-import com.grenlus.backend.DTO.CotizarEnvioDTO;
+import com.grenlus.backend.DTO.DetallePedidoResponseDTO;
 import com.grenlus.backend.DTO.EnvioResponseDTO;
-import com.grenlus.backend.DTO.OpcionEnvioDTO;
 import com.grenlus.backend.Entity.DetallePedido;
 import com.grenlus.backend.Entity.EstadoEnvio;
 import com.grenlus.backend.Entity.EstadoPago;
@@ -24,94 +24,13 @@ import com.grenlus.backend.Repository.PedidoRepository;
 @Service
 public class EnvioService {
 
-    private final ZipnovaService zipnovaService;
-
     private final PedidoRepository pedidoRepository;
 
     public EnvioService(
-            ZipnovaService zipnovaService,
             PedidoRepository pedidoRepository
     ) {
-
-        this.zipnovaService =
-                zipnovaService;
-
         this.pedidoRepository =
                 pedidoRepository;
-    }
-
-    // =========================================================
-    // COTIZAR ENVÍO
-    // =========================================================
-
-    @Transactional(readOnly = true)
-    public CotizacionEnvioResponseDTO cotizar(
-            CotizarEnvioDTO dto
-    ) {
-
-        return zipnovaService
-                .cotizar(dto);
-    }
-
-    // =========================================================
-    // OBTENER OPCIÓN ACTUAL
-    // =========================================================
-
-    /*
-     * Cuando el usuario confirma el pedido NO confiamos
-     * en el precio que llegó desde React.
-     *
-     * Volvemos a cotizar contra Zipnova y buscamos
-     * nuevamente la opción que había seleccionado.
-     */
-
-    @Transactional(readOnly = true)
-    public OpcionEnvioDTO obtenerOpcionActual(
-            CotizarEnvioDTO dto,
-            String opcionId
-    ) {
-
-        if (
-                opcionId == null ||
-                opcionId.isBlank()
-        ) {
-
-            throw new BadRequestException(
-                    "Debés seleccionar una opción de envío."
-            );
-        }
-
-        CotizacionEnvioResponseDTO cotizacion =
-                zipnovaService.cotizar(dto);
-
-        if (
-                cotizacion == null ||
-                cotizacion.getOpciones() == null ||
-                cotizacion.getOpciones().isEmpty()
-        ) {
-
-            throw new BadRequestException(
-                    "No hay opciones de envío disponibles."
-            );
-        }
-
-        return cotizacion
-                .getOpciones()
-                .stream()
-                .filter(
-                        opcion ->
-                                opcion != null &&
-                                opcionId.equals(
-                                        opcion.getOpcionId()
-                                )
-                )
-                .findFirst()
-                .orElseThrow(
-                        () ->
-                                new BadRequestException(
-                                        "La opción de envío seleccionada ya no está disponible. Volvé a calcular el envío."
-                                )
-                );
     }
 
     // =========================================================
@@ -131,18 +50,29 @@ public class EnvioService {
             EstadoEnvio estadoEnvio
     ) {
 
+        return listarEnvios(estadoEnvio, false);
+    }
+
+    @Transactional(readOnly = true)
+    public List<EnvioResponseDTO> listarEnvios(
+            EstadoEnvio estadoEnvio,
+            boolean archivado
+    ) {
+
         List<Pedido> pedidos =
                 estadoEnvio == null
 
                         ? pedidoRepository
-                                .findByMetodoEntregaOrderByFechaPedidoDesc(
-                                        MetodoEntrega.ENVIO_DOMICILIO
+                                .findByMetodoEntregaAndArchivadoOrderByFechaPedidoDesc(
+                                        MetodoEntrega.ENVIO_DOMICILIO,
+                                        archivado
                                 )
 
                         : pedidoRepository
-                                .findByMetodoEntregaAndEstadoEnvioOrderByFechaPedidoDesc(
+                                .findByMetodoEntregaAndEstadoEnvioAndArchivadoOrderByFechaPedidoDesc(
                                         MetodoEntrega.ENVIO_DOMICILIO,
-                                        estadoEnvio
+                                        estadoEnvio,
+                                        archivado
                                 );
 
         return pedidos
@@ -231,6 +161,41 @@ public class EnvioService {
             throw new BadRequestException(
                     "No se recibieron datos del envío."
             );
+        }
+
+        BigDecimal costoCotizado = dto.getCostoEnvio();
+
+        if (costoCotizado != null) {
+
+            if (costoCotizado.compareTo(BigDecimal.ZERO) < 0) {
+
+                throw new BadRequestException(
+                        "El costo del envío no puede ser negativo."
+                );
+            }
+
+            BigDecimal costoActual = pedido.getCostoEnvio() == null
+                    ? BigDecimal.ZERO
+                    : pedido.getCostoEnvio();
+
+            if (costoActual.compareTo(costoCotizado) != 0
+                    && (pedido.getEstadoPago() == EstadoPago.APROBADO
+                            || pedido.getMercadoPagoPreferenceId() != null
+                            || pedido.getComprobanteTransferencia() != null)) {
+
+                throw new BadRequestException(
+                        "No se puede cambiar el costo del envío después de iniciar o aprobar el pago."
+                );
+            }
+
+            pedido.setCostoEnvio(costoCotizado);
+            pedido.setTotal(
+                    (pedido.getSubtotalProductos() == null
+                            ? BigDecimal.ZERO
+                            : pedido.getSubtotalProductos())
+                            .add(costoCotizado)
+            );
+            pedido.setEnvioCotizado(true);
         }
 
         // =====================================================
@@ -518,20 +483,18 @@ public class EnvioService {
         dto.setEstadoEnvio(
                 pedido.getEstadoEnvio());
 
-        dto.setOpcionEnvioId(
-                pedido.getOpcionEnvioId());
-
-        dto.setCarrierEnvioNombre(
-                pedido.getCarrierEnvioNombre());
-
-        dto.setServiceNombreEnvio(
-                pedido.getServiceNombreEnvio());
-
-        dto.setLogisticTypeEnvio(
-                pedido.getLogisticTypeEnvio());
-
         dto.setCostoEnvio(
-                pedido.getCostoEnvio());
+                pedido.getCostoEnvio()
+        );
+
+        dto.setEnvioCotizado(
+                pedido.isEnvioCotizado()
+                        || (pedido.getCostoEnvio() != null
+                                && pedido.getCostoEnvio()
+                                        .compareTo(BigDecimal.ZERO) > 0));
+
+        dto.setArchivado(
+                pedido.isArchivado());
 
         dto.setCodigoSeguimiento(
                 pedido.getCodigoSeguimiento());
@@ -554,7 +517,11 @@ public class EnvioService {
         dto.setTotal(
                 pedido.getTotal());
 
+        dto.setSubtotalProductos(
+                pedido.getSubtotalProductos());
+
         int cantidadItems = 0;
+        List<DetallePedidoResponseDTO> detalles = new ArrayList<>();
 
         if (pedido.getDetalles() != null) {
 
@@ -568,10 +535,42 @@ public class EnvioService {
                     cantidadItems +=
                             detalle.getCantidad();
                 }
+
+                DetallePedidoResponseDTO detalleDTO =
+                        new DetallePedidoResponseDTO();
+                detalleDTO.setId(detalle.getId());
+                detalleDTO.setCantidad(detalle.getCantidad());
+                detalleDTO.setTalle(detalle.getTalle());
+                detalleDTO.setColor(detalle.getColor());
+                detalleDTO.setPrecioUnitario(detalle.getPrecioUnitario());
+                detalleDTO.setSubtotal(detalle.getSubtotal());
+
+                if (detalle.getTamanoEstampa() != null) {
+                    detalleDTO.setTamanoEstampa(
+                            detalle.getTamanoEstampa().name());
+                }
+
+                if (detalle.getProducto() != null) {
+                    detalleDTO.setProductoId(
+                            detalle.getProducto().getId());
+                    detalleDTO.setProductoNombre(
+                            detalle.getProducto().getNombre());
+                    detalleDTO.setPesoGramos(
+                            detalle.getProducto().getPesoGramos());
+                    detalleDTO.setLargoEnvioCm(
+                            detalle.getProducto().getLargoEnvioCm());
+                    detalleDTO.setAnchoEnvioCm(
+                            detalle.getProducto().getAnchoEnvioCm());
+                    detalleDTO.setAltoEnvioCm(
+                            detalle.getProducto().getAltoEnvioCm());
+                }
+
+                detalles.add(detalleDTO);
             }
         }
 
         dto.setCantidadItems(cantidadItems);
+        dto.setDetalles(detalles);
 
         return dto;
     }

@@ -33,17 +33,10 @@ public class PedidoResponseDTO {
 
     private MetodoEntrega metodoEntrega;
     private EstadoEnvio estadoEnvio;
-    private Long tarifaEnvioId;
-    private String tarifaEnvioNombre;
     private BigDecimal costoEnvio;
+    private boolean envioCotizado;
+    private boolean archivado;
     private String codigoSeguimiento;
-
-    /*
-     * Snapshot del transporte elegido y fechas reales
-     * del envío. Lo usa la pantalla de mis compras.
-     */
-    private String carrierEnvioNombre;
-    private String serviceNombreEnvio;
     private LocalDateTime fechaDespacho;
     private LocalDateTime fechaEntrega;
 
@@ -62,4 +55,6 @@ public class PedidoResponseDTO {
     private LocalDateTime fechaPedido;
 
     private List<DetallePedidoResponseDTO> detalles;
+
+    private String guestAccessToken;
 }

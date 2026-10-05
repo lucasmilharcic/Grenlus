@@ -1,4 +1,6 @@
-const API_URL = "http://127.0.0.1:8081";
+import { API_BASE_URL } from "./apiConfig";
+
+const API_URL = API_BASE_URL;
 
 // =====================================================
 // MERCADO PAGO
@@ -8,11 +10,15 @@ export async function crearPreferenciaMercadoPago(
     pedidoId
 ) {
 
+    const token = localStorage.getItem("token");
     const response =
         await fetch(
             `${API_URL}/pagos/mercadopago/preferencia?pedidoId=${pedidoId}`,
             {
-                method: "POST"
+                method: "POST",
+                headers: token
+                    ? { Authorization: `Bearer ${token}` }
+                    : {}
             }
         );
 
@@ -33,6 +39,62 @@ export async function crearPreferenciaMercadoPago(
             // dejamos mensaje default
         }
 
+        throw new Error(mensaje);
+    }
+
+    return response.json();
+}
+
+export async function crearPreferenciaMercadoPagoInvitado(
+    pedidoId,
+    tokenAcceso
+) {
+    const response = await fetch(
+        `${API_URL}/pagos/mercadopago/preferencia-invitado?pedidoId=${encodeURIComponent(pedidoId)}`,
+        {
+            method: "POST",
+            headers: {
+                "X-Guest-Order-Token": tokenAcceso
+            }
+        }
+    );
+
+    if (!response.ok) {
+        let mensaje = "No se pudo iniciar Mercado Pago.";
+
+        try {
+            const data = await response.json();
+            mensaje = data.message || mensaje;
+        } catch {
+            // dejamos mensaje default
+        }
+
+        throw new Error(mensaje);
+    }
+
+    return response.json();
+}
+
+export async function crearPreferenciaMercadoPagoCuenta(pedidoId) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(
+        `${API_URL}/pagos/mercadopago/preferencia-cuenta?pedidoId=${encodeURIComponent(pedidoId)}`,
+        {
+            method: "POST",
+            headers: token
+                ? { Authorization: `Bearer ${token}` }
+                : {}
+        }
+    );
+
+    if (!response.ok) {
+        let mensaje = "No se pudo iniciar Mercado Pago.";
+        try {
+            const data = await response.json();
+            mensaje = data.message || mensaje;
+        } catch {
+            // dejamos mensaje default
+        }
         throw new Error(mensaje);
     }
 
@@ -99,6 +161,74 @@ export async function subirComprobanteTransferencia(
             // mensaje default
         }
 
+        throw new Error(mensaje);
+    }
+
+    return response.json();
+}
+
+export async function subirComprobanteTransferenciaInvitado(
+    pedidoId,
+    archivo,
+    tokenAcceso
+) {
+    const formData = new FormData();
+    formData.append("archivo", archivo);
+
+    const response = await fetch(
+        `${API_URL}/pagos/transferencia/${encodeURIComponent(pedidoId)}/comprobante-invitado`,
+        {
+            method: "POST",
+            headers: {
+                "X-Guest-Order-Token": tokenAcceso
+            },
+            body: formData
+        }
+    );
+
+    if (!response.ok) {
+        let mensaje = "No se pudo subir el comprobante.";
+
+        try {
+            const data = await response.json();
+            mensaje = data.message || mensaje;
+        } catch {
+            // dejamos mensaje default
+        }
+
+        throw new Error(mensaje);
+    }
+
+    return response.json();
+}
+
+export async function subirComprobanteTransferenciaCuenta(
+    pedidoId,
+    archivo
+) {
+    const formData = new FormData();
+    formData.append("archivo", archivo);
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+        `${API_URL}/pagos/transferencia/${encodeURIComponent(pedidoId)}/comprobante-cuenta`,
+        {
+            method: "POST",
+            headers: token
+                ? { Authorization: `Bearer ${token}` }
+                : {},
+            body: formData
+        }
+    );
+
+    if (!response.ok) {
+        let mensaje = "No se pudo subir el comprobante.";
+        try {
+            const data = await response.json();
+            mensaje = data.message || mensaje;
+        } catch {
+            // dejamos mensaje default
+        }
         throw new Error(mensaje);
     }
 

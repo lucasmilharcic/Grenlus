@@ -3,6 +3,7 @@ package com.grenlus.backend.Controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +16,6 @@ import com.grenlus.backend.DTO.AuthRequest;
 import com.grenlus.backend.DTO.AuthResponse;
 import com.grenlus.backend.DTO.RegisterRequest;
 import com.grenlus.backend.DTO.UsuarioSesionDTO;
-import com.grenlus.backend.Entity.Usuario;
 import com.grenlus.backend.Service.AuthService;
 
 import jakarta.validation.Valid;
@@ -61,20 +61,15 @@ public class AuthController {
     // =========================================================
 
     @PostMapping("/register")
-    public ResponseEntity<Usuario> register(
+    public ResponseEntity<Void> register(
             @Valid
             @RequestBody
             RegisterRequest req
     ) {
 
-        Usuario usuario =
-                authService.register(
-                        req
-                );
+        authService.register(req);
 
-        return ResponseEntity.ok(
-                usuario
-        );
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     // =========================================================

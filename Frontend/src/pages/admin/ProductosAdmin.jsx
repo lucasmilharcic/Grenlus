@@ -1,4 +1,4 @@
-﻿import {
+import {
     useEffect,
     useState
 } from "react";
@@ -112,6 +112,11 @@ export default function ProductosAdmin() {
     ] = useState("");
 
     const [
+        descuentoMayoristaPorcentaje,
+        setDescuentoMayoristaPorcentaje
+    ] = useState("10");
+
+    const [
         precioEstampaChica,
         setPrecioEstampaChica
     ] = useState("");
@@ -126,7 +131,7 @@ export default function ProductosAdmin() {
         setPrecioEstampaGrande
     ] = useState("");
 
-    // DATOS LOGÍSTICOS - ZIPNOVA
+    // DATOS LOGÍSTICOS DEL PAQUETE
 
     const [pesoGramos, setPesoGramos] = useState("");
     const [largoEnvioCm, setLargoEnvioCm] = useState("");
@@ -256,6 +261,11 @@ export default function ProductosAdmin() {
     ] = useState("");
 
     const [
+        editDescuentoMayoristaPorcentaje,
+        setEditDescuentoMayoristaPorcentaje
+    ] = useState("0");
+
+    const [
         editPrecioEstampaChica,
         setEditPrecioEstampaChica
     ] = useState("");
@@ -270,7 +280,7 @@ export default function ProductosAdmin() {
         setEditPrecioEstampaGrande
     ] = useState("");
 
-    // DATOS LOGÍSTICOS - ZIPNOVA
+    // DATOS LOGÍSTICOS DEL PAQUETE
 
     const [editPesoGramos, setEditPesoGramos] = useState("");
     const [editLargoEnvioCm, setEditLargoEnvioCm] = useState("");
@@ -427,6 +437,7 @@ export default function ProductosAdmin() {
         setImagen(null);
 
         setPrecioBase("");
+        setDescuentoMayoristaPorcentaje("10");
 
         setPrecioEstampaChica("");
         setPrecioEstampaMedia("");
@@ -488,6 +499,21 @@ export default function ProductosAdmin() {
                 );
             }
 
+            if (tipo === "indumentaria" || !esCotizable) {
+                const descuentoMayorista =
+                    Number(descuentoMayoristaPorcentaje);
+
+                if (
+                    !Number.isFinite(descuentoMayorista) ||
+                    descuentoMayorista < 0 ||
+                    descuentoMayorista > 100
+                ) {
+                    throw new Error(
+                        "El descuento por mayor debe estar entre 0% y 100%."
+                    );
+                }
+            }
+
             if (tipo === "indumentaria") {
 
                 if (
@@ -530,6 +556,7 @@ export default function ProductosAdmin() {
                     imagen,
 
                     precioBase,
+                    descuentoMayoristaPorcentaje,
 
                     precioEstampaChica:
                         permiteEstampaChica
@@ -593,6 +620,11 @@ export default function ProductosAdmin() {
                             ? 0
                             : precioFijo,
 
+                    descuentoMayoristaPorcentaje:
+                        esCotizable
+                            ? 0
+                            : descuentoMayoristaPorcentaje,
+
                     requiereMedidas,
                     requiereImagen,
                     requiereCantidad,
@@ -654,6 +686,12 @@ export default function ProductosAdmin() {
         setEditPrecioBase(
             normalizarNumero(
                 producto.precioBase
+            )
+        );
+
+        setEditDescuentoMayoristaPorcentaje(
+            normalizarNumero(
+                producto.descuentoMayoristaPorcentaje ?? 0
             )
         );
 
@@ -850,6 +888,24 @@ export default function ProductosAdmin() {
             }
 
             if (
+                productoEditando.tipo === "indumentaria" ||
+                !editEsCotizable
+            ) {
+                const descuentoMayorista =
+                    Number(editDescuentoMayoristaPorcentaje);
+
+                if (
+                    !Number.isFinite(descuentoMayorista) ||
+                    descuentoMayorista < 0 ||
+                    descuentoMayorista > 100
+                ) {
+                    throw new Error(
+                        "El descuento por mayor debe estar entre 0% y 100%."
+                    );
+                }
+            }
+
+            if (
                 productoEditando.tipo ===
                 "indumentaria"
             ) {
@@ -880,6 +936,9 @@ export default function ProductosAdmin() {
 
                         precioBase:
                             editPrecioBase,
+
+                        descuentoMayoristaPorcentaje:
+                            editDescuentoMayoristaPorcentaje,
 
                         precioEstampaChica:
                             editPermiteEstampaChica
@@ -959,6 +1018,11 @@ export default function ProductosAdmin() {
                                 ? 0
                                 : editPrecioFijo,
 
+                        descuentoMayoristaPorcentaje:
+                            editEsCotizable
+                                ? 0
+                                : editDescuentoMayoristaPorcentaje,
+
                         requiereMedidas:
                             editRequiereMedidas,
 
@@ -1000,6 +1064,9 @@ export default function ProductosAdmin() {
 
                     precioBase:
                         editPrecioBase,
+
+                    descuentoMayoristaPorcentaje:
+                        editDescuentoMayoristaPorcentaje,
 
                     precioEstampaChica:
                         editPrecioEstampaChica,
@@ -1367,6 +1434,22 @@ export default function ProductosAdmin() {
 
                                         </label>
 
+                                        <label className="price-field">
+                                            <span>Descuento mayorista desde 6 unidades (%)</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                value={descuentoMayoristaPorcentaje}
+                                                onChange={(e) =>
+                                                    setDescuentoMayoristaPorcentaje(
+                                                        e.target.value
+                                                    )
+                                                }
+                                            />
+                                        </label>
+
                                     </div>
 
                                 </div>
@@ -1384,7 +1467,7 @@ export default function ProductosAdmin() {
                                         </h3>
 
                                         <p>
-                                            Zipnova usa estos datos para calcular el costo real del envío.
+                                            Estos datos describen el paquete para la gestión del envío.
                                             Cargalos para una unidad del producto ya preparada para despachar.
                                         </p>
 
@@ -1896,6 +1979,7 @@ export default function ProductosAdmin() {
 
                                     {!esCotizable && (
 
+                                        <>
                                         <label className="price-field cartel-price">
 
                                             <span>
@@ -1926,6 +2010,22 @@ export default function ProductosAdmin() {
                                             </div>
 
                                         </label>
+                                        <label className="price-field cartel-price">
+                                            <span>Descuento mayorista desde 6 unidades (%)</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                value={descuentoMayoristaPorcentaje}
+                                                onChange={(e) =>
+                                                    setDescuentoMayoristaPorcentaje(
+                                                        e.target.value
+                                                    )
+                                                }
+                                            />
+                                        </label>
+                                        </>
 
                                     )}
 
@@ -2477,6 +2577,22 @@ export default function ProductosAdmin() {
 
                                             </label>
 
+                                            <label className="price-field">
+                                                <span>Descuento mayorista desde 6 unidades (%)</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    step="0.01"
+                                                    value={editDescuentoMayoristaPorcentaje}
+                                                    onChange={(e) =>
+                                                        setEditDescuentoMayoristaPorcentaje(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                />
+                                            </label>
+
                                         </div>
 
                                         <div className="admin-config-section">
@@ -2485,7 +2601,7 @@ export default function ProductosAdmin() {
                                                 <span>ENVÍO</span>
                                                 <h3>Peso y medidas del paquete</h3>
                                                 <p>
-                                                    Estos datos se usan para cotizar con Zipnova.
+                                                    Estos datos se usan para preparar el envío en MiCorreo.
                                                 </p>
                                             </div>
 
@@ -2892,6 +3008,7 @@ export default function ProductosAdmin() {
 
                                         {!editEsCotizable && (
 
+                                            <>
                                             <label className="price-field">
 
                                                 <span>
@@ -2920,6 +3037,22 @@ export default function ProductosAdmin() {
                                                 </div>
 
                                             </label>
+                                            <label className="price-field">
+                                                <span>Descuento mayorista desde 6 unidades (%)</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    step="0.01"
+                                                    value={editDescuentoMayoristaPorcentaje}
+                                                    onChange={(e) =>
+                                                        setEditDescuentoMayoristaPorcentaje(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                />
+                                            </label>
+                                            </>
 
                                         )}
 

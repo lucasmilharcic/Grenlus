@@ -81,6 +81,7 @@ export default function PersonalizadorProducto({
 }) {
 
     const {
+        items,
         agregarAlCarrito
     } = useCarrito();
 
@@ -518,6 +519,29 @@ export default function PersonalizadorProducto({
             producto.precioBase ||
             0
         ) +
+        obtenerAdicional();
+
+    const cantidadEnCarrito =
+        items.reduce(
+            (cantidadTotal, item) =>
+                String(item.productoId) === String(producto.id)
+                    ? cantidadTotal + Number(item.cantidad || 0)
+                    : cantidadTotal,
+            0
+        );
+
+    const descuentoMayoristaPorcentaje =
+        Number(producto.descuentoMayoristaPorcentaje || 0);
+
+    const aplicaDescuentoMayorista =
+        cantidadEnCarrito + Number(cantidad || 0) > 5 &&
+        descuentoMayoristaPorcentaje > 0;
+
+    const precioUnitarioMostrado =
+        Number(producto.precioBase || 0) *
+            (aplicaDescuentoMayorista
+                ? 1 - descuentoMayoristaPorcentaje / 100
+                : 1) +
         obtenerAdicional();
 
     // =====================================================
@@ -1629,6 +1653,11 @@ export default function PersonalizadorProducto({
                         0
                     ),
 
+                descuentoMayoristaPorcentaje:
+                    Number(
+                        producto.descuentoMayoristaPorcentaje || 0
+                    ),
+
                 precioEstampa:
                     obtenerAdicional(),
 
@@ -1992,7 +2021,7 @@ export default function PersonalizadorProducto({
 
                     <strong>
                         {moneda(
-                            precioUnitario
+                            precioUnitarioMostrado
                         )}
                     </strong>
 
@@ -2014,6 +2043,16 @@ export default function PersonalizadorProducto({
                     )}
 
                 </div>
+
+                {Number(producto.descuentoMayoristaPorcentaje) > 0 && (
+                    <p className="personalizador-mayorista">
+                        {aplicaDescuentoMayorista
+                            ? "Descuento mayorista aplicado: "
+                            : "Comprando 6 o más unidades de este producto: "}
+                        {Number(producto.descuentoMayoristaPorcentaje)}% de
+                        descuento sobre el precio base.
+                    </p>
+                )}
 
                 {/* =========================================
                     TAMAÑO
@@ -2300,7 +2339,7 @@ export default function PersonalizadorProducto({
                     {subiendo
                         ? "Preparando..."
                         : `Agregar al carrito · ${moneda(
-                              precioUnitario *
+                              precioUnitarioMostrado *
                               Number(
                                   cantidad
                               )

@@ -39,5 +39,13 @@ public class DetallePedidoResponseDTO {
 
     private BigDecimal subtotal;
 
+    private Integer pesoGramos;
+
+    private Integer largoEnvioCm;
+
+    private Integer anchoEnvioCm;
+
+    private Integer altoEnvioCm;
+
     private List<DisenoPedidoResponseDTO> disenos;
 }

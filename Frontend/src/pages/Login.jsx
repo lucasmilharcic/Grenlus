@@ -4,6 +4,7 @@ import {
 
 import {
     useNavigate,
+    useLocation,
     Link
 } from "react-router-dom";
 
@@ -18,6 +19,7 @@ export default function Login() {
 
     const navigate =
         useNavigate();
+    const location = useLocation();
 
     const [
         username,
@@ -104,7 +106,9 @@ export default function Login() {
             } else {
 
                 navigate(
-                    "/mis-compras",
+                    location.state?.from?.pathname === "/checkout"
+                        ? "/checkout"
+                        : "/mis-compras",
                     {
                         replace: true
                     }
@@ -149,7 +153,9 @@ export default function Login() {
                     </h1>
 
                     <p>
-                        Ingresá a tu cuenta de Grenlus
+                        {location.state?.from?.pathname === "/checkout"
+                            ? "Iniciá sesión para continuar con tu compra. El carrito queda guardado."
+                            : "Ingresá a tu cuenta de Grenlus"}
                     </p>
 
                 </div>
@@ -236,7 +242,10 @@ export default function Login() {
                         ¿No tenés una cuenta?
                     </p>
 
-                    <Link to="/registro">
+                    <Link
+                        to="/registro"
+                        state={location.state}
+                    >
                         Crear una cuenta
                     </Link>
 

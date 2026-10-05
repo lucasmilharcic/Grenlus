@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.grenlus.backend.Entity.Indumentaria;
+import com.grenlus.backend.Exception.BadRequestException;
 import com.grenlus.backend.Exception.ResourceNotFoundException;
 import com.grenlus.backend.Service.IndumentariaService;
 
@@ -101,8 +102,14 @@ public class IndumentariaController {
             )
             BigDecimal precioEstampaGrande,
 
+            @RequestParam(
+                    value = "descuentoMayoristaPorcentaje",
+                    required = false
+            )
+            BigDecimal descuentoMayoristaPorcentaje,
+
             /*
-             * DATOS LOGÍSTICOS - ZIPNOVA
+             * DATOS LOGÍSTICOS DEL PAQUETE
              */
             @RequestParam(
                     value = "pesoGramos",
@@ -200,6 +207,7 @@ public class IndumentariaController {
                 precioEstampaChica,
                 precioEstampaMedia,
                 precioEstampaGrande,
+                descuentoMayoristaPorcentaje,
                 pesoGramos,
                 largoEnvioCm,
                 anchoEnvioCm,
@@ -273,6 +281,12 @@ public class IndumentariaController {
                     required = false
             )
             BigDecimal precioEstampaGrande,
+
+            @RequestParam(
+                    value = "descuentoMayoristaPorcentaje",
+                    required = false
+            )
+            BigDecimal descuentoMayoristaPorcentaje,
 
             @RequestParam(
                     value = "pesoGramos",
@@ -370,6 +384,7 @@ public class IndumentariaController {
                 precioEstampaChica,
                 precioEstampaMedia,
                 precioEstampaGrande,
+                descuentoMayoristaPorcentaje,
                 pesoGramos,
                 largoEnvioCm,
                 anchoEnvioCm,
@@ -419,6 +434,8 @@ public class IndumentariaController {
             BigDecimal precioEstampaMedia,
             BigDecimal precioEstampaGrande,
 
+            BigDecimal descuentoMayoristaPorcentaje,
+
             Integer pesoGramos,
             Integer largoEnvioCm,
             Integer anchoEnvioCm,
@@ -467,6 +484,18 @@ public class IndumentariaController {
                         ? precioEstampaGrande
                         : BigDecimal.ZERO
         );
+
+        BigDecimal descuento = descuentoMayoristaPorcentaje != null
+                ? descuentoMayoristaPorcentaje
+                : BigDecimal.ZERO;
+
+        if (descuento.compareTo(BigDecimal.ZERO) < 0
+                || descuento.compareTo(BigDecimal.valueOf(100)) > 0) {
+            throw new BadRequestException(
+                    "El descuento por mayor debe estar entre 0% y 100%.");
+        }
+
+        indumentaria.setDescuentoMayoristaPorcentaje(descuento);
 
         indumentaria.setPesoGramos(pesoGramos);
         indumentaria.setLargoEnvioCm(largoEnvioCm);

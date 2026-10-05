@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.grenlus.backend.Entity.Carteleria;
+import com.grenlus.backend.Exception.BadRequestException;
 import com.grenlus.backend.Service.CarteleriaService;
 
 @RestController
@@ -91,6 +92,12 @@ public class CarteleriaController {
             BigDecimal precioFijo,
 
             @RequestParam(
+                    value = "descuentoMayoristaPorcentaje",
+                    required = false
+            )
+            BigDecimal descuentoMayoristaPorcentaje,
+
+            @RequestParam(
                     value = "requiereMedidas",
                     required = false
             )
@@ -124,6 +131,7 @@ public class CarteleriaController {
                 descripcion,
                 esCotizable,
                 precioFijo,
+                descuentoMayoristaPorcentaje,
                 requiereMedidas,
                 requiereImagen,
                 requiereCantidad,
@@ -178,6 +186,12 @@ public class CarteleriaController {
             BigDecimal precioFijo,
 
             @RequestParam(
+                    value = "descuentoMayoristaPorcentaje",
+                    required = false
+            )
+            BigDecimal descuentoMayoristaPorcentaje,
+
+            @RequestParam(
                     value = "requiereMedidas",
                     required = false
             )
@@ -211,6 +225,7 @@ public class CarteleriaController {
                 descripcion,
                 esCotizable,
                 precioFijo,
+                descuentoMayoristaPorcentaje,
                 requiereMedidas,
                 requiereImagen,
                 requiereCantidad,
@@ -248,6 +263,8 @@ public class CarteleriaController {
             Boolean esCotizable,
             BigDecimal precioFijo,
 
+            BigDecimal descuentoMayoristaPorcentaje,
+
             Boolean requiereMedidas,
             Boolean requiereImagen,
             Boolean requiereCantidad,
@@ -259,6 +276,18 @@ public class CarteleriaController {
         carteleria.setDescripcion(
                 descripcion
         );
+
+        BigDecimal descuento = descuentoMayoristaPorcentaje != null
+                ? descuentoMayoristaPorcentaje
+                : BigDecimal.ZERO;
+
+        if (descuento.compareTo(BigDecimal.ZERO) < 0
+                || descuento.compareTo(BigDecimal.valueOf(100)) > 0) {
+            throw new BadRequestException(
+                    "El descuento por mayor debe estar entre 0% y 100%.");
+        }
+
+        carteleria.setDescuentoMayoristaPorcentaje(descuento);
 
         boolean cotizable =
                 Boolean.TRUE.equals(

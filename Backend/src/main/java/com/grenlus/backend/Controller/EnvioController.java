@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.grenlus.backend.DTO.ActualizarEnvioDTO;
-import com.grenlus.backend.DTO.CotizacionEnvioResponseDTO;
-import com.grenlus.backend.DTO.CotizarEnvioDTO;
 import com.grenlus.backend.DTO.EnvioResponseDTO;
 import com.grenlus.backend.Entity.EstadoEnvio;
 import com.grenlus.backend.Service.EnvioService;
@@ -32,25 +30,6 @@ public class EnvioController {
 
         this.envioService =
                 envioService;
-    }
-
-    // =========================================================
-    // COTIZAR
-    // =========================================================
-
-    @PostMapping("/cotizar")
-    public ResponseEntity<
-            CotizacionEnvioResponseDTO
-    > cotizar(
-            @RequestBody
-            CotizarEnvioDTO dto
-    ) {
-
-        return ResponseEntity.ok(
-                envioService.cotizar(
-                        dto
-                )
-        );
     }
 
     // =========================================================
@@ -86,12 +65,15 @@ public class EnvioController {
             List<EnvioResponseDTO>
     > listar(
             @RequestParam(required = false)
-            EstadoEnvio estado
+            EstadoEnvio estado,
+            @RequestParam(defaultValue = "false")
+            boolean archivados
     ) {
 
         return ResponseEntity.ok(
                 envioService.listarEnvios(
-                        estado
+                        estado,
+                        archivados
                 )
         );
     }

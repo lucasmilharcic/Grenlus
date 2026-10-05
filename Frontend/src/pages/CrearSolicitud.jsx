@@ -11,11 +11,11 @@ import {
 import {
     crearSolicitud
 } from "../services/solicitudService";
+import { API_BASE_URL } from "../services/apiConfig";
 
 import "./CrearSolicitud.css";
 
-const API_URL =
-    "http://localhost:8081";
+const API_URL = API_BASE_URL;
 
 export default function CrearSolicitud() {
 

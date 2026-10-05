@@ -51,6 +51,59 @@ function obtenerCarritoInicial() {
     }
 }
 
+function aplicarDescuentosMayoristas(items) {
+
+    const cantidadesPorProducto = items.reduce(
+        (cantidades, item) => {
+            const productoId = item.productoId;
+
+            if (productoId != null) {
+                const clave = String(productoId);
+                cantidades.set(
+                    clave,
+                    (cantidades.get(clave) || 0) +
+                        Number(item.cantidad || 0)
+                );
+            }
+
+            return cantidades;
+        },
+        new Map()
+    );
+
+    return items.map(item => {
+        const precioBase = Number(
+            item.precioBase ?? item.precioUnitario ?? 0
+        );
+        const precioAdicional = Number(item.precioEstampa || 0);
+        const descuento = Number(
+            item.descuentoMayoristaPorcentaje || 0
+        );
+        const cantidadProducto = cantidadesPorProducto.get(
+            String(item.productoId)
+        ) || 0;
+        const descuentoAplicado =
+            cantidadProducto > 5 &&
+            descuento > 0 &&
+            descuento <= 100;
+        const precioBaseFinal = descuentoAplicado
+            ? Math.round(precioBase * (1 - descuento / 100) * 100) / 100
+            : precioBase;
+        const precioUnitarioOriginal =
+            precioBase + precioAdicional;
+        const precioUnitario =
+            precioBaseFinal + precioAdicional;
+
+        return {
+            ...item,
+            precioUnitarioOriginal,
+            precioUnitario,
+            subtotal: precioUnitario * Number(item.cantidad || 1),
+            descuentoMayoristaAplicado: descuentoAplicado
+        };
+    });
+}
+
 export function CarritoProvider({ children }) {
 
     const [items, setItems] =
@@ -74,6 +127,11 @@ export function CarritoProvider({ children }) {
         );
 
     }, [items]);
+
+    const itemsConDescuentoMayorista = useMemo(
+        () => aplicarDescuentosMayoristas(items),
+        [items]
+    );
 
     // =====================================================
     // AGREGAR
@@ -194,7 +252,7 @@ export function CarritoProvider({ children }) {
     const cantidadTotal =
         useMemo(() => {
 
-            return items.reduce(
+            return itemsConDescuentoMayorista.reduce(
                 (
                     total,
                     item
@@ -207,7 +265,7 @@ export function CarritoProvider({ children }) {
                 0
             );
 
-        }, [items]);
+        }, [itemsConDescuentoMayorista]);
 
     // =====================================================
     // TOTAL
@@ -216,7 +274,7 @@ export function CarritoProvider({ children }) {
     const total =
         useMemo(() => {
 
-            return items.reduce(
+            return itemsConDescuentoMayorista.reduce(
                 (
                     acumulado,
                     item
@@ -243,7 +301,7 @@ export function CarritoProvider({ children }) {
                 0
             );
 
-        }, [items]);
+        }, [itemsConDescuentoMayorista]);
 
     // =====================================================
     // VALUE
@@ -251,7 +309,7 @@ export function CarritoProvider({ children }) {
 
     const value = {
 
-        items,
+        items: itemsConDescuentoMayorista,
 
         agregarAlCarrito,
 

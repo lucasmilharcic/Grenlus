@@ -1,5 +1,7 @@
 package com.grenlus.backend.DTO;
 
+import java.math.BigDecimal;
+
 import com.grenlus.backend.Entity.EstadoEnvio;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +23,8 @@ public class ActualizarEnvioDTO {
      * sin mover el estado.
      */
     private EstadoEnvio estadoEnvio;
+
+    private BigDecimal costoEnvio;
 
     /*
      * Número de seguimiento del transporte.

@@ -242,13 +242,23 @@ export default function Navbar() {
 
                     ) : (
 
-                        <Link
-                            to="/login"
-                            className="navbar-login"
-                            onClick={cerrarMenu}
-                        >
-                            Iniciar sesión
-                        </Link>
+                        <>
+                            <Link
+                                to="/mis-compras"
+                                className="navbar-panel-button"
+                                onClick={cerrarMenu}
+                            >
+                                Mis compras
+                            </Link>
+
+                            <Link
+                                to="/login"
+                                className="navbar-login"
+                                onClick={cerrarMenu}
+                            >
+                                Iniciar sesión
+                            </Link>
+                        </>
 
                     )}
 

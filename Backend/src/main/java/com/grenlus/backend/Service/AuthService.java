@@ -1,8 +1,10 @@
 package com.grenlus.backend.Service;
 
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +16,7 @@ import com.grenlus.backend.DTO.AuthResponse;
 import com.grenlus.backend.DTO.RegisterRequest;
 import com.grenlus.backend.Entity.Role;
 import com.grenlus.backend.Entity.Usuario;
+import com.grenlus.backend.Exception.ConflictException;
 import com.grenlus.backend.Repository.UsuarioRepository;
 
 @Service
@@ -54,13 +57,16 @@ public class AuthService {
 
     public Usuario register(RegisterRequest req) {
 
-        if (usuarioRepository.existsByUsername(req.getUsername())) {
-            throw new IllegalArgumentException("El usuario ya existe");
+        String username = req.getUsername().trim().toLowerCase(Locale.ROOT);
+
+        if (usuarioRepository.existsByUsernameIgnoreCase(username)) {
+            throw new ConflictException(
+                    "Ya existe una cuenta con ese email. Iniciá sesión para continuar.");
         }
 
         Usuario usuario = new Usuario();
 
-        usuario.setUsername(req.getUsername());
+        usuario.setUsername(username);
 
         usuario.setPassword(
                 passwordEncoder.encode(req.getPassword())
@@ -75,6 +81,14 @@ public class AuthService {
 
         usuario.setRoles(roles);
 
-        return usuarioRepository.save(usuario);
+        try {
+            return usuarioRepository.save(usuario);
+        } catch (DataIntegrityViolationException ex) {
+            if (usuarioRepository.existsByUsernameIgnoreCase(username)) {
+                throw new ConflictException(
+                        "Ya existe una cuenta con ese email. Iniciá sesión para continuar.");
+            }
+            throw ex;
+        }
     }
 }

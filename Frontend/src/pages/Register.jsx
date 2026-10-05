@@ -4,7 +4,8 @@ import {
 
 import {
     Link,
-    useNavigate
+    useNavigate,
+    useLocation
 } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
@@ -20,6 +21,7 @@ export default function Register() {
 
     const navigate =
         useNavigate();
+    const location = useLocation();
 
     const [
         nombre,
@@ -133,7 +135,8 @@ export default function Register() {
                 {
                     state: {
                         registroExitoso:
-                            true
+                            true,
+                        from: location.state?.from
                     }
                 }
             );
@@ -170,8 +173,9 @@ export default function Register() {
                     </h1>
 
                     <p className="register-subtitle">
-                        Creá tu cuenta para ver tus compras
-                        y hacer seguimiento de tus pedidos.
+                        {location.state?.from?.pathname === "/checkout"
+                            ? "Creá tu cuenta para continuar con tu compra. El carrito queda guardado."
+                            : "Creá tu cuenta para ver tus compras y hacer seguimiento de tus pedidos."}
                     </p>
 
                     <form

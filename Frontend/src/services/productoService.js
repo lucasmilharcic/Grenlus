@@ -1,4 +1,6 @@
-const API_URL = "http://127.0.0.1:8081";
+import { API_BASE_URL } from "./apiConfig";
+
+const API_URL = API_BASE_URL;
 
 // =====================================================
 // HELPERS
@@ -225,9 +227,10 @@ export async function crearIndumentaria({
     precioEstampaChica,
     precioEstampaMedia,
     precioEstampaGrande,
+    descuentoMayoristaPorcentaje,
 
     // =========================
-    // DATOS DE ENVÍO
+    // DATOS DE ENVÃO
     // =========================
     pesoGramos,
     largoEnvioCm,
@@ -297,8 +300,14 @@ export async function crearIndumentaria({
         precioEstampaGrande
     );
 
+    agregarNumero(
+        formData,
+        "descuentoMayoristaPorcentaje",
+        descuentoMayoristaPorcentaje
+    );
+
     // =========================
-    // DATOS DE ENVÍO / ZIPNOVA
+    // DATOS DE ENVÍO
     // =========================
 
     agregarNumero(
@@ -326,7 +335,7 @@ export async function crearIndumentaria({
     );
 
     // =========================
-    // CONFIGURACIÓN
+    // CONFIGURACIÃ“N
     // =========================
 
     agregarBoolean(
@@ -417,9 +426,10 @@ export async function editarIndumentaria(
         precioEstampaChica,
         precioEstampaMedia,
         precioEstampaGrande,
+        descuentoMayoristaPorcentaje,
 
         // =========================
-        // DATOS DE ENVÍO
+        // DATOS DE ENVÃO
         // =========================
         pesoGramos,
         largoEnvioCm,
@@ -490,8 +500,14 @@ export async function editarIndumentaria(
         precioEstampaGrande
     );
 
+    agregarNumero(
+        formData,
+        "descuentoMayoristaPorcentaje",
+        descuentoMayoristaPorcentaje
+    );
+
     // =========================
-    // DATOS DE ENVÍO / ZIPNOVA
+    // DATOS DE ENVÍO
     // =========================
 
     agregarNumero(
@@ -519,7 +535,7 @@ export async function editarIndumentaria(
     );
 
     // =========================
-    // CONFIGURACIÓN
+    // CONFIGURACIÃ“N
     // =========================
 
     agregarBoolean(
@@ -624,7 +640,7 @@ export async function eliminarIndumentaria(id) {
 }
 
 // =====================================================
-// ÁREAS DE PERSONALIZACIÓN
+// ÃREAS DE PERSONALIZACIÃ“N
 // =====================================================
 
 export async function getAreasPersonalizacion(
@@ -655,7 +671,7 @@ export async function getAreasPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudieron cargar las áreas de personalización."
+                "No se pudieron cargar las Ã¡reas de personalizaciÃ³n."
             )
         );
     }
@@ -678,7 +694,7 @@ export async function getAreaPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo cargar el área de personalización."
+                "No se pudo cargar el Ã¡rea de personalizaciÃ³n."
             )
         );
     }
@@ -821,7 +837,7 @@ export async function crearAreaPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo crear el área de personalización."
+                "No se pudo crear el Ã¡rea de personalizaciÃ³n."
             )
         );
     }
@@ -855,7 +871,7 @@ export async function editarAreaPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo editar el área de personalización."
+                "No se pudo editar el Ã¡rea de personalizaciÃ³n."
             )
         );
     }
@@ -882,7 +898,7 @@ export async function eliminarAreaPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo eliminar el área de personalización."
+                "No se pudo eliminar el Ã¡rea de personalizaciÃ³n."
             )
         );
     }
@@ -891,7 +907,7 @@ export async function eliminarAreaPersonalizacion(
 }
 
 // =====================================================
-// CARTELERÍA
+// CARTELERÃA
 // =====================================================
 
 export async function getCarteleria() {
@@ -906,7 +922,7 @@ export async function getCarteleria() {
         throw new Error(
             await leerError(
                 response,
-                "No se pudo cargar la cartelería."
+                "No se pudo cargar la cartelerÃ­a."
             )
         );
     }
@@ -926,7 +942,7 @@ export async function getCarteleriaById(id) {
         throw new Error(
             await leerError(
                 response,
-                "No se pudo cargar la cartelería."
+                "No se pudo cargar la cartelerÃ­a."
             )
         );
     }
@@ -941,6 +957,7 @@ export async function crearCarteleria({
 
     esCotizable,
     precioFijo,
+    descuentoMayoristaPorcentaje,
 
     requiereMedidas,
     requiereImagen,
@@ -979,6 +996,12 @@ export async function crearCarteleria({
         formData,
         "precioFijo",
         precioFijo
+    );
+
+    agregarNumero(
+        formData,
+        "descuentoMayoristaPorcentaje",
+        descuentoMayoristaPorcentaje
     );
 
     agregarBoolean(
@@ -1020,7 +1043,7 @@ export async function crearCarteleria({
         throw new Error(
             await leerError(
                 response,
-                "No se pudo crear la cartelería."
+                "No se pudo crear la cartelerÃ­a."
             )
         );
     }
@@ -1037,6 +1060,7 @@ export async function editarCarteleria(
 
         esCotizable,
         precioFijo,
+        descuentoMayoristaPorcentaje,
 
         requiereMedidas,
         requiereImagen,
@@ -1078,6 +1102,12 @@ export async function editarCarteleria(
         precioFijo
     );
 
+    agregarNumero(
+        formData,
+        "descuentoMayoristaPorcentaje",
+        descuentoMayoristaPorcentaje
+    );
+
     agregarBoolean(
         formData,
         "requiereMedidas",
@@ -1117,7 +1147,7 @@ export async function editarCarteleria(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo editar la cartelería."
+                "No se pudo editar la cartelerÃ­a."
             )
         );
     }
@@ -1141,7 +1171,7 @@ export async function eliminarCarteleria(id) {
         throw new Error(
             await leerError(
                 response,
-                "No se pudo eliminar la cartelería."
+                "No se pudo eliminar la cartelerÃ­a."
             )
         );
     }

@@ -377,6 +377,15 @@
     font-size: 11px;
 }
 
+.carrito-item-precio small del {
+    color: #8b9bab;
+}
+
+.carrito-mayorista {
+    color: #17613c;
+    font-weight: 700;
+}
+
 .carrito-item-precio strong {
     margin-top: 2px;
 

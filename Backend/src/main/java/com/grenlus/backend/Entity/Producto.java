@@ -55,8 +55,10 @@ public abstract class Producto {
      */
     private BigDecimal precioEstampaGrande;
 
+    private BigDecimal descuentoMayoristaPorcentaje;
+
     // =========================================================
-    // DATOS LOGÍSTICOS - ZIPNOVA
+    // DATOS LOGÍSTICOS DEL PAQUETE
     // =========================================================
 
     /**
@@ -72,4 +74,25 @@ public abstract class Producto {
     private Integer largoEnvioCm;
     private Integer anchoEnvioCm;
     private Integer altoEnvioCm;
+
+    public BigDecimal calcularPrecioBaseMayorista(
+            long cantidadDelProducto) {
+
+        BigDecimal precio = precioBase == null
+                ? BigDecimal.ZERO
+                : precioBase;
+
+        BigDecimal descuento = descuentoMayoristaPorcentaje == null
+                ? BigDecimal.ZERO
+                : descuentoMayoristaPorcentaje;
+
+        if (cantidadDelProducto <= 5
+                || descuento.compareTo(BigDecimal.ZERO) <= 0) {
+            return precio;
+        }
+
+        return precio
+                .multiply(BigDecimal.valueOf(100).subtract(descuento))
+                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+    }
 }

@@ -1,6 +1,8 @@
 package com.grenlus.backend.Service;
 
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grenlus.backend.Entity.DetallePedido;
 import com.grenlus.backend.Entity.EstadoPago;
 import com.grenlus.backend.Entity.EstadoPedido;
+import com.grenlus.backend.Entity.MetodoEntrega;
 import com.grenlus.backend.Entity.MetodoPago;
 import com.grenlus.backend.Entity.Pedido;
 import com.grenlus.backend.Exception.BadRequestException;
@@ -84,6 +87,16 @@ public class MercadoPagoService {
                                         "Pedido no encontrado"
                                 )
                         );
+
+        if (pedido.getMetodoEntrega() == MetodoEntrega.ENVIO_DOMICILIO
+                && !pedido.isEnvioCotizado()
+                && (pedido.getCostoEnvio() == null
+                        || pedido.getCostoEnvio().compareTo(BigDecimal.ZERO) <= 0)) {
+
+            throw new BadRequestException(
+                    "El envío todavía no fue cotizado. Se habilitará el pago cuando te informemos el total."
+            );
+        }
 
         if (pedido.getMetodoPago()
                 != MetodoPago.MERCADO_PAGO) {
@@ -208,27 +221,6 @@ public class MercadoPagoService {
             items.add(envioItem);
         }
 
-        Map<String, Object> backUrls =
-                new LinkedHashMap<>();
-
-        backUrls.put(
-                "success",
-                frontendUrl
-                        + "/pago/resultado?estado=success"
-        );
-
-        backUrls.put(
-                "pending",
-                frontendUrl
-                        + "/pago/resultado?estado=pending"
-        );
-
-        backUrls.put(
-                "failure",
-                frontendUrl
-                        + "/pago/resultado?estado=failure"
-        );
-
         Map<String, Object> request =
                 new LinkedHashMap<>();
 
@@ -249,15 +241,44 @@ public class MercadoPagoService {
                 pedido.getId().toString()
         );
 
-        request.put(
-                "back_urls",
-                backUrls
-        );
+        /*
+         * Mercado Pago rechaza localhost y 127.0.0.1 como URLs de retorno.
+         * En desarrollo local dejamos que el checkout termine en Mercado
+         * Pago; con una URL pública sí habilitamos el retorno automático.
+         */
+        if (esUrlPublica(frontendUrl)) {
 
-        request.put(
-                "auto_return",
-                "approved"
-        );
+            Map<String, Object> backUrls =
+                    new LinkedHashMap<>();
+
+            backUrls.put(
+                    "success",
+                    frontendUrl
+                            + "/pago/resultado?estado=success"
+            );
+
+            backUrls.put(
+                    "pending",
+                    frontendUrl
+                            + "/pago/resultado?estado=pending"
+            );
+
+            backUrls.put(
+                    "failure",
+                    frontendUrl
+                            + "/pago/resultado?estado=failure"
+            );
+
+            request.put(
+                    "back_urls",
+                    backUrls
+            );
+
+            request.put(
+                    "auto_return",
+                    "approved"
+            );
+        }
 
         /*
          * Solo enviamos notification_url
@@ -709,5 +730,35 @@ public class MercadoPagoService {
         }
 
         return resultado;
+    }
+
+    private static boolean esUrlPublica(
+            String valor) {
+
+        if (valor == null ||
+                valor.isBlank()) {
+
+            return false;
+        }
+
+        try {
+
+            URI uri =
+                    new URI(valor);
+
+            String host =
+                    uri.getHost();
+
+            return ("http".equalsIgnoreCase(uri.getScheme()) ||
+                    "https".equalsIgnoreCase(uri.getScheme())) &&
+                    host != null &&
+                    !"localhost".equalsIgnoreCase(host) &&
+                    !"127.0.0.1".equals(host) &&
+                    !"::1".equals(host);
+
+        } catch (URISyntaxException e) {
+
+            return false;
+        }
     }
 }

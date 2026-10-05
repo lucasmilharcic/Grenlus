@@ -1,5 +1,6 @@
-const API_URL =
-    "http://127.0.0.1:8081";
+import { API_BASE_URL } from "./apiConfig";
+
+const API_URL = API_BASE_URL;
 
 // =====================================================
 // HEADERS
@@ -67,59 +68,33 @@ async function manejarError(
 }
 
 // =====================================================
-// COTIZAR ENVÍO CON ZIPNOVA
-// =====================================================
-
-export async function cotizarEnvio(
-    datos
-) {
-
-    const response =
-        await fetch(
-            `${API_URL}/envios/cotizar`,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body:
-                    JSON.stringify(
-                        datos
-                    )
-            }
-        );
-
-    if (!response.ok) {
-
-        await manejarError(
-            response,
-            "No se pudo calcular el envío."
-        );
-    }
-
-    return response.json();
-}
-
-// =====================================================
-// ADMIN - LISTAR ENVÍOS
+// ADMIN - LISTAR ENVÃOS
 // =====================================================
 
 /*
  * estado es opcional.
  *
  * Sin estado trae todos los pedidos
- * con envío a domicilio.
+ * con envÃ­o a domicilio.
  */
 export async function getEnvios(
-    estado
+    estado,
+    archivados = false
 ) {
 
+    const parametros = new URLSearchParams();
+
+    if (estado && estado !== "TODOS") {
+        parametros.set("estado", estado);
+    }
+
+    if (archivados) {
+        parametros.set("archivados", "true");
+    }
+
     const query =
-        estado && estado !== "TODOS"
-            ? `?estado=${estado}`
+        parametros.size > 0
+            ? `?${parametros.toString()}`
             : "";
 
     const response =
@@ -135,7 +110,7 @@ export async function getEnvios(
 
         await manejarError(
             response,
-            "No se pudieron cargar los envíos."
+            "No se pudieron cargar los envÃ­os."
         );
     }
 
@@ -143,7 +118,7 @@ export async function getEnvios(
 }
 
 // =====================================================
-// ADMIN - OBTENER UN ENVÍO
+// ADMIN - OBTENER UN ENVÃO
 // =====================================================
 
 export async function getEnvio(
@@ -163,7 +138,23 @@ export async function getEnvio(
 
         await manejarError(
             response,
-            "No se pudo cargar el envío."
+            "No se pudo cargar el envÃ­o."
+        );
+    }
+
+    return response.json();
+}
+
+export async function getPortalMiCorreo() {
+    const response = await fetch(`${API_URL}/envios/correo/portal`, {
+        method: "GET",
+        headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+        await manejarError(
+            response,
+            "No se pudo obtener el portal MiCorreo."
         );
     }
 
@@ -171,12 +162,12 @@ export async function getEnvio(
 }
 
 // =====================================================
-// ADMIN - ACTUALIZAR ENVÍO
+// ADMIN - ACTUALIZAR ENVÃO
 // =====================================================
 
 /*
  * Sirve para avanzar el estado, para cargar
- * el código de seguimiento, o para las dos
+ * el cÃ³digo de seguimiento, o para las dos
  * cosas a la vez.
  */
 export async function actualizarEnvio(
@@ -202,7 +193,7 @@ export async function actualizarEnvio(
 
         await manejarError(
             response,
-            "No se pudo actualizar el envío."
+            "No se pudo actualizar el envÃ­o."
         );
     }
 
@@ -210,7 +201,7 @@ export async function actualizarEnvio(
 }
 
 // =====================================================
-// CLIENTE - MIS ENVÍOS
+// CLIENTE - MIS ENVÃOS
 // =====================================================
 
 export async function getMisEnvios() {
@@ -222,13 +213,14 @@ export async function getMisEnvios() {
                 method: "GET",
                 headers: getAuthHeaders()
             }
+
         );
 
     if (!response.ok) {
 
         await manejarError(
             response,
-            "No se pudieron cargar tus envíos."
+            "No se pudieron cargar tus envÃ­os."
         );
     }
 

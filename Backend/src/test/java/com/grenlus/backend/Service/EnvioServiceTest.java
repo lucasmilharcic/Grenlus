@@ -18,6 +18,8 @@ import com.grenlus.backend.DTO.EnvioResponseDTO;
 import com.grenlus.backend.Entity.EstadoEnvio;
 import com.grenlus.backend.Entity.EstadoPago;
 import com.grenlus.backend.Entity.EstadoPedido;
+import com.grenlus.backend.Entity.DetallePedido;
+import com.grenlus.backend.Entity.Indumentaria;
 import com.grenlus.backend.Entity.MetodoEntrega;
 import com.grenlus.backend.Entity.Pedido;
 import com.grenlus.backend.Exception.BadRequestException;
@@ -42,7 +44,6 @@ class EnvioServiceTest {
 
         envioService =
                 new EnvioService(
-                        mock(ZipnovaService.class),
                         pedidoRepository
                 );
 
@@ -77,6 +78,8 @@ class EnvioServiceTest {
         pedido.setEstadoEnvio(estadoEnvio);
         pedido.setEstadoPago(estadoPago);
         pedido.setEstado(EstadoPedido.PAGADO);
+        pedido.setSubtotalProductos(
+                new BigDecimal("40000"));
         pedido.setCostoEnvio(
                 new BigDecimal("8500"));
         pedido.setTotal(
@@ -98,6 +101,7 @@ class EnvioServiceTest {
 
         return new ActualizarEnvioDTO(
                 estado,
+                null,
                 seguimiento
         );
     }
@@ -189,6 +193,147 @@ class EnvioServiceTest {
         assertThat(
                 pedido.getEstadoEnvio())
                 .isEqualTo(EstadoEnvio.PENDIENTE);
+    }
+
+    @Test
+    void guardaLaCotizacionYActualizaElTotalDelPedido() {
+
+        Pedido pedido =
+                pedidoConEnvio(
+                        EstadoEnvio.PENDIENTE,
+                        EstadoPago.PENDIENTE
+                );
+
+        EnvioResponseDTO respuesta =
+                envioService.actualizarEnvio(
+                        1L,
+                        new ActualizarEnvioDTO(
+                                null,
+                                new BigDecimal("1200"),
+                                null
+                        )
+                );
+
+        assertThat(pedido.isEnvioCotizado())
+                .isTrue();
+
+        assertThat(respuesta.getCostoEnvio())
+                .isEqualByComparingTo("1200");
+
+        assertThat(respuesta.getTotal())
+                .isEqualByComparingTo("41200");
+    }
+
+    @Test
+    void listaEnviosSegunSiEstanArchivados() {
+
+        Pedido archivado = pedidoConEnvio(
+                EstadoEnvio.ENTREGADO,
+                EstadoPago.APROBADO
+        );
+        archivado.setArchivado(true);
+
+        when(
+                pedidoRepository.findByMetodoEntregaAndArchivadoOrderByFechaPedidoDesc(
+                        MetodoEntrega.ENVIO_DOMICILIO,
+                        true
+                )
+        ).thenReturn(List.of(archivado));
+
+        List<EnvioResponseDTO> resultado =
+                envioService.listarEnvios(null, true);
+
+        assertThat(resultado)
+                .hasSize(1);
+        assertThat(resultado.get(0).isArchivado())
+                .isTrue();
+    }
+
+    @Test
+    void incluyeProductosPreciosYDatosLogisticosEnElEnvio() {
+
+        Pedido pedido = pedidoConEnvio(
+                EstadoEnvio.PENDIENTE,
+                EstadoPago.PENDIENTE
+        );
+        Indumentaria producto = new Indumentaria();
+        producto.setId(12L);
+        producto.setNombre("Remera personalizada");
+        producto.setPesoGramos(250);
+        producto.setLargoEnvioCm(30);
+        producto.setAnchoEnvioCm(24);
+        producto.setAltoEnvioCm(3);
+
+        DetallePedido detalle = new DetallePedido();
+        detalle.setId(4L);
+        detalle.setProducto(producto);
+        detalle.setCantidad(2);
+        detalle.setPrecioUnitario(new BigDecimal("15000"));
+        detalle.setSubtotal(new BigDecimal("30000"));
+        pedido.setDetalles(List.of(detalle));
+        pedido.setSubtotalProductos(new BigDecimal("30000"));
+
+        EnvioResponseDTO respuesta =
+                envioService.buscarEnvio(1L);
+
+        assertThat(respuesta.getSubtotalProductos())
+                .isEqualByComparingTo("30000");
+        assertThat(respuesta.getDetalles())
+                .hasSize(1);
+        assertThat(respuesta.getDetalles().get(0).getProductoNombre())
+                .isEqualTo("Remera personalizada");
+        assertThat(respuesta.getDetalles().get(0).getCantidad())
+                .isEqualTo(2);
+        assertThat(respuesta.getDetalles().get(0).getSubtotal())
+                .isEqualByComparingTo("30000");
+        assertThat(respuesta.getDetalles().get(0).getPesoGramos())
+                .isEqualTo(250);
+        assertThat(respuesta.getDetalles().get(0).getLargoEnvioCm())
+                .isEqualTo(30);
+    }
+
+    @Test
+    void rechazaCostosDeEnvioNegativos() {
+
+        pedidoConEnvio(
+                EstadoEnvio.PENDIENTE,
+                EstadoPago.PENDIENTE
+        );
+
+        assertThatThrownBy(
+                () -> envioService.actualizarEnvio(
+                        1L,
+                        new ActualizarEnvioDTO(
+                                null,
+                                new BigDecimal("-1"),
+                                null
+                        )
+                )
+        )
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("no puede ser negativo");
+    }
+
+    @Test
+    void noPermiteCambiarLaCotizacionDespuesDeAprobadoElPago() {
+
+        pedidoConEnvio(
+                EstadoEnvio.PENDIENTE,
+                EstadoPago.APROBADO
+        );
+
+        assertThatThrownBy(
+                () -> envioService.actualizarEnvio(
+                        1L,
+                        new ActualizarEnvioDTO(
+                                null,
+                                new BigDecimal("1200"),
+                                null
+                        )
+                )
+        )
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("después de iniciar o aprobar el pago");
     }
 
     // =========================================================
@@ -414,8 +559,9 @@ class EnvioServiceTest {
 
         when(
                 pedidoRepository
-                        .findByMetodoEntregaOrderByFechaPedidoDesc(
-                                MetodoEntrega.ENVIO_DOMICILIO
+                        .findByMetodoEntregaAndArchivadoOrderByFechaPedidoDesc(
+                                MetodoEntrega.ENVIO_DOMICILIO,
+                                false
                         )
         ).thenReturn(
                 List.of(pedido)

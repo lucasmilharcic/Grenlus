@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -56,30 +57,16 @@ public class Pedido {
     @Enumerated(EnumType.STRING)
     private EstadoEnvio estadoEnvio;
 
-    // =========================================================
-    // ENVÍO ZIPNOVA
-    // =========================================================
-
-    /*
-     * Guardamos un snapshot de la opción seleccionada.
-     *
-     * No guardamos una relación con TarifaEnvio porque
-     * las tarifas ahora vienen dinámicamente desde Zipnova.
-     */
-
-    private String opcionEnvioId;
-
-    private Long carrierEnvioId;
-
-    private String carrierEnvioNombre;
-
-    private String logisticTypeEnvio;
-
-    private String serviceTypeEnvio;
-
-    private String serviceNombreEnvio;
-
     private BigDecimal costoEnvio;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean envioCotizado;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean archivado;
+
+    @Column(length = 64)
+    private String guestAccessTokenHash;
 
     private String codigoSeguimiento;
 

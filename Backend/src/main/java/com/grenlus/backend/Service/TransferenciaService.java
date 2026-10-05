@@ -1,5 +1,6 @@
 package com.grenlus.backend.Service;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -10,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.grenlus.backend.Entity.EstadoPago;
 import com.grenlus.backend.Entity.EstadoPedido;
+import com.grenlus.backend.Entity.MetodoEntrega;
 import com.grenlus.backend.Entity.MetodoPago;
 import com.grenlus.backend.Entity.Pedido;
 import com.grenlus.backend.Exception.BadRequestException;
@@ -107,6 +109,16 @@ public class TransferenciaService {
             );
         }
 
+        if (pedido.getMetodoEntrega() == MetodoEntrega.ENVIO_DOMICILIO
+                && !pedido.isEnvioCotizado()
+                && (pedido.getCostoEnvio() == null
+                        || pedido.getCostoEnvio().compareTo(BigDecimal.ZERO) <= 0)) {
+
+            throw new BadRequestException(
+                    "El envío todavía no fue cotizado. Esperá a recibir el total antes de pagar."
+            );
+        }
+
         if (archivo == null ||
                 archivo.isEmpty()) {
 
@@ -188,13 +200,71 @@ public class TransferenciaService {
             );
         }
 
-        if (pedido.getComprobanteTransferencia()
-                == null) {
+        validarEnvioCotizadoAntesDeAprobar(pedido);
+
+        if (pedido.getEstadoPago() != EstadoPago.PENDIENTE) {
+
+            throw new BadRequestException(
+                    "Solo se pueden aprobar pagos pendientes."
+            );
+        }
+
+        if (pedido.getComprobanteTransferencia() == null) {
 
             throw new BadRequestException(
                     "El pedido no tiene comprobante de transferencia."
             );
         }
+
+        marcarPagoAprobado(pedido);
+    }
+
+    @Transactional
+    public void aprobarPagoManualmente(
+            Long pedidoId) {
+
+        Pedido pedido =
+                pedidoRepository.findById(pedidoId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Pedido no encontrado"
+                                )
+                        );
+
+        validarEnvioCotizadoAntesDeAprobar(pedido);
+
+        if (pedido.getEstadoPago() != EstadoPago.PENDIENTE) {
+
+            throw new BadRequestException(
+                    "Solo se pueden aprobar pagos pendientes."
+            );
+        }
+
+        marcarPagoAprobado(pedido);
+    }
+
+    private void validarEnvioCotizadoAntesDeAprobar(
+            Pedido pedido) {
+
+        if (pedido.getEstado() == EstadoPedido.CANCELADO) {
+
+            throw new BadRequestException(
+                    "No se puede aprobar el pago de un pedido cancelado."
+            );
+        }
+
+        if (pedido.getMetodoEntrega() == MetodoEntrega.ENVIO_DOMICILIO
+                && !pedido.isEnvioCotizado()
+                && (pedido.getCostoEnvio() == null
+                        || pedido.getCostoEnvio().compareTo(BigDecimal.ZERO) <= 0)) {
+
+            throw new BadRequestException(
+                    "No se puede aprobar el pago antes de cotizar el envío."
+            );
+        }
+    }
+
+    private void marcarPagoAprobado(Pedido pedido) {
 
         pedido.setEstadoPago(
                 EstadoPago.APROBADO

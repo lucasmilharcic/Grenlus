@@ -273,6 +273,91 @@
     overflow-wrap: anywhere;
 }
 
+.envio-productos {
+    margin-top: 20px;
+    padding: 18px;
+
+    background: #f5f8fb;
+    border: 1px solid #e0e9f0;
+    border-radius: 12px;
+}
+
+.envio-productos-cabecera {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+
+    margin-bottom: 10px;
+}
+
+.envio-productos-cabecera h3 {
+    margin: 0;
+    color: #123d65;
+    font-size: 16px;
+}
+
+.envio-productos-cabecera > strong {
+    color: #17613c;
+    font-size: 13px;
+}
+
+.envio-productos > p {
+    margin: 10px 0 0;
+    color: #536b80;
+}
+
+.envio-productos-lista {
+    display: grid;
+    gap: 10px;
+}
+
+.envio-producto {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    padding: 13px 0;
+    border-top: 1px solid #dfe8ef;
+}
+
+.envio-producto-info,
+.envio-producto-precios {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.envio-producto-info {
+    min-width: 0;
+}
+
+.envio-producto-info > strong {
+    color: #123d65;
+}
+
+.envio-producto-info > span,
+.envio-producto-info > small,
+.envio-producto-precios > span {
+    color: #536b80;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.envio-producto-precios {
+    flex-shrink: 0;
+    align-items: flex-end;
+    text-align: right;
+}
+
+.envio-producto-precios > strong {
+    color: #123d65;
+    font-size: 15px;
+}
+
 .envio-fechas {
     display: flex;
     flex-wrap: wrap;
@@ -292,6 +377,45 @@
 
     font-size: 12px;
     font-weight: 600;
+}
+
+.envio-cotizacion {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+
+    margin-top: 18px;
+    padding: 15px;
+
+    background: #fff8e5;
+    border: 1px solid #f1dda4;
+    border-radius: 10px;
+}
+
+.envio-cotizacion label {
+    color: #72540c;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.envio-cotizacion > small {
+    color: #806c3a;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.envio-paq-ar-acciones a {
+    display: inline-block;
+    margin-top: 8px;
+    color: #0a315e;
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
 }
 
 /* =====================================================
@@ -387,8 +511,6 @@
 }
 
 .envio-avanzar {
-    width: 100%;
-
     padding: 13px 20px;
 
     color: #ffffff;
@@ -402,6 +524,37 @@
     font-weight: 800;
 
     cursor: pointer;
+}
+
+.envio-estado-control {
+    margin-top: 14px;
+}
+
+.envio-estado-control label {
+    display: block;
+    margin-bottom: 8px;
+    color: #536b80;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.envio-estado-control select {
+    min-width: 0;
+    flex: 1;
+    padding: 11px 12px;
+    color: #123d65;
+    background: #ffffff;
+    border: 1px solid #cddce8;
+    border-radius: 9px;
+    font: inherit;
+}
+
+.envio-estado-control small {
+    display: block;
+    margin-top: 7px;
+    color: #536b80;
+    font-size: 12px;
+    line-height: 1.45;
 }
 
 .envio-avanzar:hover:not(:disabled) {
@@ -482,6 +635,101 @@
         align-items: flex-start;
         flex-direction: column;
     }
+}
+
+.envio-email-cotizacion {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+
+    margin-top: 14px;
+}
+
+.envio-email-cotizacion button {
+    padding: 10px 15px;
+
+    color: #0a315e;
+    background: #e8f0f6;
+
+    border: 1px solid #cddce8;
+    border-radius: 9px;
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+
+    cursor: pointer;
+}
+
+.envio-email-cotizacion small {
+    color: #536b80;
+    line-height: 1.5;
+}
+
+.envio-paq-ar-acciones small {
+    color: #536b80;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.envio-aprobar-pago {
+    width: 100%;
+
+    margin-bottom: 12px;
+    padding: 12px 18px;
+
+    color: #ffffff;
+    background: #218052;
+
+    border: 0;
+    border-radius: 9px;
+
+    font: inherit;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.envio-aprobar-pago:hover:not(:disabled) {
+    background: #176b42;
+}
+
+.envio-aprobar-pago:disabled,
+.envio-email-cotizacion button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.envio-archivar {
+    align-self: flex-end;
+
+    margin-top: 18px;
+    padding: 9px 14px;
+
+    color: #294b69;
+    background: #e8f0f6;
+
+    border: 1px solid #cddce8;
+    border-radius: 9px;
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+
+    cursor: pointer;
+}
+
+.envio-archivar:hover:not(:disabled) {
+    background: #dce8f1;
+}
+
+.envio-archivar:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+@media (max-width: 850px) {
 
     .envios-grid {
         grid-template-columns: minmax(0, 1fr);
@@ -497,5 +745,18 @@
 
     .envio-guardar {
         width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+
+    .envio-producto {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .envio-producto-precios {
+        align-items: flex-start;
+        text-align: left;
     }
 }

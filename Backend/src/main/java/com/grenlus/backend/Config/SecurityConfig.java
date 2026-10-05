@@ -1,8 +1,10 @@
 package com.grenlus.backend.Config;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,6 +33,9 @@ public class SecurityConfig {
         private final JwtAuthenticationEntryPoint unauthorizedHandler;
 
         private final UserDetailsService userDetailsService;
+
+        @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:5174,http://localhost:5175}")
+        private String allowedCorsOrigins;
 
         @Autowired
         public SecurityConfig(
@@ -123,27 +128,16 @@ public class SecurityConfig {
                                                                 .requestMatchers(
                                                                                 HttpMethod.POST,
                                                                                 "/pedidos")
-                                                                .permitAll()
+                                                                .authenticated()
 
                                                                 // =========================
                                                                 // ENVÍOS
                                                                 // =========================
 
-                                                                /*
-                                                                 * Cotizar tiene que funcionar
-                                                                 * también sin cuenta, porque el
-                                                                 * checkout permite comprar como
-                                                                 * invitado.
-                                                                 */
-                                                                .requestMatchers(
-                                                                                HttpMethod.POST,
-                                                                                "/envios/cotizar")
-                                                                .permitAll()
-
                                                                 .requestMatchers(
                                                                                 HttpMethod.GET,
-                                                                                "/envios/correo/test")
-                                                                .permitAll()
+                                                                                "/envios/correo/portal")
+                                                                .hasRole("ADMIN")
 
                                                                 /*
                                                                  * El seguimiento propio va antes
@@ -172,7 +166,17 @@ public class SecurityConfig {
                                                                 .requestMatchers(
                                                                                 HttpMethod.POST,
                                                                                 "/pagos/mercadopago/preferencia")
+                                                                .hasRole("ADMIN")
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.POST,
+                                                                                "/pagos/mercadopago/preferencia-invitado")
                                                                 .permitAll()
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.POST,
+                                                                                "/pagos/mercadopago/preferencia-cuenta")
+                                                                .authenticated()
 
                                                                 .requestMatchers(
                                                                                 HttpMethod.POST,
@@ -191,7 +195,17 @@ public class SecurityConfig {
                                                                 .requestMatchers(
                                                                                 HttpMethod.POST,
                                                                                 "/pagos/transferencia/*/comprobante")
+                                                                .authenticated()
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.POST,
+                                                                                "/pagos/transferencia/*/comprobante-invitado")
                                                                 .permitAll()
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.POST,
+                                                                                "/pagos/transferencia/*/comprobante-cuenta")
+                                                                .authenticated()
 
                                                                 // =========================
                                                                 // ADMIN PAGOS
@@ -199,7 +213,17 @@ public class SecurityConfig {
 
                                                                 .requestMatchers(
                                                                                 HttpMethod.PUT,
+                                                                                "/pagos/*/aprobar-manual")
+                                                                .hasRole("ADMIN")
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.PUT,
                                                                                 "/pagos/transferencia/*/aprobar")
+                                                                .hasRole("ADMIN")
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.PUT,
+                                                                                "/pagos/transferencia/*/aprobar-manual")
                                                                 .hasRole("ADMIN")
 
                                                                 .requestMatchers(
@@ -211,6 +235,16 @@ public class SecurityConfig {
                                                                 // MIS COMPRAS
                                                                 // =========================
 
+                                                                .requestMatchers(
+                                                                                HttpMethod.GET,
+                                                                                "/pedidos/invitado/**")
+                                                                .permitAll()
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.PUT,
+                                                                                "/pedidos/invitado/**")
+                                                                .permitAll()
+
                                                                 /*
                                                                  * Tiene que quedar antes del bloque
                                                                  * de admin, si no /pedidos/** deja
@@ -220,6 +254,11 @@ public class SecurityConfig {
                                                                 .requestMatchers(
                                                                                 HttpMethod.GET,
                                                                                 "/pedidos/mis-compras")
+                                                                .authenticated()
+
+                                                                .requestMatchers(
+                                                                                HttpMethod.PUT,
+                                                                                "/pedidos/mis-compras/**")
                                                                 .authenticated()
 
                                                                 // =========================
@@ -334,17 +373,18 @@ public class SecurityConfig {
                 CorsConfiguration configuration = new CorsConfiguration();
 
                 configuration.setAllowedOrigins(
-                                List.of(
-                                                "http://localhost:5173",
-                                                "http://localhost:5174",
-                                                "http://localhost:5175"));
+                                Arrays.stream(allowedCorsOrigins.split(","))
+                                                .map(String::trim)
+                                                .filter(origin -> !origin.isEmpty())
+                                                .toList());
 
                 configuration.setAllowedMethods(
                                 List.of(
                                                 "GET",
                                                 "POST",
                                                 "PUT",
-                                                "DELETE",
+                                "PATCH",
+                                "DELETE",
                                                 "OPTIONS"));
 
                 configuration.setAllowedHeaders(

@@ -300,6 +300,16 @@
     font-size: 9px;
 }
 
+.personalizador-mayorista {
+    margin: 10px 0 0;
+
+    color: #17613c;
+
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
 /* =========================
    SECTIONS
 ========================= */

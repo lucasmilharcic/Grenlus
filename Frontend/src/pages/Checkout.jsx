@@ -4,11 +4,16 @@ import {
 } from "react";
 
 import {
-    Link
+    Link,
+    Navigate
 } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import {
+    getUsuario,
+    isAuthenticated
+} from "../services/authService";
 
 import {
     useCarrito
@@ -19,14 +24,10 @@ import {
 } from "../services/pedidoService";
 
 import {
-    crearPreferenciaMercadoPago,
+    crearPreferenciaMercadoPagoCuenta,
     getDatosTransferencia,
-    subirComprobanteTransferencia
+    subirComprobanteTransferenciaCuenta
 } from "../services/pagoService";
-
-import {
-    cotizarEnvio
-} from "../services/envioService";
 
 import "./Checkout.css";
 
@@ -59,7 +60,7 @@ export default function Checkout() {
     const [
         nombreCliente,
         setNombreCliente
-    ] = useState("");
+    ] = useState(() => getUsuario()?.nombre || "");
 
     const [
         telefono,
@@ -69,7 +70,10 @@ export default function Checkout() {
     const [
         email,
         setEmail
-    ] = useState("");
+    ] = useState(() => {
+        const username = getUsuario()?.username;
+        return username?.includes("@") ? username : "";
+    });
 
     const [
         direccion,
@@ -99,21 +103,6 @@ export default function Checkout() {
         metodoEntrega,
         setMetodoEntrega
     ] = useState("RETIRO");
-
-    const [
-        cotizacion,
-        setCotizacion
-    ] = useState(null);
-
-    const [
-        opcionEnvio,
-        setOpcionEnvio
-    ] = useState(null);
-
-    const [
-        cotizando,
-        setCotizando
-    ] = useState(false);
 
     // =====================================================
     // PAGO
@@ -161,16 +150,13 @@ export default function Checkout() {
         setComprobanteEnviado
     ] = useState(false);
 
+    const autenticado = isAuthenticated();
+
     // =====================================================
     // TOTAL
     // =====================================================
 
-    const costoEnvio =
-        metodoEntrega === "ENVIO_DOMICILIO"
-            ? Number(
-                opcionEnvio?.precio || 0
-            )
-            : 0;
+    const costoEnvio = 0;
 
     const totalFinal =
         Number(total || 0) +
@@ -221,154 +207,12 @@ export default function Checkout() {
             valor
         );
 
-        setError("");
-
-        setCotizacion(null);
-        setOpcionEnvio(null);
-    }
-
-    // =====================================================
-    // COTIZAR
-    // =====================================================
-
-    async function handleCotizarEnvio() {
+        if (valor === "ENVIO_DOMICILIO") {
+            setMetodoPago("MERCADO_PAGO");
+        }
 
         setError("");
 
-        if (
-            !provincia.trim()
-        ) {
-
-            setError(
-                "Ingresá la provincia."
-            );
-
-            return;
-        }
-
-        if (
-            !ciudad.trim()
-        ) {
-
-            setError(
-                "Ingresá la localidad."
-            );
-
-            return;
-        }
-
-        if (
-            !codigoPostal.trim()
-        ) {
-
-            setError(
-                "Ingresá el código postal."
-            );
-
-            return;
-        }
-
-        if (
-            items.length === 0
-        ) {
-
-            setError(
-                "El carrito está vacío."
-            );
-
-            return;
-        }
-
-        try {
-
-            setCotizando(true);
-
-            setCotizacion(null);
-            setOpcionEnvio(null);
-
-            const data =
-                await cotizarEnvio({
-
-                    codigoPostal:
-                        codigoPostal.trim(),
-
-                    provincia:
-                        provincia.trim(),
-
-                    localidad:
-                        ciudad.trim(),
-
-                    valorDeclarado:
-                        Number(total || 0),
-
-                    items:
-                        items.map(
-                            (item) => ({
-
-                                productoId:
-                                    Number(
-                                        item.productoId
-                                    ),
-
-                                cantidad:
-                                    Number(
-                                        item.cantidad
-                                    )
-                            })
-                        )
-                });
-
-            setCotizacion(
-                data
-            );
-
-            /*
-             * El backend ya devuelve únicamente Correo Argentino
-             * y ordena las opciones de menor a mayor precio.
-             *
-             * Seleccionamos automáticamente la más barata.
-             */
-            if (
-                data?.opciones?.length > 0
-            ) {
-
-                const masBarata =
-                    [...data.opciones]
-                        .sort(
-                            (a, b) =>
-                                Number(a.precio) -
-                                Number(b.precio)
-                        )[0];
-
-                setOpcionEnvio(
-                    masBarata
-                );
-
-            } else {
-
-                setOpcionEnvio(null);
-
-                setError(
-                    "Correo Argentino no tiene opciones disponibles para ese destino."
-                );
-            }
-
-        } catch (err) {
-
-            console.error(err);
-
-            setCotizacion(null);
-            setOpcionEnvio(null);
-
-            setError(
-                err.message ||
-                "No se pudo calcular el envío."
-            );
-
-        } finally {
-
-            setCotizando(false);
-        }
     }
 
     // =====================================================
@@ -521,6 +365,15 @@ export default function Checkout() {
             "ENVIO_DOMICILIO"
         ) {
 
+            if (!email.trim()) {
+
+                setError(
+                    "Ingresá tu email para recibir la cotización del envío."
+                );
+
+                return;
+            }
+
             if (
                 !direccion.trim()
             ) {
@@ -565,16 +418,6 @@ export default function Checkout() {
                 return;
             }
 
-            if (
-                !opcionEnvio?.opcionId
-            ) {
-
-                setError(
-                    "Calculá el envío y seleccioná una opción."
-                );
-
-                return;
-            }
         }
 
         try {
@@ -621,12 +464,6 @@ export default function Checkout() {
 
                     metodoEntrega,
 
-                    opcionEnvioId:
-                        metodoEntrega ===
-                            "ENVIO_DOMICILIO"
-                            ? opcionEnvio.opcionId
-                            : null,
-
                     metodoPago,
 
                     detalles:
@@ -636,6 +473,11 @@ export default function Checkout() {
             setPedidoCreado(
                 pedido
             );
+
+            if (metodoEntrega === "ENVIO_DOMICILIO") {
+                vaciarCarrito();
+                return;
+            }
 
             // =================================================
             // MERCADO PAGO
@@ -647,7 +489,7 @@ export default function Checkout() {
             ) {
 
                 const preferencia =
-                    await crearPreferenciaMercadoPago(
+                    await crearPreferenciaMercadoPagoCuenta(
                         pedido.id
                     );
 
@@ -728,7 +570,7 @@ export default function Checkout() {
 
             setError("");
 
-            await subirComprobanteTransferencia(
+            await subirComprobanteTransferenciaCuenta(
                 pedidoCreado.id,
                 comprobante
             );
@@ -761,6 +603,92 @@ export default function Checkout() {
     // =====================================================
     // TRANSFERENCIA CREADA
     // =====================================================
+
+    if (!autenticado) {
+        return (
+            <Navigate
+                to="/login"
+                replace
+                state={{ from: { pathname: "/checkout" } }}
+            />
+        );
+    }
+
+    if (
+        pedidoCreado &&
+        pedidoCreado.metodoEntrega === "ENVIO_DOMICILIO"
+    ) {
+
+        return (
+            <>
+                <Navbar />
+
+                <main className="checkout-page">
+
+                    <div className="checkout-cotizacion-final">
+
+                        <span className="checkout-eyebrow">
+                            PEDIDO #{pedidoCreado.id}
+                        </span>
+
+                        <h1>
+                            Recibimos tu pedido
+                        </h1>
+
+                        <p>
+                            El envío está pendiente de cotización por MiCorreo.
+                            Te vamos a contactar por email con el costo del envío
+                            y el total final. También vas a verlo actualizado en
+                            Mis compras, dentro de tu cuenta.
+                        </p>
+
+                        <div className="checkout-envio-resumen-final">
+                            <span>Envío</span>
+                            <strong>A cotizar</strong>
+                        </div>
+
+                        <div className="checkout-envio-resumen-final">
+                            <span>Subtotal de productos</span>
+                            <strong>
+                                {formatearPrecio(pedidoCreado.subtotalProductos)}
+                            </strong>
+                        </div>
+
+                        <p className="checkout-cotizacion-contacto">
+                            Enviaremos la cotización a{" "}
+                            <strong>{pedidoCreado.email}</strong>.
+                            No realices el pago todavía. Cuando recibas el aviso,
+                            iniciá sesión para pagar desde Mis compras.
+                        </p>
+
+                        {error && (
+                            <div className="checkout-error">
+                                {error}
+                            </div>
+                        )}
+
+                        <Link
+                            to="/mis-compras"
+                            className="checkout-volver"
+                        >
+                            Consultar estado del pedido
+                        </Link>
+
+                        <Link
+                            to="/"
+                            className="checkout-volver"
+                        >
+                            Volver al inicio
+                        </Link>
+
+                    </div>
+
+                </main>
+
+                <Footer />
+            </>
+        );
+    }
 
     if (
         pedidoCreado &&
@@ -906,6 +834,13 @@ export default function Checkout() {
                         )}
 
                         <Link
+                            to="/mis-compras"
+                            className="checkout-volver"
+                        >
+                            Consultar estado del pedido
+                        </Link>
+
+                        <Link
                             to="/"
                             className="checkout-volver"
                         >
@@ -981,6 +916,7 @@ export default function Checkout() {
                             <p>
                                 Completá tus datos, elegí la
                                 entrega y cómo querés pagar.
+                                No necesitás crear una cuenta para comprar.
                             </p>
 
                         </header>
@@ -1042,10 +978,16 @@ export default function Checkout() {
 
                                         <label>
                                             Email
+                                            {metodoEntrega === "ENVIO_DOMICILIO"
+                                                ? " *"
+                                                : ""}
                                         </label>
 
                                         <input
                                             type="email"
+                                            required={
+                                                metodoEntrega === "ENVIO_DOMICILIO"
+                                            }
                                             value={email}
                                             onChange={(e) =>
                                                 setEmail(
@@ -1133,12 +1075,11 @@ export default function Checkout() {
 
                                         <div>
                                             <strong>
-                                                Envío a domicilio
+                                                Envío a cotizar por mail
                                             </strong>
 
                                             <span>
-                                                Calculamos el costo según
-                                                tu zona.
+                                                Te confirmamos el costo y el total por email antes de pagar.
                                             </span>
                                         </div>
 
@@ -1167,13 +1108,6 @@ export default function Checkout() {
                                                                 e.target.value
                                                             );
 
-                                                            setCotizacion(
-                                                                null
-                                                            );
-
-                                                            setOpcionEnvio(
-                                                                null
-                                                            );
                                                         }}
                                                         placeholder="Buenos Aires"
                                                     />
@@ -1194,13 +1128,6 @@ export default function Checkout() {
                                                                 e.target.value
                                                             );
 
-                                                            setCotizacion(
-                                                                null
-                                                            );
-
-                                                            setOpcionEnvio(
-                                                                null
-                                                            );
                                                         }}
                                                         placeholder="Temperley"
                                                     />
@@ -1221,13 +1148,6 @@ export default function Checkout() {
                                                                 e.target.value
                                                             );
 
-                                                            setCotizacion(
-                                                                null
-                                                            );
-
-                                                            setOpcionEnvio(
-                                                                null
-                                                            );
                                                         }}
                                                         placeholder="1834"
                                                     />
@@ -1255,114 +1175,9 @@ export default function Checkout() {
 
                                             </div>
 
-                                            <button
-                                                type="button"
-                                                className="checkout-cotizar-envio"
-                                                onClick={
-                                                    handleCotizarEnvio
-                                                }
-                                                disabled={
-                                                    cotizando
-                                                }
-                                            >
-                                                {cotizando
-                                                    ? "Calculando..."
-                                                    : "Calcular envío"}
-                                            </button>
-
-                                            {cotizacion?.opciones?.length > 0 && (
-
-                                                <div className="checkout-opciones-envio">
-
-                                                    <div className="checkout-opciones-header">
-
-                                                        <strong>
-                                                            Opciones disponibles
-                                                        </strong>
-
-                                                        <span>
-                                                            Elegí cómo querés recibir tu pedido
-                                                        </span>
-
-                                                    </div>
-
-                                                    {cotizacion.opciones.map(
-                                                        (opcion) => (
-
-                                                            <label
-                                                                key={opcion.opcionId}
-                                                                className={
-                                                                    `checkout-opcion-envio ${opcionEnvio?.opcionId ===
-                                                                        opcion.opcionId
-                                                                        ? "selected"
-                                                                        : ""
-                                                                    }`
-                                                                }
-                                                            >
-
-                                                                <input
-                                                                    type="radio"
-                                                                    name="opcionEnvio"
-                                                                    checked={
-                                                                        opcionEnvio?.opcionId ===
-                                                                        opcion.opcionId
-                                                                    }
-                                                                    onChange={() =>
-                                                                        setOpcionEnvio(
-                                                                            opcion
-                                                                        )
-                                                                    }
-                                                                />
-
-                                                                <div className="checkout-opcion-info">
-
-                                                                    <strong>
-                                                                        {opcion.carrierNombre ||
-                                                                            "Transporte"}
-                                                                    </strong>
-
-                                                                    <span>
-                                                                        {opcion.serviceNombre ||
-                                                                            opcion.serviceType ||
-                                                                            "Envío"}
-                                                                    </span>
-
-                                                                    {(
-                                                                        opcion.diasMin != null ||
-                                                                        opcion.diasMax != null
-                                                                    ) && (
-
-                                                                            <small>
-                                                                                Entrega estimada:{" "}
-
-                                                                                {opcion.diasMin != null
-                                                                                    ? opcion.diasMin
-                                                                                    : opcion.diasMax}
-
-                                                                                {opcion.diasMax != null &&
-                                                                                    opcion.diasMax !==
-                                                                                    opcion.diasMin
-                                                                                    ? ` a ${opcion.diasMax}`
-                                                                                    : ""}
-
-                                                                                {" "}días
-                                                                            </small>
-                                                                        )}
-
-                                                                </div>
-
-                                                                <strong className="checkout-opcion-precio">
-                                                                    {formatearPrecio(
-                                                                        opcion.precio
-                                                                    )}
-                                                                </strong>
-
-                                                            </label>
-                                                        )
-                                                    )}
-
-                                                </div>
-                                            )}
+                                            <p className="checkout-envio-aviso">
+                                                Envío a cotizar por email. Te enviaremos el costo y el total final antes de que pagues.
+                                            </p>
 
                                         </div>
                                     )}
@@ -1373,6 +1188,7 @@ export default function Checkout() {
                                 PAGO
                             ========================= */}
 
+                            {metodoEntrega !== "ENVIO_DOMICILIO" ? (
                             <section className="checkout-section">
 
                                 <h2>
@@ -1456,6 +1272,12 @@ export default function Checkout() {
                                 </div>
 
                             </section>
+                            ) : (
+                                <div className="checkout-envio-aviso">
+                                    El envío se cotiza manualmente. No se cobrará nada
+                                    hasta que recibas por email el costo y el total final.
+                                </div>
+                            )}
 
                             {error && (
 
@@ -1468,13 +1290,14 @@ export default function Checkout() {
                                 type="submit"
                                 className="checkout-confirmar"
                                 disabled={
-                                    enviando ||
-                                    cotizando
+                                    enviando
                                 }
                             >
                                 {enviando
                                     ? "Procesando..."
-                                    : metodoPago ===
+                                    : metodoEntrega === "ENVIO_DOMICILIO"
+                                        ? "Solicitar cotización"
+                                        : metodoPago ===
                                         "MERCADO_PAGO"
                                         ? "Continuar a Mercado Pago"
                                         : "Confirmar pedido"}
@@ -1512,6 +1335,8 @@ export default function Checkout() {
                                             {formatearPrecio(
                                                 item.precioUnitario
                                             )}
+                                            {item.descuentoMayoristaAplicado &&
+                                                ` · ${item.descuentoMayoristaPorcentaje}% mayorista`}
                                         </span>
                                     </div>
 
@@ -1549,14 +1374,9 @@ export default function Checkout() {
                                 </span>
 
                                 <strong>
-                                    {metodoEntrega ===
-                                        "RETIRO"
+                                    {metodoEntrega === "RETIRO"
                                         ? "Gratis"
-                                        : opcionEnvio
-                                            ? formatearPrecio(
-                                                costoEnvio
-                                            )
-                                            : "A calcular"}
+                                        : "A cotizar por mail"}
                                 </strong>
                             </div>
 
@@ -1565,7 +1385,9 @@ export default function Checkout() {
                         <div className="checkout-total">
 
                             <span>
-                                Total
+                                {metodoEntrega === "ENVIO_DOMICILIO"
+                                    ? "Subtotal sin envío"
+                                    : "Total"}
                             </span>
 
                             <strong>
@@ -1577,9 +1399,9 @@ export default function Checkout() {
                         </div>
 
                         <small>
-                            El servidor verificará nuevamente
-                            los precios y la opción de envío al crear
-                            el pedido.
+                            {metodoEntrega === "ENVIO_DOMICILIO"
+                                ? "El pedido queda registrado sin cobrar. Te enviaremos el total final antes de pagar."
+                                : "El servidor verificará nuevamente los precios al crear el pedido."}
                         </small>
 
                     </aside>

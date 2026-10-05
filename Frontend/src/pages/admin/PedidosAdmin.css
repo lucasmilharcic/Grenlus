@@ -372,6 +372,44 @@
     font-size: 11px;
 }
 
+.pedido-archivo-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    margin-top: 20px;
+}
+
+.pedido-archivar {
+    padding: 10px 15px;
+
+    color: #294b69;
+    background: #e8f0f6;
+
+    border: 1px solid #cddce8;
+    border-radius: 9px;
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+
+    cursor: pointer;
+}
+
+.pedido-archivar:hover:not(:disabled) {
+    background: #dce8f1;
+}
+
+.pedido-archivar.restaurar {
+    color: #17613c;
+    background: #e4f6ec;
+    border-color: #c1e7d0;
+}
+
+.pedido-archivar:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 .pedido-mensaje-accion {
     max-width: 1350px;
 

@@ -4,10 +4,11 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 import { useCarrito } from "../context/CarritoContext";
+import { API_BASE_URL } from "../services/apiConfig";
 
 import "./Carrito.css";
 
-const API_URL = "http://localhost:8081";
+const API_URL = API_BASE_URL;
 
 function formatearPrecio(valor) {
 
@@ -312,9 +313,27 @@ export default function Carrito() {
                                                     <div className="carrito-item-precio">
 
                                                         <small>
-                                                            {formatearPrecio(
-                                                                item.precioUnitario
-                                                            )} c/u
+                                                            {item.descuentoMayoristaAplicado ? (
+                                                                <>
+                                                                    <del>
+                                                                        {formatearPrecio(
+                                                                            item.precioUnitarioOriginal
+                                                                        )}
+                                                                    </del>
+                                                                    {" "}
+                                                                    <span className="carrito-mayorista">
+                                                                        Mayorista{" "}
+                                                                        {item.descuentoMayoristaPorcentaje}% ·{" "}
+                                                                        {formatearPrecio(item.precioUnitario)} c/u
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    {formatearPrecio(
+                                                                        item.precioUnitario
+                                                                    )} c/u
+                                                                </>
+                                                            )}
                                                         </small>
 
                                                         <strong>
