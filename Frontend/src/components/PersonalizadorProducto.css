@@ -22,6 +22,20 @@
     min-width: 0;
 }
 
+.personalizador-consulta-colores {
+    margin: 16px 0 0;
+    padding: 13px 16px;
+
+    color: #c3d1dc;
+
+    background: rgba(255, 255, 255, 0.06);
+    border-left: 3px solid #1765a0;
+    border-radius: 8px;
+
+    font-size: 12px;
+    line-height: 1.6;
+}
+
 .personalizador-tabs {
     display: flex;
 

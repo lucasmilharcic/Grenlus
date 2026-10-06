@@ -1997,6 +1997,10 @@ export default function PersonalizadorProducto({
 
                 )}
 
+                <p className="personalizador-consulta-colores">
+                    ¿Querés ver mejor los colores? Consultanos por mail o WhatsApp y te enviamos fotos para que puedas elegir con más precisión.
+                </p>
+
             </div>
 
             {/* =================================================
