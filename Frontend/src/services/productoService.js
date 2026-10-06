@@ -238,6 +238,7 @@ export async function crearIndumentaria({
     altoEnvioCm,
 
     usaTalles,
+    incluyeTallesInfantiles,
     usaColores,
 
     permiteFrente,
@@ -346,6 +347,12 @@ export async function crearIndumentaria({
 
     agregarBoolean(
         formData,
+        "incluyeTallesInfantiles",
+        incluyeTallesInfantiles
+    );
+
+    agregarBoolean(
+        formData,
         "usaColores",
         usaColores
     );
@@ -437,6 +444,7 @@ export async function editarIndumentaria(
         altoEnvioCm,
 
         usaTalles,
+        incluyeTallesInfantiles,
         usaColores,
 
         permiteFrente,
@@ -542,6 +550,12 @@ export async function editarIndumentaria(
         formData,
         "usaTalles",
         usaTalles
+    );
+
+    agregarBoolean(
+        formData,
+        "incluyeTallesInfantiles",
+        incluyeTallesInfantiles
     );
 
     agregarBoolean(

@@ -20,6 +20,8 @@ public class Indumentaria extends Producto {
 
     private boolean usaTalles;
 
+    private Boolean incluyeTallesInfantiles = true;
+
     private boolean usaColores;
 
     private boolean permiteFrente;

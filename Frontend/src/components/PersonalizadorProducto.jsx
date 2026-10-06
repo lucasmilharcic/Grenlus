@@ -61,6 +61,252 @@ function clamp(
     );
 }
 
+async function recortarMargenTransparente(archivo) {
+
+    if (
+        ![
+            "image/png",
+            "image/webp",
+            "image/avif"
+        ].includes(archivo.type) ||
+        typeof createImageBitmap !== "function"
+    ) {
+        return archivo;
+    }
+
+    const imagen =
+        await createImageBitmap(archivo);
+
+    try {
+
+        const escala =
+            Math.min(
+                1,
+                512 /
+                    Math.max(
+                        imagen.width,
+                        imagen.height
+                    )
+            );
+
+        const anchoMuestra =
+            Math.max(
+                1,
+                Math.ceil(imagen.width * escala)
+            );
+
+        const altoMuestra =
+            Math.max(
+                1,
+                Math.ceil(imagen.height * escala)
+            );
+
+        const lienzoMuestra =
+            document.createElement("canvas");
+
+        lienzoMuestra.width = anchoMuestra;
+        lienzoMuestra.height = altoMuestra;
+
+        const contextoMuestra =
+            lienzoMuestra.getContext(
+                "2d",
+                { willReadFrequently: true }
+            );
+
+        if (!contextoMuestra) {
+            throw new Error(
+                "No se pudo preparar la imagen para recortarla."
+            );
+        }
+
+        contextoMuestra.drawImage(
+            imagen,
+            0,
+            0,
+            anchoMuestra,
+            altoMuestra
+        );
+
+        const pixeles =
+            contextoMuestra.getImageData(
+                0,
+                0,
+                anchoMuestra,
+                altoMuestra
+            ).data;
+
+        let izquierda = anchoMuestra;
+        let arriba = altoMuestra;
+        let derecha = -1;
+        let abajo = -1;
+
+        for (
+            let y = 0;
+            y < altoMuestra;
+            y += 1
+        ) {
+            for (
+                let x = 0;
+                x < anchoMuestra;
+                x += 1
+            ) {
+                const alpha =
+                    pixeles[
+                        (y * anchoMuestra + x) * 4 + 3
+                    ];
+
+                if (alpha > 8) {
+                    izquierda = Math.min(izquierda, x);
+                    arriba = Math.min(arriba, y);
+                    derecha = Math.max(derecha, x);
+                    abajo = Math.max(abajo, y);
+                }
+            }
+        }
+
+        if (derecha < izquierda || abajo < arriba) {
+            return archivo;
+        }
+
+        const margenMuestra = 2;
+        const origenX =
+            Math.max(0, izquierda - margenMuestra);
+        const origenY =
+            Math.max(0, arriba - margenMuestra);
+        const finalX =
+            Math.min(anchoMuestra, derecha + margenMuestra + 1);
+        const finalY =
+            Math.min(altoMuestra, abajo + margenMuestra + 1);
+
+        const recorteX =
+            Math.floor(origenX / escala);
+        const recorteY =
+            Math.floor(origenY / escala);
+        const recorteAncho =
+            Math.min(
+                imagen.width - recorteX,
+                Math.ceil((finalX - origenX) / escala)
+            );
+        const recorteAlto =
+            Math.min(
+                imagen.height - recorteY,
+                Math.ceil((finalY - origenY) / escala)
+            );
+
+        if (
+            recorteX === 0 &&
+            recorteY === 0 &&
+            recorteAncho === imagen.width &&
+            recorteAlto === imagen.height
+        ) {
+            return archivo;
+        }
+
+        const lienzoRecorte =
+            document.createElement("canvas");
+
+        lienzoRecorte.width = recorteAncho;
+        lienzoRecorte.height = recorteAlto;
+
+        const contextoRecorte =
+            lienzoRecorte.getContext("2d");
+
+        if (!contextoRecorte) {
+            throw new Error(
+                "No se pudo recortar el margen transparente de la imagen."
+            );
+        }
+
+        contextoRecorte.drawImage(
+            imagen,
+            recorteX,
+            recorteY,
+            recorteAncho,
+            recorteAlto,
+            0,
+            0,
+            recorteAncho,
+            recorteAlto
+        );
+
+        const blob =
+            await new Promise((resolve, reject) => {
+                lienzoRecorte.toBlob(
+                    resultado => {
+                        if (resultado) {
+                            resolve(resultado);
+                        } else {
+                            reject(
+                                new Error(
+                                    "No se pudo generar la imagen recortada."
+                                )
+                            );
+                        }
+                    },
+                    "image/png"
+                );
+            });
+
+        const nombreBase =
+            archivo.name.replace(/\.[^.]+$/, "");
+
+        return new File(
+            [blob],
+            `${nombreBase}.png`,
+            {
+                type: "image/png",
+                lastModified: Date.now()
+            }
+        );
+
+    } finally {
+        imagen.close();
+    }
+}
+
+async function obtenerAspectRatioImagen(archivo) {
+
+    if (typeof createImageBitmap === "function") {
+
+        const imagen =
+            await createImageBitmap(archivo);
+
+        try {
+            return imagen.width / imagen.height;
+        } finally {
+            imagen.close();
+        }
+    }
+
+    const url =
+        URL.createObjectURL(archivo);
+
+    try {
+
+        const imagen = new Image();
+
+        return await new Promise((resolve, reject) => {
+            imagen.onload = () => {
+                resolve(
+                    imagen.naturalWidth /
+                    imagen.naturalHeight
+                );
+            };
+            imagen.onerror = () => {
+                reject(
+                    new Error(
+                        "No se pudieron leer las dimensiones de la imagen."
+                    )
+                );
+            };
+            imagen.src = url;
+        });
+
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+}
+
 function crearDisenoVacio() {
     return {
         archivo: null,
@@ -71,7 +317,8 @@ function crearDisenoVacio() {
             x: 0,
             y: 0,
             width: 0,
-            height: 0
+            height: 0,
+            aspectRatio: 1
         }
     };
 }
@@ -627,7 +874,7 @@ export default function PersonalizadorProducto({
     // CHICA / MEDIA / GRANDE solamente determinan
     // cuánto puede medir el diseño.
     //
-    // El usuario puede moverlo por TODA el área general.
+    // El usuario puede moverlo por todo el mockup.
     // =====================================================
 
     function obtenerMaximoVisual(
@@ -835,6 +1082,15 @@ export default function PersonalizadorProducto({
                                     .height ||
                                 0
                             );
+                        const aspectRatio =
+                            Number(
+                                anterior.logo.aspectRatio
+                            ) ||
+                            (
+                                width > 0 && height > 0
+                                    ? width / height
+                                    : 1
+                            );
 
                         const nuncaInicializado =
                             width <= 0 ||
@@ -844,26 +1100,24 @@ export default function PersonalizadorProducto({
                             nuncaInicializado
                         ) {
 
-                            width =
-                                max.width *
-                                0.6;
+                            width = Math.min(
+                                max.width * 0.6,
+                                max.height * 0.6 * aspectRatio
+                            );
 
                             height =
-                                max.height *
-                                0.6;
+                                width / aspectRatio;
                         } else {
 
-                            width =
+                            const escala =
                                 Math.min(
-                                    width,
-                                    max.width
+                                    1,
+                                    max.width / width,
+                                    max.height / height
                                 );
 
-                            height =
-                                Math.min(
-                                    height,
-                                    max.height
-                                );
+                            width *= escala;
+                            height *= escala;
                         }
 
                         let x =
@@ -915,31 +1169,15 @@ export default function PersonalizadorProducto({
                             x =
                                 clamp(
                                     x,
-                                    Number(
-                                        area.x
-                                    ),
-                                    Number(
-                                        area.x
-                                    ) +
-                                        Number(
-                                            area.width
-                                        ) -
-                                        width
+                                    0,
+                                    100 - width
                                 );
 
                             y =
                                 clamp(
                                     y,
-                                    Number(
-                                        area.y
-                                    ),
-                                    Number(
-                                        area.y
-                                    ) +
-                                        Number(
-                                            area.height
-                                        ) -
-                                        height
+                                    0,
+                                    100 - height
                                 );
                         }
 
@@ -952,7 +1190,8 @@ export default function PersonalizadorProducto({
                                 x,
                                 y,
                                 width,
-                                height
+                                height,
+                                aspectRatio
                             }
                         };
                     }
@@ -971,7 +1210,7 @@ export default function PersonalizadorProducto({
     // ARCHIVO DE LA VISTA ACTUAL
     // =====================================================
 
-    function procesarArchivo(
+    async function procesarArchivo(
         archivo
     ) {
 
@@ -995,35 +1234,96 @@ export default function PersonalizadorProducto({
             return;
         }
 
-        const anterior =
-            disenosPorVista[
-                posicion
-            ];
+        try {
 
-        if (
-            anterior?.preview
-        ) {
+            const archivoRecortado =
+                await recortarMargenTransparente(
+                    archivo
+                );
 
-            URL.revokeObjectURL(
-                anterior.preview
+            const aspectRatio =
+                await obtenerAspectRatioImagen(
+                    archivoRecortado
+                );
+
+            const maximo =
+                obtenerMaximoVisual(
+                    areaActual
+                );
+
+            const width = Math.min(
+                maximo.width * 0.6,
+                maximo.height * 0.6 * aspectRatio
+            );
+
+            const height =
+                width / aspectRatio;
+
+            const x =
+                clamp(
+                    Number(areaActual?.x || 0) +
+                        (
+                            Number(areaActual?.width || 100) -
+                            width
+                        ) / 2,
+                    0,
+                    100 - width
+                );
+
+            const y =
+                clamp(
+                    Number(areaActual?.y || 0) +
+                        (
+                            Number(areaActual?.height || 100) -
+                            height
+                        ) / 2,
+                    0,
+                    100 - height
+                );
+
+            const anterior =
+                disenosPorVista[
+                    posicion
+                ];
+
+            if (anterior?.preview) {
+                URL.revokeObjectURL(
+                    anterior.preview
+                );
+            }
+
+            actualizarDisenoVista(
+                posicion,
+                {
+                    archivo: archivoRecortado,
+                    ruta: null,
+                    logo: {
+                        x,
+                        y,
+                        width,
+                        height,
+                        aspectRatio
+                    },
+
+                    preview:
+                        URL.createObjectURL(
+                            archivoRecortado
+                        )
+                }
+            );
+
+            setMensaje("");
+            setError("");
+
+        } catch (err) {
+
+            console.error(err);
+
+            setError(
+                err.message ||
+                "No se pudo preparar la imagen."
             );
         }
-
-        actualizarDisenoVista(
-            posicion,
-            {
-                archivo,
-                ruta: null,
-
-                preview:
-                    URL.createObjectURL(
-                        archivo
-                    )
-            }
-        );
-
-        setMensaje("");
-        setError("");
     }
 
     function handleDrop(e) {
@@ -1042,8 +1342,7 @@ export default function PersonalizadorProducto({
     // =====================================================
     // MOVER LOGO
     //
-    // El movimiento usa SIEMPRE areaActual,
-    // no un área chica centrada.
+    // El diseño no queda limitado al área de impresión.
     // =====================================================
 
     function iniciarMover(e) {
@@ -1137,34 +1436,6 @@ export default function PersonalizadorProducto({
             ) *
             100;
 
-        const minX =
-            Number(
-                area.x
-            );
-
-        const maxX =
-            Number(
-                area.x
-            ) +
-            Number(
-                area.width
-            ) -
-            drag.inicial.width;
-
-        const minY =
-            Number(
-                area.y
-            );
-
-        const maxY =
-            Number(
-                area.y
-            ) +
-            Number(
-                area.height
-            ) -
-            drag.inicial.height;
-
         actualizarLogoVista(
             drag.posicion,
             {
@@ -1174,16 +1445,16 @@ export default function PersonalizadorProducto({
                     clamp(
                         drag.inicial.x +
                             dx,
-                        minX,
-                        maxX
+                        0,
+                        100 - drag.inicial.width
                     ),
 
                 y:
                     clamp(
                         drag.inicial.y +
                             dy,
-                        minY,
-                        maxY
+                        0,
+                        100 - drag.inicial.height
                     )
             }
         );
@@ -1201,7 +1472,7 @@ export default function PersonalizadorProducto({
     // El máximo depende de CHICA/MEDIA/GRANDE.
     //
     // Pero puede estar ubicado en cualquier parte
-    // del área general.
+    // del mockup.
     // =====================================================
 
     function iniciarResize(e) {
@@ -1290,39 +1561,43 @@ export default function PersonalizadorProducto({
                 area
             );
 
-        /*
-         * Además del máximo por categoría,
-         * no puede salirse del borde derecho/inferior
-         * del área general desde su posición actual.
-         */
         const maxWidthPorPosicion =
-            Number(
-                area.x
-            ) +
-            Number(
-                area.width
-            ) -
+            100 -
             resize.inicial.x;
 
         const maxHeightPorPosicion =
-            Number(
-                area.y
-            ) +
-            Number(
-                area.height
-            ) -
+            100 -
             resize.inicial.y;
 
         const maxWidth =
             Math.min(
                 maximoTamano.width,
-                maxWidthPorPosicion
+                maxWidthPorPosicion,
+                maxHeightPorPosicion *
+                    (
+                        Number(resize.inicial.aspectRatio) ||
+                        resize.inicial.width /
+                            resize.inicial.height
+                    )
             );
 
-        const maxHeight =
-            Math.min(
-                maximoTamano.height,
-                maxHeightPorPosicion
+        const aspectRatio =
+            Number(resize.inicial.aspectRatio) ||
+            resize.inicial.width /
+                resize.inicial.height;
+
+        const anchoSolicitado =
+            Math.abs(dx) >= Math.abs(dy) * aspectRatio
+                ? resize.inicial.width + dx
+                : (
+                    resize.inicial.height + dy
+                ) * aspectRatio;
+
+        const width =
+            clamp(
+                anchoSolicitado,
+                Math.min(3, maxWidth),
+                maxWidth
             );
 
         actualizarLogoVista(
@@ -1330,27 +1605,8 @@ export default function PersonalizadorProducto({
             {
                 ...resize.inicial,
 
-                width:
-                    clamp(
-                        resize.inicial.width +
-                            dx,
-                        Math.min(
-                            3,
-                            maxWidth
-                        ),
-                        maxWidth
-                    ),
-
-                height:
-                    clamp(
-                        resize.inicial.height +
-                            dy,
-                        Math.min(
-                            3,
-                            maxHeight
-                        ),
-                        maxHeight
-                    )
+                width,
+                height: width / aspectRatio
             }
         );
     }
@@ -2159,16 +2415,18 @@ export default function PersonalizadorProducto({
                                 Elegir talle
                             </option>
 
-                            <optgroup label="Infantil">
-                                <option value="4">4</option>
-                                <option value="6">6</option>
-                                <option value="8">8</option>
-                                <option value="10">10</option>
-                                <option value="12">12</option>
-                                <option value="14">14</option>
-                                <option value="16">16</option>
-                                <option value="18">18</option>
-                            </optgroup>
+                            {producto.incluyeTallesInfantiles !== false && (
+                                <optgroup label="Infantil">
+                                    <option value="4">4</option>
+                                    <option value="6">6</option>
+                                    <option value="8">8</option>
+                                    <option value="10">10</option>
+                                    <option value="12">12</option>
+                                    <option value="14">14</option>
+                                    <option value="16">16</option>
+                                    <option value="18">18</option>
+                                </optgroup>
+                            )}
 
                             <optgroup label="Adulto">
                                 <option value="XS">XS</option>

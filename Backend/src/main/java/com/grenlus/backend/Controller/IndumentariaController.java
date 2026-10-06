@@ -145,6 +145,12 @@ public class IndumentariaController {
             Boolean usaTalles,
 
             @RequestParam(
+                    value = "incluyeTallesInfantiles",
+                    required = false
+            )
+            Boolean incluyeTallesInfantiles,
+
+            @RequestParam(
                     value = "usaColores",
                     required = false
             )
@@ -213,6 +219,7 @@ public class IndumentariaController {
                 anchoEnvioCm,
                 altoEnvioCm,
                 usaTalles,
+                incluyeTallesInfantiles,
                 usaColores,
                 permiteFrente,
                 permiteEspalda,
@@ -319,6 +326,12 @@ public class IndumentariaController {
             Boolean usaTalles,
 
             @RequestParam(
+                    value = "incluyeTallesInfantiles",
+                    required = false
+            )
+            Boolean incluyeTallesInfantiles,
+
+            @RequestParam(
                     value = "usaColores",
                     required = false
             )
@@ -390,6 +403,7 @@ public class IndumentariaController {
                 anchoEnvioCm,
                 altoEnvioCm,
                 usaTalles,
+                incluyeTallesInfantiles,
                 usaColores,
                 permiteFrente,
                 permiteEspalda,
@@ -442,6 +456,7 @@ public class IndumentariaController {
             Integer altoEnvioCm,
 
             Boolean usaTalles,
+            Boolean incluyeTallesInfantiles,
             Boolean usaColores,
 
             Boolean permiteFrente,
@@ -505,6 +520,12 @@ public class IndumentariaController {
         indumentaria.setUsaTalles(
                 Boolean.TRUE.equals(
                         usaTalles
+                )
+        );
+
+        indumentaria.setIncluyeTallesInfantiles(
+                !Boolean.FALSE.equals(
+                        incluyeTallesInfantiles
                 )
         );
 

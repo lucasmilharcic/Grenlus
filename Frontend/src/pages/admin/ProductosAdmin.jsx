@@ -146,6 +146,11 @@ export default function ProductosAdmin() {
     ] = useState(true);
 
     const [
+        incluyeTallesInfantiles,
+        setIncluyeTallesInfantiles
+    ] = useState(true);
+
+    const [
         usaColores,
         setUsaColores
     ] = useState(true);
@@ -293,6 +298,11 @@ export default function ProductosAdmin() {
         editUsaTalles,
         setEditUsaTalles
     ] = useState(false);
+
+    const [
+        editIncluyeTallesInfantiles,
+        setEditIncluyeTallesInfantiles
+    ] = useState(true);
 
     const [
         editUsaColores,
@@ -449,6 +459,7 @@ export default function ProductosAdmin() {
         setAltoEnvioCm("");
 
         setUsaTalles(true);
+        setIncluyeTallesInfantiles(true);
         setUsaColores(true);
 
         setPermiteFrente(true);
@@ -579,6 +590,7 @@ export default function ProductosAdmin() {
                     altoEnvioCm,
 
                     usaTalles,
+                    incluyeTallesInfantiles,
                     usaColores,
 
                     permiteFrente,
@@ -731,6 +743,10 @@ export default function ProductosAdmin() {
 
         setEditUsaTalles(
             Boolean(producto.usaTalles)
+        );
+
+        setEditIncluyeTallesInfantiles(
+            producto.incluyeTallesInfantiles !== false
         );
 
         setEditUsaColores(
@@ -970,6 +986,9 @@ export default function ProductosAdmin() {
                         usaTalles:
                             editUsaTalles,
 
+                        incluyeTallesInfantiles:
+                            editIncluyeTallesInfantiles,
+
                         usaColores:
                             editUsaColores,
 
@@ -1091,6 +1110,9 @@ export default function ProductosAdmin() {
 
                     usaTalles:
                         editUsaTalles,
+
+                    incluyeTallesInfantiles:
+                        editIncluyeTallesInfantiles,
 
                     usaColores:
                         editUsaColores,
@@ -1800,6 +1822,24 @@ export default function ProductosAdmin() {
 
                                             <span>
                                                 Usa talles
+                                            </span>
+
+                                        </label>
+
+                                        <label className="checkbox-option">
+
+                                            <input
+                                                type="checkbox"
+                                                checked={incluyeTallesInfantiles}
+                                                onChange={(e) =>
+                                                    setIncluyeTallesInfantiles(
+                                                        e.target.checked
+                                                    )
+                                                }
+                                            />
+
+                                            <span>
+                                                Incluye talles infantiles (4–18)
                                             </span>
 
                                         </label>
@@ -2849,6 +2889,26 @@ export default function ProductosAdmin() {
 
                                                 <span>
                                                     Usa talles
+                                                </span>
+
+                                            </label>
+
+                                            <label className="checkbox-option">
+
+                                                <input
+                                                    type="checkbox"
+                                                    checked={
+                                                        editIncluyeTallesInfantiles
+                                                    }
+                                                    onChange={(e) =>
+                                                        setEditIncluyeTallesInfantiles(
+                                                            e.target.checked
+                                                        )
+                                                    }
+                                                />
+
+                                                <span>
+                                                    Incluye talles infantiles (4–18)
                                                 </span>
 
                                             </label>
