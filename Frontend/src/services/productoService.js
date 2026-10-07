@@ -239,6 +239,9 @@ export async function crearIndumentaria({
 
     usaTalles,
     incluyeTallesInfantiles,
+    incluyeTallesEspeciales,
+    precioAdicionalTalleEspecial,
+    modelo3dPersonalizador,
     usaColores,
 
     permiteFrente,
@@ -307,6 +310,12 @@ export async function crearIndumentaria({
         descuentoMayoristaPorcentaje
     );
 
+    agregarNumero(
+        formData,
+        "precioAdicionalTalleEspecial",
+        precioAdicionalTalleEspecial
+    );
+
     // =========================
     // DATOS DE ENVÍO
     // =========================
@@ -350,6 +359,19 @@ export async function crearIndumentaria({
         "incluyeTallesInfantiles",
         incluyeTallesInfantiles
     );
+
+    agregarBoolean(
+        formData,
+        "incluyeTallesEspeciales",
+        incluyeTallesEspeciales
+    );
+
+    if (modelo3dPersonalizador) {
+        formData.append(
+            "modelo3dPersonalizador",
+            modelo3dPersonalizador
+        );
+    }
 
     agregarBoolean(
         formData,
@@ -445,6 +467,9 @@ export async function editarIndumentaria(
 
         usaTalles,
         incluyeTallesInfantiles,
+        incluyeTallesEspeciales,
+        precioAdicionalTalleEspecial,
+        modelo3dPersonalizador,
         usaColores,
 
         permiteFrente,
@@ -514,6 +539,12 @@ export async function editarIndumentaria(
         descuentoMayoristaPorcentaje
     );
 
+    agregarNumero(
+        formData,
+        "precioAdicionalTalleEspecial",
+        precioAdicionalTalleEspecial
+    );
+
     // =========================
     // DATOS DE ENVÍO
     // =========================
@@ -557,6 +588,24 @@ export async function editarIndumentaria(
         "incluyeTallesInfantiles",
         incluyeTallesInfantiles
     );
+
+    agregarBoolean(
+        formData,
+        "incluyeTallesEspeciales",
+        incluyeTallesEspeciales
+    );
+
+    if (modelo3dPersonalizador) {
+        formData.append(
+            "modelo3dPersonalizador",
+            modelo3dPersonalizador
+        );
+    } else {
+        formData.append(
+            "modelo3dPersonalizador",
+            ""
+        );
+    }
 
     agregarBoolean(
         formData,

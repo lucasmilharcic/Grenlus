@@ -1,4 +1,6 @@
 import {
+    lazy,
+    Suspense,
     useEffect,
     useMemo,
     useRef,
@@ -19,6 +21,9 @@ import {
 } from "../context/CarritoContext";
 
 import "./PersonalizadorProducto.css";
+
+const Producto3DPreview =
+    lazy(() => import("./Producto3DPreview"));
 
 const TAMANOS = {
     CHICA: {
@@ -761,12 +766,18 @@ export default function PersonalizadorProducto({
         return 0;
     }
 
+    const precioAdicionalTalle =
+        producto.incluyeTallesEspeciales === true &&
+        ["T6", "T8", "T10", "T14", "T16"].includes(
+            String(talle).trim().toUpperCase()
+        )
+            ? Number(producto.precioAdicionalTalleEspecial || 0)
+            : 0;
+
     const precioUnitario =
-        Number(
-            producto.precioBase ||
-            0
-        ) +
-        obtenerAdicional();
+        Number(producto.precioBase || 0) +
+        obtenerAdicional() +
+        precioAdicionalTalle;
 
     const cantidadEnCarrito =
         items.reduce(
@@ -789,7 +800,8 @@ export default function PersonalizadorProducto({
             (aplicaDescuentoMayorista
                 ? 1 - descuentoMayoristaPorcentaje / 100
                 : 1) +
-        obtenerAdicional();
+        obtenerAdicional() +
+        precioAdicionalTalle;
 
     // =====================================================
     // MEDIDAS MÁXIMAS EN CM
@@ -1917,6 +1929,8 @@ export default function PersonalizadorProducto({
                 precioEstampa:
                     obtenerAdicional(),
 
+                precioAdicionalTalle,
+
                 precioUnitario,
 
                 subtotal:
@@ -2065,16 +2079,44 @@ export default function PersonalizadorProducto({
                     MOCKUP
                 ========================================= */}
 
-                <div
-                    ref={canvasRef}
-                    className="personalizador-canvas"
-                    onDragOver={(e) =>
-                        e.preventDefault()
-                    }
-                    onDrop={
-                        handleDrop
-                    }
-                >
+                {producto.modelo3dPersonalizador ? (
+                    <Suspense
+                        fallback={
+                            <div className="personalizador-loading">
+                                Preparando vista 3D...
+                            </div>
+                        }
+                    >
+                        <Producto3DPreview
+                            tipoModelo={
+                                producto.modelo3dPersonalizador
+                            }
+                            color={
+                                color ||
+                                areaActual?.color
+                            }
+                            designUrl={previewLogo}
+                            logo={logo}
+                            onLogoChange={(nuevoLogo) =>
+                                actualizarLogoVista(
+                                    posicion,
+                                    nuevoLogo
+                                )
+                            }
+                            onDrop={handleDrop}
+                        />
+                    </Suspense>
+                ) : (
+                    <div
+                        ref={canvasRef}
+                        className="personalizador-canvas"
+                        onDragOver={(e) =>
+                            e.preventDefault()
+                        }
+                        onDrop={
+                            handleDrop
+                        }
+                    >
 
                     {imagenMockup && (
 
@@ -2217,6 +2259,7 @@ export default function PersonalizadorProducto({
                     )}
 
                 </div>
+                )}
 
                 <input
                     ref={fileInputRef}
@@ -2300,6 +2343,13 @@ export default function PersonalizadorProducto({
                             {" "}estampa
                         </span>
 
+                    )}
+
+                    {precioAdicionalTalle > 0 && (
+                        <span>
+                            Adicional por talle especial:{" "}
+                            {moneda(precioAdicionalTalle)}
+                        </span>
                     )}
 
                 </div>
@@ -2425,6 +2475,16 @@ export default function PersonalizadorProducto({
                                     <option value="14">14</option>
                                     <option value="16">16</option>
                                     <option value="18">18</option>
+                                </optgroup>
+                            )}
+
+                            {producto.incluyeTallesEspeciales === true && (
+                                <optgroup label="Talles especiales">
+                                    <option value="T6">T6</option>
+                                    <option value="T8">T8</option>
+                                    <option value="T10">T10</option>
+                                    <option value="T14">T14</option>
+                                    <option value="T16">T16</option>
                                 </optgroup>
                             )}
 

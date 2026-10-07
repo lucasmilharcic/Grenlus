@@ -465,8 +465,13 @@ public class PedidoService {
                                 producto,
                                 tamanoEstampa);
 
-                BigDecimal precioUnitario = precioBaseMayorista.add(
-                                precioEstampa);
+                BigDecimal precioAdicionalTalle = calcularPrecioAdicionalTalle(
+                                producto,
+                                detalleDTO.getTalle());
+
+                BigDecimal precioUnitario = precioBaseMayorista
+                                .add(precioEstampa)
+                                .add(precioAdicionalTalle);
 
                 BigDecimal subtotal = precioUnitario.multiply(
                                 BigDecimal.valueOf(
@@ -478,6 +483,9 @@ public class PedidoService {
 
                 detalle.setPrecioEstampa(
                                 precioEstampa);
+
+                detalle.setPrecioAdicionalTalle(
+                                precioAdicionalTalle);
 
                 detalle.setPrecioUnitario(
                                 precioUnitario);
@@ -1044,6 +1052,19 @@ public class PedidoService {
                 };
         }
 
+        private BigDecimal calcularPrecioAdicionalTalle(
+
+                        Producto producto,
+
+                        String talle) {
+
+                if (!(producto instanceof Indumentaria indumentaria)) {
+                        return BigDecimal.ZERO;
+                }
+
+                return indumentaria.calcularPrecioAdicionalTalleEspecial(talle);
+        }
+
         private void limpiarDatosEnvio(
                         Pedido pedido) {
 
@@ -1416,6 +1437,9 @@ public class PedidoService {
 
                 dto.setPrecioEstampa(
                                 detalle.getPrecioEstampa());
+
+                dto.setPrecioAdicionalTalle(
+                                detalle.getPrecioAdicionalTalle());
 
                 dto.setPrecioUnitario(
                                 detalle.getPrecioUnitario());

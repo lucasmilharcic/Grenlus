@@ -191,6 +191,18 @@ export default function Carrito() {
                                                         </span>
                                                     )}
 
+                                                    {Number(item.precioAdicionalTalle) > 0 && (
+                                                        <span>
+                                                            Adicional por talle:
+                                                            <strong>
+                                                                {" "}
+                                                                {formatearPrecio(
+                                                                    item.precioAdicionalTalle
+                                                                )}
+                                                            </strong>
+                                                        </span>
+                                                    )}
+
                                                     {item.color && (
                                                         <span>
                                                             Color:

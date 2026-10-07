@@ -76,6 +76,9 @@ function aplicarDescuentosMayoristas(items) {
             item.precioBase ?? item.precioUnitario ?? 0
         );
         const precioAdicional = Number(item.precioEstampa || 0);
+        const precioAdicionalTalle = Number(
+            item.precioAdicionalTalle || 0
+        );
         const descuento = Number(
             item.descuentoMayoristaPorcentaje || 0
         );
@@ -90,9 +93,9 @@ function aplicarDescuentosMayoristas(items) {
             ? Math.round(precioBase * (1 - descuento / 100) * 100) / 100
             : precioBase;
         const precioUnitarioOriginal =
-            precioBase + precioAdicional;
+            precioBase + precioAdicional + precioAdicionalTalle;
         const precioUnitario =
-            precioBaseFinal + precioAdicional;
+            precioBaseFinal + precioAdicional + precioAdicionalTalle;
 
         return {
             ...item,

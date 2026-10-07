@@ -1,5 +1,6 @@
 package com.grenlus.backend.Entity;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +22,12 @@ public class Indumentaria extends Producto {
     private boolean usaTalles;
 
     private Boolean incluyeTallesInfantiles = true;
+
+    private Boolean incluyeTallesEspeciales = false;
+
+    private BigDecimal precioAdicionalTalleEspecial = BigDecimal.ZERO;
+
+    private String modelo3dPersonalizador;
 
     private boolean usaColores;
 
@@ -78,5 +85,20 @@ public class Indumentaria extends Producto {
         areasPersonalizacion.remove(area);
 
         area.setIndumentaria(null);
+    }
+
+    public BigDecimal calcularPrecioAdicionalTalleEspecial(
+            String talle) {
+
+        if (!Boolean.TRUE.equals(incluyeTallesEspeciales)
+                || talle == null
+                || !List.of("T6", "T8", "T10", "T14", "T16")
+                        .contains(talle.trim().toUpperCase())) {
+            return BigDecimal.ZERO;
+        }
+
+        return precioAdicionalTalleEspecial != null
+                ? precioAdicionalTalleEspecial
+                : BigDecimal.ZERO;
     }
 }

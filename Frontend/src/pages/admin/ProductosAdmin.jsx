@@ -151,6 +151,21 @@ export default function ProductosAdmin() {
     ] = useState(true);
 
     const [
+        incluyeTallesEspeciales,
+        setIncluyeTallesEspeciales
+    ] = useState(false);
+
+    const [
+        precioAdicionalTalleEspecial,
+        setPrecioAdicionalTalleEspecial
+    ] = useState("0");
+
+    const [
+        modelo3dPersonalizador,
+        setModelo3dPersonalizador
+    ] = useState("");
+
+    const [
         usaColores,
         setUsaColores
     ] = useState(true);
@@ -303,6 +318,21 @@ export default function ProductosAdmin() {
         editIncluyeTallesInfantiles,
         setEditIncluyeTallesInfantiles
     ] = useState(true);
+
+    const [
+        editIncluyeTallesEspeciales,
+        setEditIncluyeTallesEspeciales
+    ] = useState(false);
+
+    const [
+        editPrecioAdicionalTalleEspecial,
+        setEditPrecioAdicionalTalleEspecial
+    ] = useState("0");
+
+    const [
+        editModelo3dPersonalizador,
+        setEditModelo3dPersonalizador
+    ] = useState("");
 
     const [
         editUsaColores,
@@ -460,6 +490,9 @@ export default function ProductosAdmin() {
 
         setUsaTalles(true);
         setIncluyeTallesInfantiles(true);
+        setIncluyeTallesEspeciales(false);
+        setPrecioAdicionalTalleEspecial("0");
+        setModelo3dPersonalizador("");
         setUsaColores(true);
 
         setPermiteFrente(true);
@@ -538,6 +571,17 @@ export default function ProductosAdmin() {
                 }
 
                 if (
+                    !Number.isFinite(
+                        Number(precioAdicionalTalleEspecial)
+                    ) ||
+                    Number(precioAdicionalTalleEspecial) < 0
+                ) {
+                    throw new Error(
+                        "El adicional por talle especial debe ser un importe válido, mayor o igual a cero."
+                    );
+                }
+
+                if (
                     Number(pesoGramos) <= 0 ||
                     Number(largoEnvioCm) <= 0 ||
                     Number(anchoEnvioCm) <= 0 ||
@@ -591,6 +635,9 @@ export default function ProductosAdmin() {
 
                     usaTalles,
                     incluyeTallesInfantiles,
+                    incluyeTallesEspeciales,
+                    precioAdicionalTalleEspecial,
+                    modelo3dPersonalizador,
                     usaColores,
 
                     permiteFrente,
@@ -747,6 +794,20 @@ export default function ProductosAdmin() {
 
         setEditIncluyeTallesInfantiles(
             producto.incluyeTallesInfantiles !== false
+        );
+
+        setEditIncluyeTallesEspeciales(
+            producto.incluyeTallesEspeciales === true
+        );
+
+        setEditPrecioAdicionalTalleEspecial(
+            normalizarNumero(
+                producto.precioAdicionalTalleEspecial ?? 0
+            )
+        );
+
+        setEditModelo3dPersonalizador(
+            producto.modelo3dPersonalizador || ""
         );
 
         setEditUsaColores(
@@ -938,6 +999,17 @@ export default function ProductosAdmin() {
                     );
                 }
 
+                if (
+                    !Number.isFinite(
+                        Number(editPrecioAdicionalTalleEspecial)
+                    ) ||
+                    Number(editPrecioAdicionalTalleEspecial) < 0
+                ) {
+                    throw new Error(
+                        "El adicional por talle especial debe ser un importe válido, mayor o igual a cero."
+                    );
+                }
+
                 await editarIndumentaria(
                     productoEditando.id,
                     {
@@ -988,6 +1060,15 @@ export default function ProductosAdmin() {
 
                         incluyeTallesInfantiles:
                             editIncluyeTallesInfantiles,
+
+                        incluyeTallesEspeciales:
+                            editIncluyeTallesEspeciales,
+
+                        precioAdicionalTalleEspecial:
+                            editPrecioAdicionalTalleEspecial || 0,
+
+                        modelo3dPersonalizador:
+                            editModelo3dPersonalizador,
 
                         usaColores:
                             editUsaColores,
@@ -1113,6 +1194,15 @@ export default function ProductosAdmin() {
 
                     incluyeTallesInfantiles:
                         editIncluyeTallesInfantiles,
+
+                    incluyeTallesEspeciales:
+                        editIncluyeTallesEspeciales,
+
+                    precioAdicionalTalleEspecial:
+                        editPrecioAdicionalTalleEspecial || 0,
+
+                    modelo3dPersonalizador:
+                        editModelo3dPersonalizador,
 
                     usaColores:
                         editUsaColores,
@@ -1402,6 +1492,46 @@ export default function ProductosAdmin() {
                             "indumentaria" && (
 
                             <>
+
+                                <div className="admin-config-section">
+
+                                    <div className="config-section-heading">
+                                        <span>VISTA DEL PERSONALIZADOR</span>
+                                        <h3>Modelo de producto 3D</h3>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label htmlFor="modelo-3d-producto">
+                                            Modelo 3D
+                                        </label>
+
+                                        <select
+                                            id="modelo-3d-producto"
+                                            value={modelo3dPersonalizador}
+                                            onChange={(e) =>
+                                                setModelo3dPersonalizador(
+                                                    e.target.value
+                                                )
+                                            }
+                                        >
+                                            <option value="">
+                                                Sin vista 3D
+                                            </option>
+                                            <option value="TAZA">
+                                                Taza
+                                            </option>
+                                            <option value="BOTELLA">
+                                                Botella
+                                            </option>
+                                        </select>
+
+                                        <small>
+                                            El cliente podrá girar el modelo y ubicar el diseño sobre la superficie.
+                                            Configurá también el área de impresión del producto.
+                                        </small>
+                                    </div>
+
+                                </div>
 
                                 <div className="admin-config-section">
 
@@ -1848,6 +1978,24 @@ export default function ProductosAdmin() {
 
                                             <input
                                                 type="checkbox"
+                                                checked={incluyeTallesEspeciales}
+                                                onChange={(e) =>
+                                                    setIncluyeTallesEspeciales(
+                                                        e.target.checked
+                                                    )
+                                                }
+                                            />
+
+                                            <span>
+                                                Incluye talles especiales (T6, T8, T10, T14, T16)
+                                            </span>
+
+                                        </label>
+
+                                        <label className="checkbox-option">
+
+                                            <input
+                                                type="checkbox"
                                                 checked={usaColores}
                                                 onChange={(e) =>
                                                     setUsaColores(
@@ -1935,6 +2083,35 @@ export default function ProductosAdmin() {
                                         </label>
 
                                     </div>
+
+                                    <label className="price-field cartel-price">
+
+                                        <span>
+                                            Adicional por talle especial
+                                        </span>
+
+                                        <div className="money-input">
+
+                                            <strong>
+                                                + $
+                                            </strong>
+
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                disabled={!incluyeTallesEspeciales}
+                                                value={precioAdicionalTalleEspecial}
+                                                onChange={(e) =>
+                                                    setPrecioAdicionalTalleEspecial(
+                                                        e.target.value
+                                                    )
+                                                }
+                                            />
+
+                                        </div>
+
+                                    </label>
 
                                 </div>
 
@@ -2581,6 +2758,45 @@ export default function ProductosAdmin() {
                                         <div className="admin-config-section">
 
                                             <div className="config-section-heading">
+                                                <span>VISTA DEL PERSONALIZADOR</span>
+                                                <h3>Modelo de producto 3D</h3>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label htmlFor="edit-modelo-3d-producto">
+                                                    Modelo 3D
+                                                </label>
+
+                                                <select
+                                                    id="edit-modelo-3d-producto"
+                                                    value={editModelo3dPersonalizador}
+                                                    onChange={(e) =>
+                                                        setEditModelo3dPersonalizador(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                >
+                                                    <option value="">
+                                                        Sin vista 3D
+                                                    </option>
+                                                    <option value="TAZA">
+                                                        Taza
+                                                    </option>
+                                                    <option value="BOTELLA">
+                                                        Botella
+                                                    </option>
+                                                </select>
+
+                                                <small>
+                                                    Configurá también el área de impresión del producto.
+                                                </small>
+                                            </div>
+
+                                        </div>
+
+                                        <div className="admin-config-section">
+
+                                            <div className="config-section-heading">
 
                                                 <span>
                                                     PRECIOS
@@ -2918,6 +3134,26 @@ export default function ProductosAdmin() {
                                                 <input
                                                     type="checkbox"
                                                     checked={
+                                                        editIncluyeTallesEspeciales
+                                                    }
+                                                    onChange={(e) =>
+                                                        setEditIncluyeTallesEspeciales(
+                                                            e.target.checked
+                                                        )
+                                                    }
+                                                />
+
+                                                <span>
+                                                    Incluye talles especiales (T6, T8, T10, T14, T16)
+                                                </span>
+
+                                            </label>
+
+                                            <label className="checkbox-option">
+
+                                                <input
+                                                    type="checkbox"
+                                                    checked={
                                                         editUsaColores
                                                     }
                                                     onChange={(e) =>
@@ -3014,6 +3250,35 @@ export default function ProductosAdmin() {
                                             </label>
 
                                         </div>
+
+                                        <label className="price-field cartel-price">
+
+                                            <span>
+                                                Adicional por talle especial
+                                            </span>
+
+                                            <div className="money-input">
+
+                                                <strong>
+                                                    + $
+                                                </strong>
+
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="1"
+                                                    disabled={!editIncluyeTallesEspeciales}
+                                                    value={editPrecioAdicionalTalleEspecial}
+                                                    onChange={(e) =>
+                                                        setEditPrecioAdicionalTalleEspecial(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                />
+
+                                            </div>
+
+                                        </label>
 
                                     </>
 

@@ -151,6 +151,24 @@ public class IndumentariaController {
             Boolean incluyeTallesInfantiles,
 
             @RequestParam(
+                    value = "incluyeTallesEspeciales",
+                    required = false
+            )
+            Boolean incluyeTallesEspeciales,
+
+            @RequestParam(
+                    value = "precioAdicionalTalleEspecial",
+                    required = false
+            )
+            BigDecimal precioAdicionalTalleEspecial,
+
+            @RequestParam(
+                    value = "modelo3dPersonalizador",
+                    required = false
+            )
+            String modelo3dPersonalizador,
+
+            @RequestParam(
                     value = "usaColores",
                     required = false
             )
@@ -220,6 +238,9 @@ public class IndumentariaController {
                 altoEnvioCm,
                 usaTalles,
                 incluyeTallesInfantiles,
+                incluyeTallesEspeciales,
+                precioAdicionalTalleEspecial,
+                modelo3dPersonalizador,
                 usaColores,
                 permiteFrente,
                 permiteEspalda,
@@ -332,6 +353,24 @@ public class IndumentariaController {
             Boolean incluyeTallesInfantiles,
 
             @RequestParam(
+                    value = "incluyeTallesEspeciales",
+                    required = false
+            )
+            Boolean incluyeTallesEspeciales,
+
+            @RequestParam(
+                    value = "precioAdicionalTalleEspecial",
+                    required = false
+            )
+            BigDecimal precioAdicionalTalleEspecial,
+
+            @RequestParam(
+                    value = "modelo3dPersonalizador",
+                    required = false
+            )
+            String modelo3dPersonalizador,
+
+            @RequestParam(
                     value = "usaColores",
                     required = false
             )
@@ -404,6 +443,9 @@ public class IndumentariaController {
                 altoEnvioCm,
                 usaTalles,
                 incluyeTallesInfantiles,
+                incluyeTallesEspeciales,
+                precioAdicionalTalleEspecial,
+                modelo3dPersonalizador,
                 usaColores,
                 permiteFrente,
                 permiteEspalda,
@@ -457,6 +499,9 @@ public class IndumentariaController {
 
             Boolean usaTalles,
             Boolean incluyeTallesInfantiles,
+            Boolean incluyeTallesEspeciales,
+            BigDecimal precioAdicionalTalleEspecial,
+            String modelo3dPersonalizador,
             Boolean usaColores,
 
             Boolean permiteFrente,
@@ -527,6 +572,40 @@ public class IndumentariaController {
                 !Boolean.FALSE.equals(
                         incluyeTallesInfantiles
                 )
+        );
+
+        indumentaria.setIncluyeTallesEspeciales(
+                Boolean.TRUE.equals(
+                        incluyeTallesEspeciales
+                )
+        );
+
+        BigDecimal adicionalTalle = precioAdicionalTalleEspecial != null
+                ? precioAdicionalTalleEspecial
+                : BigDecimal.ZERO;
+
+        if (adicionalTalle.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BadRequestException(
+                    "El adicional por talle especial no puede ser negativo.");
+        }
+
+        indumentaria.setPrecioAdicionalTalleEspecial(adicionalTalle);
+
+        String modelo3d = modelo3dPersonalizador == null
+                ? null
+                : modelo3dPersonalizador.trim().toUpperCase();
+
+        if (modelo3d != null
+                && !modelo3d.isEmpty()
+                && !List.of("TAZA", "BOTELLA").contains(modelo3d)) {
+            throw new BadRequestException(
+                    "El modelo 3D debe ser TAZA, BOTELLA o estar vacío.");
+        }
+
+        indumentaria.setModelo3dPersonalizador(
+                modelo3d == null || modelo3d.isEmpty()
+                        ? null
+                        : modelo3d
         );
 
         indumentaria.setUsaColores(

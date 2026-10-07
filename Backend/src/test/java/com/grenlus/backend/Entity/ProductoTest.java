@@ -3,6 +3,7 @@ package com.grenlus.backend.Entity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,5 +31,31 @@ class ProductoTest {
 
         assertThat(producto.calcularPrecioBaseMayorista(6))
                 .isEqualByComparingTo("10000");
+    }
+
+    @Test
+    void aplicaAdicionalSoloALosTallesEspecialesHabilitados() {
+
+        Indumentaria producto = new Indumentaria();
+        producto.setIncluyeTallesEspeciales(true);
+        producto.setPrecioAdicionalTalleEspecial(new BigDecimal("2500"));
+
+        for (String talle : List.of("T6", "T8", "T10", "T14", "T16")) {
+            assertThat(producto.calcularPrecioAdicionalTalleEspecial(talle))
+                    .isEqualByComparingTo("2500");
+        }
+
+        assertThat(producto.calcularPrecioAdicionalTalleEspecial("M"))
+                .isEqualByComparingTo("0");
+    }
+
+    @Test
+    void noAplicaAdicionalCuandoLosTallesEspecialesEstanDeshabilitados() {
+
+        Indumentaria producto = new Indumentaria();
+        producto.setPrecioAdicionalTalleEspecial(new BigDecimal("2500"));
+
+        assertThat(producto.calcularPrecioAdicionalTalleEspecial("T6"))
+                .isEqualByComparingTo("0");
     }
 }
