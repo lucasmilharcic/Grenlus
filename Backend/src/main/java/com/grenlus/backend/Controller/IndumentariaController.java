@@ -163,12 +163,6 @@ public class IndumentariaController {
             BigDecimal precioAdicionalTalleEspecial,
 
             @RequestParam(
-                    value = "modelo3dPersonalizador",
-                    required = false
-            )
-            String modelo3dPersonalizador,
-
-            @RequestParam(
                     value = "usaColores",
                     required = false
             )
@@ -240,7 +234,6 @@ public class IndumentariaController {
                 incluyeTallesInfantiles,
                 incluyeTallesEspeciales,
                 precioAdicionalTalleEspecial,
-                modelo3dPersonalizador,
                 usaColores,
                 permiteFrente,
                 permiteEspalda,
@@ -365,12 +358,6 @@ public class IndumentariaController {
             BigDecimal precioAdicionalTalleEspecial,
 
             @RequestParam(
-                    value = "modelo3dPersonalizador",
-                    required = false
-            )
-            String modelo3dPersonalizador,
-
-            @RequestParam(
                     value = "usaColores",
                     required = false
             )
@@ -445,7 +432,6 @@ public class IndumentariaController {
                 incluyeTallesInfantiles,
                 incluyeTallesEspeciales,
                 precioAdicionalTalleEspecial,
-                modelo3dPersonalizador,
                 usaColores,
                 permiteFrente,
                 permiteEspalda,
@@ -501,7 +487,6 @@ public class IndumentariaController {
             Boolean incluyeTallesInfantiles,
             Boolean incluyeTallesEspeciales,
             BigDecimal precioAdicionalTalleEspecial,
-            String modelo3dPersonalizador,
             Boolean usaColores,
 
             Boolean permiteFrente,
@@ -590,23 +575,6 @@ public class IndumentariaController {
         }
 
         indumentaria.setPrecioAdicionalTalleEspecial(adicionalTalle);
-
-        String modelo3d = modelo3dPersonalizador == null
-                ? null
-                : modelo3dPersonalizador.trim().toUpperCase();
-
-        if (modelo3d != null
-                && !modelo3d.isEmpty()
-                && !List.of("TAZA", "BOTELLA").contains(modelo3d)) {
-            throw new BadRequestException(
-                    "El modelo 3D debe ser TAZA, BOTELLA o estar vacío.");
-        }
-
-        indumentaria.setModelo3dPersonalizador(
-                modelo3d == null || modelo3d.isEmpty()
-                        ? null
-                        : modelo3d
-        );
 
         indumentaria.setUsaColores(
                 Boolean.TRUE.equals(

@@ -161,11 +161,6 @@ export default function ProductosAdmin() {
     ] = useState("0");
 
     const [
-        modelo3dPersonalizador,
-        setModelo3dPersonalizador
-    ] = useState("");
-
-    const [
         usaColores,
         setUsaColores
     ] = useState(true);
@@ -330,11 +325,6 @@ export default function ProductosAdmin() {
     ] = useState("0");
 
     const [
-        editModelo3dPersonalizador,
-        setEditModelo3dPersonalizador
-    ] = useState("");
-
-    const [
         editUsaColores,
         setEditUsaColores
     ] = useState(false);
@@ -492,7 +482,6 @@ export default function ProductosAdmin() {
         setIncluyeTallesInfantiles(true);
         setIncluyeTallesEspeciales(false);
         setPrecioAdicionalTalleEspecial("0");
-        setModelo3dPersonalizador("");
         setUsaColores(true);
 
         setPermiteFrente(true);
@@ -637,7 +626,6 @@ export default function ProductosAdmin() {
                     incluyeTallesInfantiles,
                     incluyeTallesEspeciales,
                     precioAdicionalTalleEspecial,
-                    modelo3dPersonalizador,
                     usaColores,
 
                     permiteFrente,
@@ -804,10 +792,6 @@ export default function ProductosAdmin() {
             normalizarNumero(
                 producto.precioAdicionalTalleEspecial ?? 0
             )
-        );
-
-        setEditModelo3dPersonalizador(
-            producto.modelo3dPersonalizador || ""
         );
 
         setEditUsaColores(
@@ -1067,9 +1051,6 @@ export default function ProductosAdmin() {
                         precioAdicionalTalleEspecial:
                             editPrecioAdicionalTalleEspecial || 0,
 
-                        modelo3dPersonalizador:
-                            editModelo3dPersonalizador,
-
                         usaColores:
                             editUsaColores,
 
@@ -1200,9 +1181,6 @@ export default function ProductosAdmin() {
 
                     precioAdicionalTalleEspecial:
                         editPrecioAdicionalTalleEspecial || 0,
-
-                    modelo3dPersonalizador:
-                        editModelo3dPersonalizador,
 
                     usaColores:
                         editUsaColores,
@@ -1492,46 +1470,6 @@ export default function ProductosAdmin() {
                             "indumentaria" && (
 
                             <>
-
-                                <div className="admin-config-section">
-
-                                    <div className="config-section-heading">
-                                        <span>VISTA DEL PERSONALIZADOR</span>
-                                        <h3>Modelo de producto 3D</h3>
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label htmlFor="modelo-3d-producto">
-                                            Modelo 3D
-                                        </label>
-
-                                        <select
-                                            id="modelo-3d-producto"
-                                            value={modelo3dPersonalizador}
-                                            onChange={(e) =>
-                                                setModelo3dPersonalizador(
-                                                    e.target.value
-                                                )
-                                            }
-                                        >
-                                            <option value="">
-                                                Sin vista 3D
-                                            </option>
-                                            <option value="TAZA">
-                                                Taza
-                                            </option>
-                                            <option value="BOTELLA">
-                                                Botella
-                                            </option>
-                                        </select>
-
-                                        <small>
-                                            El cliente podrá girar el modelo y ubicar el diseño sobre la superficie.
-                                            Configurá también el área de impresión del producto.
-                                        </small>
-                                    </div>
-
-                                </div>
 
                                 <div className="admin-config-section">
 
@@ -2758,45 +2696,6 @@ export default function ProductosAdmin() {
                                         <div className="admin-config-section">
 
                                             <div className="config-section-heading">
-                                                <span>VISTA DEL PERSONALIZADOR</span>
-                                                <h3>Modelo de producto 3D</h3>
-                                            </div>
-
-                                            <div className="form-group">
-                                                <label htmlFor="edit-modelo-3d-producto">
-                                                    Modelo 3D
-                                                </label>
-
-                                                <select
-                                                    id="edit-modelo-3d-producto"
-                                                    value={editModelo3dPersonalizador}
-                                                    onChange={(e) =>
-                                                        setEditModelo3dPersonalizador(
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                >
-                                                    <option value="">
-                                                        Sin vista 3D
-                                                    </option>
-                                                    <option value="TAZA">
-                                                        Taza
-                                                    </option>
-                                                    <option value="BOTELLA">
-                                                        Botella
-                                                    </option>
-                                                </select>
-
-                                                <small>
-                                                    Configurá también el área de impresión del producto.
-                                                </small>
-                                            </div>
-
-                                        </div>
-
-                                        <div className="admin-config-section">
-
-                                            <div className="config-section-heading">
 
                                                 <span>
                                                     PRECIOS
@@ -3523,15 +3422,12 @@ export default function ProductosAdmin() {
                                         </span>
 
                                         <h2>
-                                            {productoEditando.modelo3dPersonalizador
-                                                ? "Vistas y área de impresión"
-                                                : "Mockups y áreas"}
+                                            Mockups y áreas
                                         </h2>
 
                                         <p>
-                                            {productoEditando.modelo3dPersonalizador
-                                                ? "Primero guardá el producto y después habilitá las vistas que podrá personalizar el cliente. No necesitás cargar fotos de mockup."
-                                                : "Primero guardá las opciones del producto. Después configurá cada vista con su mockup."}
+                                            Primero guardá las opciones del producto.
+                                            Después configurá cada vista con su mockup.
                                         </p>
 
                                     </div>

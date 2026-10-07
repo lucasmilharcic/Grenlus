@@ -27,8 +27,6 @@ public class Indumentaria extends Producto {
 
     private BigDecimal precioAdicionalTalleEspecial = BigDecimal.ZERO;
 
-    private String modelo3dPersonalizador;
-
     private boolean usaColores;
 
     private boolean permiteFrente;

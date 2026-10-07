@@ -241,7 +241,6 @@ export async function crearIndumentaria({
     incluyeTallesInfantiles,
     incluyeTallesEspeciales,
     precioAdicionalTalleEspecial,
-    modelo3dPersonalizador,
     usaColores,
 
     permiteFrente,
@@ -366,13 +365,6 @@ export async function crearIndumentaria({
         incluyeTallesEspeciales
     );
 
-    if (modelo3dPersonalizador) {
-        formData.append(
-            "modelo3dPersonalizador",
-            modelo3dPersonalizador
-        );
-    }
-
     agregarBoolean(
         formData,
         "usaColores",
@@ -469,7 +461,6 @@ export async function editarIndumentaria(
         incluyeTallesInfantiles,
         incluyeTallesEspeciales,
         precioAdicionalTalleEspecial,
-        modelo3dPersonalizador,
         usaColores,
 
         permiteFrente,
@@ -594,18 +585,6 @@ export async function editarIndumentaria(
         "incluyeTallesEspeciales",
         incluyeTallesEspeciales
     );
-
-    if (modelo3dPersonalizador) {
-        formData.append(
-            "modelo3dPersonalizador",
-            modelo3dPersonalizador
-        );
-    } else {
-        formData.append(
-            "modelo3dPersonalizador",
-            ""
-        );
-    }
 
     agregarBoolean(
         formData,

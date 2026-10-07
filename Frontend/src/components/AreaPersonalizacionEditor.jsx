@@ -64,8 +64,6 @@ export default function AreaPersonalizacionEditor({
 
     const [error, setError] = useState("");
     const [mensaje, setMensaje] = useState("");
-    const usaModelo3d =
-        Boolean(producto.modelo3dPersonalizador);
 
     const coloresConfigurados = useMemo(() => {
 
@@ -452,7 +450,7 @@ export default function AreaPersonalizacionEditor({
         setError("");
         setMensaje("");
 
-        if (!imagenActualUrl && !usaModelo3d) {
+        if (!imagenActualUrl) {
             setError(
                 "Subí una imagen para esta vista."
             );
@@ -612,20 +610,14 @@ export default function AreaPersonalizacionEditor({
     return (
         <section className="area-admin-editor">
             <div className="area-admin-header">
-                <span>
-                    {usaModelo3d ? "VISTA 3D" : "MOCKUPS"}
-                </span>
+                <span>MOCKUPS</span>
 
                 <h3>
-                    {usaModelo3d
-                        ? "Área de impresión 3D"
-                        : "Áreas de estampado"}
+                    Áreas de estampado
                 </h3>
 
                 <p>
-                    {usaModelo3d
-                        ? "No hace falta subir una foto: el personalizador muestra el modelo 3D. Guardá cada vista para habilitarla al cliente."
-                        : "Subí una imagen por vista y acomodá el rectángulo sobre la zona imprimible."}
+                    Subí una imagen por vista y acomodá el rectángulo sobre la zona imprimible.
                 </p>
             </div>
 
@@ -774,17 +766,6 @@ export default function AreaPersonalizacionEditor({
                                 alt={`Vista ${posicion}`}
                                 draggable="false"
                             />
-                        ) : usaModelo3d ? (
-                            <div className="area-admin-3d-placeholder">
-                                <strong>
-                                    Modelo 3D {producto.modelo3dPersonalizador === "TAZA"
-                                        ? "de taza"
-                                        : "de botella"}
-                                </strong>
-                                <span>
-                                    Esta vista no necesita una foto de mockup.
-                                </span>
-                            </div>
                         ) : (
                             <div className="area-admin-no-image">
                                 <strong>
@@ -797,7 +778,7 @@ export default function AreaPersonalizacionEditor({
                             </div>
                         )}
 
-                        {(imagenActualUrl || usaModelo3d) && (
+                        {imagenActualUrl && (
                             <div
                                 className="area-admin-box"
                                 style={{
@@ -877,11 +858,11 @@ export default function AreaPersonalizacionEditor({
                 <div className="area-admin-config">
                     <div className="area-admin-field">
                         <label>
-                            {usaModelo3d
-                                ? "Foto de referencia (opcional)"
-                                : `Foto de ${posicion.toLowerCase()}${producto.usaColores && color
-                                    ? ` · ${color}`
-                                    : ""}`}
+                            Foto de{" "}
+                            {posicion.toLowerCase()}
+                            {producto.usaColores && color
+                                ? ` · ${color}`
+                                : ""}
                         </label>
 
                         <input
@@ -894,11 +875,6 @@ export default function AreaPersonalizacionEditor({
                                 )
                             }
                         />
-                        {usaModelo3d && (
-                            <small>
-                                La foto solo se usa como referencia de administración; no es necesaria para la vista 3D.
-                            </small>
-                        )}
                     </div>
 
                     {producto.permiteEstampaChica && (

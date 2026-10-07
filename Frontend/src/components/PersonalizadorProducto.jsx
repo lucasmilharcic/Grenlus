@@ -1,6 +1,4 @@
 import {
-    lazy,
-    Suspense,
     useEffect,
     useMemo,
     useRef,
@@ -20,15 +18,7 @@ import {
     useCarrito
 } from "../context/CarritoContext";
 
-import {
-    limitarDisenoTaza,
-    MARGEN_TAZA_PORCENTAJE
-} from "../utils/personalizacion3d";
-
 import "./PersonalizadorProducto.css";
-
-const Producto3DPreview =
-    lazy(() => import("./Producto3DPreview"));
 
 const TAMANOS = {
     CHICA: {
@@ -1031,10 +1021,7 @@ export default function PersonalizadorProducto({
 
                     [posicionVista]: {
                         ...anterior,
-
-                        logo: producto.modelo3dPersonalizador === "TAZA"
-                            ? limitarDisenoTaza(logoActualizado)
-                            : logoActualizado
+                        logo: logoActualizado
                     }
                 };
             }
@@ -1193,39 +1180,23 @@ export default function PersonalizadorProducto({
                             y =
                                 clamp(
                                     y,
-                                    producto.modelo3dPersonalizador === "TAZA"
-                                        ? MARGEN_TAZA_PORCENTAJE
-                                        : 0,
-                                    100 -
-                                        (producto.modelo3dPersonalizador === "TAZA"
-                                            ? MARGEN_TAZA_PORCENTAJE
-                                            : 0) -
-                                        height
+                                    0,
+                                    100 - height
                                 );
                         }
-
-                        const logoNormalizado = producto.modelo3dPersonalizador === "TAZA"
-                            ? limitarDisenoTaza({
-                                x,
-                                y,
-                                width,
-                                height,
-                                aspectRatio
-                            })
-                            : {
-                                x,
-                                y,
-                                width,
-                                height,
-                                aspectRatio
-                            };
 
                         copia[
                             area.posicion
                         ] = {
                             ...anterior,
 
-                            logo: logoNormalizado
+                            logo: {
+                                x,
+                                y,
+                                width,
+                                height,
+                                aspectRatio
+                            }
                         };
                     }
                 );
@@ -1236,8 +1207,7 @@ export default function PersonalizadorProducto({
 
     }, [
         tamano,
-        areasActivas,
-        producto.modelo3dPersonalizador
+        areasActivas
     ]);
 
     // =====================================================
@@ -2012,11 +1982,9 @@ export default function PersonalizadorProducto({
 
             <div className="personalizador-no-config">
 
-                {producto.modelo3dPersonalizador
-                    ? "Este producto todavía no tiene vistas de impresión configuradas."
-                    : producto.usaColores
-                        ? "Este producto todavía no tiene colores con mockups configurados."
-                        : "Este producto todavía no tiene mockups configurados."}
+                {producto.usaColores
+                    ? "Este producto todavía no tiene colores con mockups configurados."
+                    : "Este producto todavía no tiene mockups configurados."}
 
             </div>
         );
@@ -2103,44 +2071,16 @@ export default function PersonalizadorProducto({
                     MOCKUP
                 ========================================= */}
 
-                {producto.modelo3dPersonalizador ? (
-                    <Suspense
-                        fallback={
-                            <div className="personalizador-loading">
-                                Preparando vista 3D...
-                            </div>
-                        }
-                    >
-                        <Producto3DPreview
-                            tipoModelo={
-                                producto.modelo3dPersonalizador
-                            }
-                            color={
-                                color ||
-                                areaActual?.color
-                            }
-                            designUrl={previewLogo}
-                            logo={logo}
-                            onLogoChange={(nuevoLogo) =>
-                                actualizarLogoVista(
-                                    posicion,
-                                    nuevoLogo
-                                )
-                            }
-                            onDrop={handleDrop}
-                        />
-                    </Suspense>
-                ) : (
-                    <div
-                        ref={canvasRef}
-                        className="personalizador-canvas"
-                        onDragOver={(e) =>
-                            e.preventDefault()
-                        }
-                        onDrop={
-                            handleDrop
-                        }
-                    >
+                <div
+                    ref={canvasRef}
+                    className="personalizador-canvas"
+                    onDragOver={(e) =>
+                        e.preventDefault()
+                    }
+                    onDrop={
+                        handleDrop
+                    }
+                >
 
                     {imagenMockup && (
 
@@ -2283,7 +2223,6 @@ export default function PersonalizadorProducto({
                     )}
 
                 </div>
-                )}
 
                 <input
                     ref={fileInputRef}
