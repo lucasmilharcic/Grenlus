@@ -20,6 +20,11 @@ import {
     useCarrito
 } from "../context/CarritoContext";
 
+import {
+    limitarDisenoTaza,
+    MARGEN_TAZA_PORCENTAJE
+} from "../utils/personalizacion3d";
+
 import "./PersonalizadorProducto.css";
 
 const Producto3DPreview =
@@ -1016,6 +1021,10 @@ export default function PersonalizadorProducto({
                         posicionVista
                     ] ||
                     crearDisenoVacio();
+                const logoActualizado =
+                    typeof nuevoLogo === "function"
+                        ? nuevoLogo(anterior.logo)
+                        : nuevoLogo;
 
                 return {
                     ...actual,
@@ -1023,13 +1032,9 @@ export default function PersonalizadorProducto({
                     [posicionVista]: {
                         ...anterior,
 
-                        logo:
-                            typeof nuevoLogo ===
-                            "function"
-                                ? nuevoLogo(
-                                      anterior.logo
-                                  )
-                                : nuevoLogo
+                        logo: producto.modelo3dPersonalizador === "TAZA"
+                            ? limitarDisenoTaza(logoActualizado)
+                            : logoActualizado
                     }
                 };
             }
@@ -1188,23 +1193,39 @@ export default function PersonalizadorProducto({
                             y =
                                 clamp(
                                     y,
-                                    0,
-                                    100 - height
+                                    producto.modelo3dPersonalizador === "TAZA"
+                                        ? MARGEN_TAZA_PORCENTAJE
+                                        : 0,
+                                    100 -
+                                        (producto.modelo3dPersonalizador === "TAZA"
+                                            ? MARGEN_TAZA_PORCENTAJE
+                                            : 0) -
+                                        height
                                 );
                         }
+
+                        const logoNormalizado = producto.modelo3dPersonalizador === "TAZA"
+                            ? limitarDisenoTaza({
+                                x,
+                                y,
+                                width,
+                                height,
+                                aspectRatio
+                            })
+                            : {
+                                x,
+                                y,
+                                width,
+                                height,
+                                aspectRatio
+                            };
 
                         copia[
                             area.posicion
                         ] = {
                             ...anterior,
 
-                            logo: {
-                                x,
-                                y,
-                                width,
-                                height,
-                                aspectRatio
-                            }
+                            logo: logoNormalizado
                         };
                     }
                 );
@@ -1215,7 +1236,8 @@ export default function PersonalizadorProducto({
 
     }, [
         tamano,
-        areasActivas
+        areasActivas,
+        producto.modelo3dPersonalizador
     ]);
 
     // =====================================================

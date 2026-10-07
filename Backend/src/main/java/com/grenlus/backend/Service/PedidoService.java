@@ -665,9 +665,16 @@ public class PedidoService {
                         // VALIDAR QUE EL DISEÃ‘O QUEDE DENTRO DEL ÃREA
                         // =================================================
 
-                        validarDisenoDentroDelArea(
-                                        dto,
-                                        area);
+                        if (indumentaria.getModelo3dPersonalizador() != null) {
+                                validarDisenoDentroDeSuperficie3d(
+                                                dto,
+                                                "TAZA".equalsIgnoreCase(
+                                                                indumentaria.getModelo3dPersonalizador()));
+                        } else {
+                                validarDisenoDentroDelArea(
+                                                dto,
+                                                area);
+                        }
 
                         /*
                          * =================================================
@@ -780,6 +787,44 @@ public class PedidoService {
 
                         throw new BadRequestException(
                                         "El diseÃ±o estÃ¡ fuera del Ã¡rea de estampado permitida.");
+                }
+        }
+
+        private void validarDisenoDentroDeSuperficie3d(
+
+                        DisenoPedidoDTO dto,
+
+                        boolean esTaza) {
+
+                if (dto.getPosicionX() == null ||
+                                dto.getPosicionY() == null ||
+                                dto.getAncho() == null ||
+                                dto.getAlto() == null) {
+
+                        throw new BadRequestException(
+                                        "El diseÃ±o debe informar posiciÃ³n y tamaÃ±o.");
+                }
+
+                double x = dto.getPosicionX();
+                double y = dto.getPosicionY();
+                double width = dto.getAncho();
+                double height = dto.getAlto();
+                double margenVertical = esTaza
+                                ? (1.0 / 9.5) * 100.0
+                                : 0.0;
+                double tolerancia = 0.01;
+
+                if (width <= 0 ||
+                                height <= 0 ||
+                                x < -tolerancia ||
+                                y < margenVertical - tolerancia ||
+                                x + width > 100 + tolerancia ||
+                                y + height > 100 - margenVertical + tolerancia) {
+
+                        throw new BadRequestException(
+                                        esTaza
+                                                        ? "El diseÃ±o de la taza debe quedar en la superficie y mantener 1 cm de margen arriba y abajo."
+                                                        : "El diseÃ±o debe quedar dentro de la superficie del producto 3D.");
                 }
         }
 

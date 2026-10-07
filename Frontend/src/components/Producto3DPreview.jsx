@@ -6,6 +6,10 @@ import {
 
 import * as THREE from "three";
 
+import {
+    MARGEN_TAZA_PORCENTAJE
+} from "../utils/personalizacion3d";
+
 import "./Producto3DPreview.css";
 
 const COLORES_PRODUCTO = {
@@ -47,7 +51,7 @@ function crearModelo(scene, tipoModelo) {
 
     if (tipoModelo === "TAZA") {
         const cuerpo = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.68, 0.58, 1.42, 96, 1, true),
+            new THREE.CylinderGeometry(0.68, 0.64, 1.42, 96, 1, true),
             material
         );
         cuerpo.position.y = -0.02;
@@ -58,28 +62,30 @@ function crearModelo(scene, tipoModelo) {
             material
         );
         base.position.y = -0.75;
+        const materialAccesorios =
+            new THREE.MeshStandardMaterial({
+                color: "#f5f4ef",
+                roughness: 0.36,
+                metalness: 0.02
+            });
+        base.material = materialAccesorios;
         grupo.add(base);
 
         const borde = new THREE.Mesh(
             new THREE.TorusGeometry(0.675, 0.035, 12, 96),
-            material
+            materialAccesorios
         );
         borde.rotation.x = Math.PI / 2;
         borde.position.y = 0.69;
         grupo.add(borde);
 
-        const materialAsa = new THREE.MeshStandardMaterial({
-            color: "#f5f4ef",
-            roughness: 0.36,
-            metalness: 0.02
-        });
         const asa = new THREE.Mesh(
-            new THREE.TorusGeometry(0.38, 0.095, 20, 48),
-            materialAsa
+            new THREE.TorusGeometry(0.39, 0.085, 20, 48),
+            materialAccesorios
         );
-        asa.position.set(0.78, 0.02, -0.03);
+        asa.position.set(-0.77, 0.02, -0.03);
         grupo.add(asa);
-        grupo.userData.colorMaterials = [materialAsa];
+        grupo.userData.colorMaterials = [materialAccesorios];
 
         grupo.userData.surface = cuerpo;
     } else {
@@ -253,7 +259,7 @@ export default function Producto3DPreview({
 
             const { grupo, material } =
                 crearModelo(scene, tipoModelo);
-            grupo.rotation.y = -0.45;
+            grupo.rotation.y = 0.45;
             grupo.rotation.x = -0.04;
 
             const textureCanvas =
@@ -414,6 +420,10 @@ export default function Producto3DPreview({
                         const deltaX = deltaU * 100;
                         const deltaY =
                             (gesture.startUv.y - hit.uv.y) * 100;
+                        const maxY =
+                            100 -
+                            MARGEN_TAZA_PORCENTAJE -
+                            gesture.initialLogo.height;
 
                         current?.onLogoChange({
                             ...gesture.initialLogo,
@@ -427,9 +437,9 @@ export default function Producto3DPreview({
                             y: Math.min(
                                 Math.max(
                                     gesture.initialLogo.y + deltaY,
-                                    0
+                                    MARGEN_TAZA_PORCENTAJE
                                 ),
-                                100 - gesture.initialLogo.height
+                                maxY
                             )
                         });
                     }
@@ -529,12 +539,23 @@ export default function Producto3DPreview({
                     wheel
                 );
                 texture.dispose();
+                const materials = new Set();
                 grupo.traverse((objeto) => {
                     if (objeto.geometry) {
                         objeto.geometry.dispose();
                     }
+                    if (objeto.material) {
+                        const objectMaterials = Array.isArray(objeto.material)
+                            ? objeto.material
+                            : [objeto.material];
+                        objectMaterials.forEach((objectMaterial) =>
+                            materials.add(objectMaterial)
+                        );
+                    }
                 });
-                material.dispose();
+                materials.forEach((objectMaterial) =>
+                    objectMaterial.dispose()
+                );
                 renderer.dispose();
                 renderer.domElement.remove();
                 rendererRef.current = null;
@@ -621,13 +642,25 @@ export default function Producto3DPreview({
 
     const anchoMaximo =
         Math.max(
-            4,
+            0.1,
             Math.min(
                 45,
                 100 - Number(logo?.x || 0),
-                (100 - Number(logo?.y || 0)) * aspectRatio
+                (
+                    100 -
+                    MARGEN_TAZA_PORCENTAJE -
+                    Math.max(
+                        Number(logo?.y || 0),
+                        MARGEN_TAZA_PORCENTAJE
+                    )
+                ) * aspectRatio,
+                (
+                    100 -
+                    2 * MARGEN_TAZA_PORCENTAJE
+                ) * aspectRatio
             )
         );
+    const anchoMinimo = Math.min(4, anchoMaximo);
 
     function cambiarTamano(event) {
         if (!logo || !onLogoChange) {
@@ -642,7 +675,15 @@ export default function Producto3DPreview({
             width,
             height,
             x: Math.min(logo.x, 100 - width),
-            y: Math.min(logo.y, 100 - height)
+            y: Math.min(
+                Math.max(
+                    logo.y,
+                    MARGEN_TAZA_PORCENTAJE
+                ),
+                100 -
+                    MARGEN_TAZA_PORCENTAJE -
+                    height
+            )
         });
     }
 
@@ -669,7 +710,7 @@ export default function Producto3DPreview({
                     </span>
                     <input
                         type="range"
-                        min="4"
+                        min={anchoMinimo}
                         max={anchoMaximo}
                         step="0.5"
                         value={Math.min(
@@ -687,6 +728,7 @@ export default function Producto3DPreview({
 
             <p className="producto-3d-instructions">
                 Arrastrá el diseño para ubicarlo y el producto para girarlo.
+                En la taza se mantiene 1 cm de margen arriba y abajo.
                 Usá la rueda o el control táctil para acercar y alejar.
             </p>
         </section>
