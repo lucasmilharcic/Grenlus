@@ -1990,9 +1990,11 @@ export default function PersonalizadorProducto({
 
             <div className="personalizador-no-config">
 
-                {producto.usaColores
-                    ? "Este producto todavía no tiene colores con mockups configurados."
-                    : "Este producto todavía no tiene mockups configurados."}
+                {producto.modelo3dPersonalizador
+                    ? "Este producto todavía no tiene vistas de impresión configuradas."
+                    : producto.usaColores
+                        ? "Este producto todavía no tiene colores con mockups configurados."
+                        : "Este producto todavía no tiene mockups configurados."}
 
             </div>
         );

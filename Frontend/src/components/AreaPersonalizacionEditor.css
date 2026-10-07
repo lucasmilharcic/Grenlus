@@ -116,6 +116,33 @@
     color: #7890a5;
 }
 
+.area-admin-3d-placeholder {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 24px;
+    color: #526d84;
+    text-align: center;
+    background:
+        radial-gradient(circle at 50% 42%, #fff 0, #eef4f8 68%);
+}
+
+.area-admin-3d-placeholder strong {
+    color: #064b8a;
+}
+
+.area-admin-3d-placeholder span {
+    max-width: 260px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
 .area-admin-box {
     position: absolute;
 

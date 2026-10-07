@@ -3523,12 +3523,15 @@ export default function ProductosAdmin() {
                                         </span>
 
                                         <h2>
-                                            Mockups y áreas
+                                            {productoEditando.modelo3dPersonalizador
+                                                ? "Vistas y área de impresión"
+                                                : "Mockups y áreas"}
                                         </h2>
 
                                         <p>
-                                            Primero guardá las opciones del producto.
-                                            Después configurá cada vista.
+                                            {productoEditando.modelo3dPersonalizador
+                                                ? "Primero guardá el producto y después habilitá las vistas que podrá personalizar el cliente. No necesitás cargar fotos de mockup."
+                                                : "Primero guardá las opciones del producto. Después configurá cada vista con su mockup."}
                                         </p>
 
                                     </div>
