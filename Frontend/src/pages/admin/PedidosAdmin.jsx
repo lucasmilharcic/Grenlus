@@ -1002,6 +1002,21 @@ export default function PedidosAdmin() {
                                                                                         }
                                                                                     />
 
+                                                                                    {Number(diseno.anchoCm) > 0 &&
+                                                                                    Number(diseno.altoCm) > 0 && (
+                                                                                        <p className="pedido-diseno-medidas">
+                                                                                            Estampa aprox.:{" "}
+                                                                                            {Number(diseno.anchoCm).toLocaleString("es-AR", {
+                                                                                                maximumFractionDigits: 1
+                                                                                            })}{" "}
+                                                                                            ×{" "}
+                                                                                            {Number(diseno.altoCm).toLocaleString("es-AR", {
+                                                                                                maximumFractionDigits: 1
+                                                                                            })}{" "}
+                                                                                            cm
+                                                                                        </p>
+                                                                                    )}
+
                                                                                     <div className="pedido-diseno-actions">
 
                                                                                         {originalUrl && (

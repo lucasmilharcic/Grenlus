@@ -1173,15 +1173,19 @@ export default function PersonalizadorProducto({
                             x =
                                 clamp(
                                     x,
-                                    0,
-                                    100 - width
+                                    Number(area.x),
+                                    Number(area.x) +
+                                        Number(area.width) -
+                                        width
                                 );
 
                             y =
                                 clamp(
                                     y,
-                                    0,
-                                    100 - height
+                                    Number(area.y),
+                                    Number(area.y) +
+                                        Number(area.height) -
+                                        height
                                 );
                         }
 
@@ -1270,8 +1274,10 @@ export default function PersonalizadorProducto({
                             Number(areaActual?.width || 100) -
                             width
                         ) / 2,
-                    0,
-                    100 - width
+                    Number(areaActual?.x || 0),
+                    Number(areaActual?.x || 0) +
+                        Number(areaActual?.width || 100) -
+                        width
                 );
 
             const y =
@@ -1281,8 +1287,10 @@ export default function PersonalizadorProducto({
                             Number(areaActual?.height || 100) -
                             height
                         ) / 2,
-                    0,
-                    100 - height
+                    Number(areaActual?.y || 0),
+                    Number(areaActual?.y || 0) +
+                        Number(areaActual?.height || 100) -
+                        height
                 );
 
             const anterior =
@@ -1346,7 +1354,7 @@ export default function PersonalizadorProducto({
     // =====================================================
     // MOVER LOGO
     //
-    // El diseño no queda limitado al área de impresión.
+    // El diseño debe permanecer dentro del área de impresión.
     // =====================================================
 
     function iniciarMover(e) {
@@ -1449,16 +1457,20 @@ export default function PersonalizadorProducto({
                     clamp(
                         drag.inicial.x +
                             dx,
-                        0,
-                        100 - drag.inicial.width
+                        Number(area.x),
+                        Number(area.x) +
+                            Number(area.width) -
+                            drag.inicial.width
                     ),
 
                 y:
                     clamp(
                         drag.inicial.y +
                             dy,
-                        0,
-                        100 - drag.inicial.height
+                        Number(area.y),
+                        Number(area.y) +
+                            Number(area.height) -
+                            drag.inicial.height
                     )
             }
         );
@@ -1475,8 +1487,7 @@ export default function PersonalizadorProducto({
     //
     // El máximo depende de CHICA/MEDIA/GRANDE.
     //
-    // Pero puede estar ubicado en cualquier parte
-    // del mockup.
+    // Y siempre debe quedar dentro del área configurada.
     // =====================================================
 
     function iniciarResize(e) {
@@ -1566,16 +1577,24 @@ export default function PersonalizadorProducto({
             );
 
         const maxWidthPorPosicion =
-            100 -
+            Number(area.x) +
+            Number(area.width) -
             resize.inicial.x;
 
         const maxHeightPorPosicion =
-            100 -
+            Number(area.y) +
+            Number(area.height) -
             resize.inicial.y;
 
         const maxWidth =
             Math.min(
                 maximoTamano.width,
+                maximoTamano.height *
+                    (
+                        Number(resize.inicial.aspectRatio) ||
+                        resize.inicial.width /
+                            resize.inicial.height
+                    ),
                 maxWidthPorPosicion,
                 maxHeightPorPosicion *
                     (
@@ -2392,11 +2411,24 @@ export default function PersonalizadorProducto({
                     </div>
 
                     {areaActual && (
+                        <div className="medida-actual">
+                            <span>
+                                Mové y ajustá tu diseño dentro del área marcada.
+                            </span>
 
-                        <small className="medida-actual">
-                            Mové y ajustá tu diseño hasta que quede como te guste.
-                        </small>
-
+                            {medidasRealesActuales.ancho > 0 &&
+                            medidasRealesActuales.alto > 0 ? (
+                                <strong>
+                                    Medida aproximada según la categoría de estampa (no varía automáticamente por talle de prenda):{" "}
+                                    {medidasRealesActuales.ancho} ×{" "}
+                                    {medidasRealesActuales.alto} cm
+                                </strong>
+                            ) : (
+                                <span>
+                                    Las medidas en cm se muestran cuando están configuradas para esta vista.
+                                </span>
+                            )}
+                        </div>
                     )}
 
                 </div>
