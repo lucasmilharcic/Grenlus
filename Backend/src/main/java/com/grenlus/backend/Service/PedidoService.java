@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import com.grenlus.backend.DTO.DisenoPedidoResponseDTO;
 import com.grenlus.backend.DTO.PedidoResponseDTO;
 
 import com.grenlus.backend.Entity.AreaPersonalizacion;
+import com.grenlus.backend.Entity.CalibracionEstampa;
 import com.grenlus.backend.Entity.Carteleria;
 import com.grenlus.backend.Entity.DetallePedido;
 import com.grenlus.backend.Entity.DisenoPedido;
@@ -39,6 +41,7 @@ import com.grenlus.backend.Exception.BadRequestException;
 import com.grenlus.backend.Exception.ResourceNotFoundException;
 
 import com.grenlus.backend.Repository.AreaPersonalizacionRepository;
+import com.grenlus.backend.Repository.CalibracionEstampaRepository;
 import com.grenlus.backend.Repository.PedidoRepository;
 import com.grenlus.backend.Repository.ProductoRepository;
 
@@ -51,6 +54,8 @@ public class PedidoService {
 
         private final AreaPersonalizacionRepository areaRepository;
 
+        private final CalibracionEstampaRepository calibracionRepository;
+
         private final UsuarioRepository usuarioRepository;
 
         private final EnvioService envioService;
@@ -59,6 +64,7 @@ public class PedidoService {
                         PedidoRepository pedidoRepository,
                         ProductoRepository productoRepository,
                         AreaPersonalizacionRepository areaRepository,
+                        CalibracionEstampaRepository calibracionRepository,
                         UsuarioRepository usuarioRepository,
                         EnvioService envioService) {
 
@@ -67,6 +73,8 @@ public class PedidoService {
                 this.productoRepository = productoRepository;
 
                 this.areaRepository = areaRepository;
+
+                this.calibracionRepository = calibracionRepository;
 
                 this.usuarioRepository = usuarioRepository;
 
@@ -521,6 +529,7 @@ public class PedidoService {
                                 DisenoPedido diseno = crearDiseno(
                                                 producto,
                                                 detalle.getColor(),
+                                                detalle.getTalle(),
                                                 disenoDTO);
 
                                 detalle.agregarDiseno(
@@ -540,6 +549,8 @@ public class PedidoService {
                         Producto producto,
 
                         String colorDetalle,
+
+                        String talleDetalle,
 
                         DisenoPedidoDTO dto) {
 
@@ -718,6 +729,17 @@ public class PedidoService {
                                         dto,
                                         anchoMax,
                                         altoMax);
+
+                        if (indumentaria.isUsaTalles()) {
+                                calibracionRepository
+                                                .findByIndumentariaIdAndPosicion(
+                                                                indumentaria.getId(),
+                                                                dto.getPosicion())
+                                                .ifPresent(calibracion -> validarMedidaCalibrada(
+                                                                dto,
+                                                                talleDetalle,
+                                                                calibracion));
+                        }
                 }
 
                 return diseno;
@@ -736,7 +758,11 @@ public class PedidoService {
                 if (dto.getPosicionX() == null ||
                                 dto.getPosicionY() == null ||
                                 dto.getAncho() == null ||
-                                dto.getAlto() == null) {
+                                dto.getAlto() == null ||
+                                !Double.isFinite(dto.getPosicionX()) ||
+                                !Double.isFinite(dto.getPosicionY()) ||
+                                !Double.isFinite(dto.getAncho()) ||
+                                !Double.isFinite(dto.getAlto())) {
 
                         throw new BadRequestException(
                                         "El diseÃ±o debe informar posiciÃ³n y tamaÃ±o.");
@@ -796,7 +822,9 @@ public class PedidoService {
                         Double altoMax) {
 
                 if (dto.getAnchoCm() == null ||
-                                dto.getAltoCm() == null) {
+                                dto.getAltoCm() == null ||
+                                !Double.isFinite(dto.getAnchoCm()) ||
+                                !Double.isFinite(dto.getAltoCm())) {
 
                         throw new BadRequestException(
                                         "El diseÃ±o debe informar sus medidas reales.");
@@ -821,6 +849,39 @@ public class PedidoService {
 
                         throw new BadRequestException(
                                         "El diseÃ±o supera el alto mÃ¡ximo permitido.");
+                }
+        }
+
+        private void validarMedidaCalibrada(
+                        DisenoPedidoDTO dto,
+                        String talle,
+                        CalibracionEstampa calibracion) {
+
+                String talleNormalizado = limpiarTexto(talle);
+                BigDecimal distanciaCm = talleNormalizado == null
+                                ? null
+                                : calibracion.getMedidasCmPorTalle().get(
+                                                talleNormalizado.toUpperCase(Locale.ROOT));
+
+                if (distanciaCm == null) {
+                        throw new BadRequestException(
+                                        "Falta calibrar la medida de referencia para el talle "
+                                                        + (talleNormalizado == null ? "seleccionado" : talleNormalizado)
+                                                        + ".");
+                }
+
+                double distanciaPuntos = Math.hypot(
+                                calibracion.getPunto2X() - calibracion.getPunto1X(),
+                                calibracion.getPunto2Y() - calibracion.getPunto1Y());
+
+                double cmPorPuntoPorcentual = distanciaCm.doubleValue() / distanciaPuntos;
+                double anchoEsperado = dto.getAncho() * cmPorPuntoPorcentual;
+                double altoEsperado = dto.getAlto() * cmPorPuntoPorcentual;
+
+                if (Math.abs(dto.getAnchoCm() - anchoEsperado) > 0.11
+                                || Math.abs(dto.getAltoCm() - altoEsperado) > 0.11) {
+                        throw new BadRequestException(
+                                        "Las medidas reales del diseño no coinciden con la calibración del talle seleccionado.");
                 }
         }
 

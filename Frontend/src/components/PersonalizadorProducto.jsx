@@ -7,6 +7,7 @@ import {
 
 import {
     getAreasPersonalizacion,
+    getCalibracionesEstampa,
     obtenerUrlArchivo
 } from "../services/productoService";
 
@@ -350,6 +351,11 @@ export default function PersonalizadorProducto({
     ] = useState([]);
 
     const [
+        calibraciones,
+        setCalibraciones
+    ] = useState([]);
+
+    const [
         cargando,
         setCargando
     ] = useState(true);
@@ -578,6 +584,33 @@ export default function PersonalizadorProducto({
         cargarAreas();
 
     }, [producto.id, producto.usaColores]);
+
+    useEffect(() => {
+        let activa = true;
+
+        async function cargarCalibraciones() {
+            try {
+                const data = await getCalibracionesEstampa(producto.id);
+                if (activa) {
+                    setCalibraciones(Array.isArray(data) ? data : []);
+                }
+            } catch (err) {
+                console.error(err);
+                if (activa) {
+                    setError(
+                        err.message ||
+                        "No se pudieron cargar las medidas por talle."
+                    );
+                }
+            }
+        }
+
+        cargarCalibraciones();
+
+        return () => {
+            activa = false;
+        };
+    }, [producto.id]);
 
     useEffect(() => {
 
@@ -873,6 +906,40 @@ export default function PersonalizadorProducto({
         };
     }
 
+    function obtenerEscalaCmPorcentaje(
+        area = areaActual,
+        talleSeleccionado = talle
+    ) {
+        if (!area || !talleSeleccionado) {
+            return 0;
+        }
+
+        const calibracion = calibraciones.find(
+            item => item.posicion === area.posicion
+        );
+        const medidasPorTalle = calibracion?.medidasCmPorTalle || {};
+        const distanciaCm = Number(
+            medidasPorTalle[String(talleSeleccionado).trim().toUpperCase()] || 0
+        );
+
+        if (
+            !calibracion ||
+            distanciaCm <= 0 ||
+            !Number.isFinite(distanciaCm)
+        ) {
+            return 0;
+        }
+
+        const distanciaPuntos = Math.hypot(
+            Number(calibracion.punto2X) - Number(calibracion.punto1X),
+            Number(calibracion.punto2Y) - Number(calibracion.punto1Y)
+        );
+
+        return distanciaPuntos > 0
+            ? distanciaCm / distanciaPuntos
+            : 0;
+    }
+
     // =====================================================
     // TAMAÑO VISUAL MÁXIMO DEL LOGO
     //
@@ -912,6 +979,26 @@ export default function PersonalizadorProducto({
             obtenerMedidasMaximas(
                 area
             );
+
+        const escalaCmPorcentaje =
+            obtenerEscalaCmPorcentaje(area);
+
+        if (
+            escalaCmPorcentaje > 0 &&
+            medidas.ancho > 0 &&
+            medidas.alto > 0
+        ) {
+            return {
+                width: Math.min(
+                    Number(area.width),
+                    medidas.ancho / escalaCmPorcentaje
+                ),
+                height: Math.min(
+                    Number(area.height),
+                    medidas.alto / escalaCmPorcentaje
+                )
+            };
+        }
 
         /*
          * Si faltan medidas físicas,
@@ -1211,7 +1298,9 @@ export default function PersonalizadorProducto({
 
     }, [
         tamano,
-        areasActivas
+        areasActivas,
+        talle,
+        calibraciones
     ]);
 
     // =====================================================
@@ -1670,6 +1759,20 @@ export default function PersonalizadorProducto({
                 area
             );
 
+        const escalaCmPorcentaje =
+            obtenerEscalaCmPorcentaje(area);
+
+        if (escalaCmPorcentaje > 0) {
+            return {
+                ancho: Number(
+                    (Number(logoVista.width) * escalaCmPorcentaje).toFixed(1)
+                ),
+                alto: Number(
+                    (Number(logoVista.height) * escalaCmPorcentaje).toFixed(1)
+                )
+            };
+        }
+
         if (
             maxVisual.width <= 0 ||
             maxVisual.height <= 0 ||
@@ -1719,8 +1822,17 @@ export default function PersonalizadorProducto({
         }, [
             areaActual,
             logo,
-            tamano
+            tamano,
+            talle,
+            calibraciones
         ]);
+
+    const calibracionActual = calibraciones.find(
+        item => item.posicion === posicion
+    ) || null;
+
+    const escalaCalibradaActual =
+        obtenerEscalaCmPorcentaje(areaActual);
 
     // =====================================================
     // AGREGAR AL CARRITO
@@ -1763,6 +1875,33 @@ export default function PersonalizadorProducto({
                 "Subí al menos un diseño antes de agregar el producto."
             );
 
+            return;
+        }
+
+        const disenoSinCalibracion =
+            producto.usaTalles &&
+            talle
+                ? disenosConArchivo.find(([posicionVista]) => {
+                    const calibracion = calibraciones.find(
+                        item => item.posicion === posicionVista
+                    );
+
+                    if (!calibracion) {
+                        return false;
+                    }
+
+                    const area = areas.find(
+                        item => item.posicion === posicionVista
+                    );
+
+                    return !obtenerEscalaCmPorcentaje(area, talle);
+                })
+                : null;
+
+        if (disenoSinCalibracion) {
+            setError(
+                `Falta calibrar el talle ${talle} para la vista ${disenoSinCalibracion[0].toLowerCase().replaceAll("_", " ")}.`
+            );
             return;
         }
 
@@ -2419,13 +2558,17 @@ export default function PersonalizadorProducto({
                             {medidasRealesActuales.ancho > 0 &&
                             medidasRealesActuales.alto > 0 ? (
                                 <strong>
-                                    Medida aproximada según la categoría de estampa (no varía automáticamente por talle de prenda):{" "}
+                                    {escalaCalibradaActual > 0
+                                        ? `Medida aproximada para talle ${talle}: `
+                                        : "Medida aproximada según límites generales de estampa: "}
                                     {medidasRealesActuales.ancho} ×{" "}
                                     {medidasRealesActuales.alto} cm
                                 </strong>
                             ) : (
                                 <span>
-                                    Las medidas en cm se muestran cuando están configuradas para esta vista.
+                                    {producto.usaTalles && calibracionActual && talle
+                                        ? `Falta cargar la medida de referencia del talle ${talle} para esta vista.`
+                                        : "Las medidas en cm se muestran cuando están configuradas para esta vista y talle."}
                                 </span>
                             )}
                         </div>

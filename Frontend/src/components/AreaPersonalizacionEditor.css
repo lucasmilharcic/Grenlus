@@ -162,6 +162,49 @@
     cursor: nwse-resize;
 }
 
+.area-admin-calibration-point {
+    position: absolute;
+    z-index: 5;
+
+    display: grid;
+    place-items: center;
+
+    width: 24px;
+    height: 24px;
+
+    transform: translate(-50%, -50%);
+
+    color: #ffffff;
+    background: #d44735;
+
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+
+    font-size: 12px;
+    font-weight: 800;
+
+    pointer-events: none;
+}
+
+.area-admin-calibration-line {
+    position: absolute;
+    z-index: 4;
+
+    height: 2px;
+
+    background: rgba(212, 71, 53, 0.9);
+
+    transform-origin: left center;
+
+    pointer-events: none;
+}
+
+.area-admin-calibration-point.second {
+    background: #208149;
+}
+
 .area-admin-coordinates {
     display: flex;
     flex-wrap: wrap;
@@ -210,6 +253,98 @@
 .area-medida-card strong {
     color: #032a5b;
     font-size: 11px;
+}
+
+.area-calibracion-card p {
+    margin: 7px 0;
+
+    color: #71879b;
+
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.area-calibracion-card > small {
+    display: block;
+
+    margin: 8px 0;
+
+    color: #61788d;
+
+    font-size: 9px;
+    line-height: 1.45;
+}
+
+.area-calibracion-puntos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.area-calibracion-puntos button {
+    padding: 7px 9px;
+
+    color: #526d84;
+    background: #f4f7fa;
+
+    border: 1px solid #d8e3ec;
+    border-radius: 6px;
+
+    font: inherit;
+    font-size: 9px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.area-calibracion-puntos button.active {
+    color: #ffffff;
+    background: #064b8a;
+    border-color: #064b8a;
+}
+
+.area-calibracion-puntos button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.area-calibracion-medidas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+
+    margin-top: 10px;
+}
+
+.area-calibracion-medidas label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    color: #61788d;
+    font-size: 9px;
+}
+
+.area-calibracion-medidas input {
+    min-width: 0;
+    padding: 7px;
+
+    border: 1px solid #dbe4ec;
+    border-radius: 6px;
+}
+
+.area-calibracion-save {
+    width: 100%;
+
+    margin-top: 12px;
+    padding: 9px;
+
+    cursor: pointer;
+}
+
+.area-calibracion-save:disabled {
+    opacity: 0.6;
+    cursor: wait;
 }
 
 .area-medida-grid {

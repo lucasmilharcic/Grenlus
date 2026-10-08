@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
@@ -67,6 +69,15 @@ public class Indumentaria extends Producto {
     )
     @OrderBy("id ASC")
     private List<AreaPersonalizacion> areasPersonalizacion =
+            new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(
+            mappedBy = "indumentaria",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<CalibracionEstampa> calibracionesEstampa =
             new ArrayList<>();
 
     public void agregarAreaPersonalizacion(

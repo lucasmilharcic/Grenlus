@@ -744,6 +744,54 @@ export async function getAreaPersonalizacion(
     return response.json();
 }
 
+export async function getCalibracionesEstampa(
+    indumentariaId
+) {
+    const response = await fetch(
+        `${API_URL}/indumentarias/${indumentariaId}/calibraciones-estampa`
+    );
+
+    if (!response.ok) {
+        throw new Error(
+            await leerError(
+                response,
+                "No se pudieron cargar las calibraciones de estampa."
+            )
+        );
+    }
+
+    return response.json();
+}
+
+export async function guardarCalibracionEstampa(
+    indumentariaId,
+    posicion,
+    calibracion
+) {
+    const response = await fetch(
+        `${API_URL}/indumentarias/${indumentariaId}/calibraciones-estampa/${posicion}`,
+        {
+            method: "PUT",
+            headers: {
+                ...getAuthHeaders(),
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(calibracion)
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(
+            await leerError(
+                response,
+                "No se pudo guardar la calibración de estampa."
+            )
+        );
+    }
+
+    return response.json();
+}
+
 function construirAreaFormData({
     posicion,
     color,

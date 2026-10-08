@@ -4,6 +4,8 @@ import {
     crearAreaPersonalizacion,
     editarAreaPersonalizacion,
     eliminarAreaPersonalizacion,
+    getCalibracionesEstampa,
+    guardarCalibracionEstampa,
     obtenerUrlArchivo
 } from "../services/productoService";
 
@@ -23,6 +25,10 @@ const AREA_INICIAL = {
     height: 50
 };
 
+const TALLES_ADULTOS = ["XS", "S", "M", "L", "XL", "XXL"];
+const TALLES_INFANTILES = ["4", "6", "8", "10", "12", "14", "16", "18"];
+const TALLES_ESPECIALES = ["T6", "T8", "T10", "T14", "T16"];
+
 function numero(valor) {
     const parsed = Number(valor);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -30,6 +36,22 @@ function numero(valor) {
 
 function limitar(valor, min, max) {
     return Math.min(Math.max(valor, min), max);
+}
+
+function obtenerTallesCalibrables(producto) {
+    if (!producto.usaTalles) {
+        return [];
+    }
+
+    return [
+        ...(producto.incluyeTallesInfantiles !== false
+            ? TALLES_INFANTILES
+            : []),
+        ...(producto.incluyeTallesEspeciales === true
+            ? TALLES_ESPECIALES
+            : []),
+        ...TALLES_ADULTOS
+    ];
 }
 
 export default function AreaPersonalizacionEditor({
@@ -51,6 +73,10 @@ export default function AreaPersonalizacionEditor({
 
     const [area, setArea] = useState(AREA_INICIAL);
 
+    const [calibraciones, setCalibraciones] = useState([]);
+    const [borradoresCalibracion, setBorradoresCalibracion] = useState({});
+    const [puntosPendientes, setPuntosPendientes] = useState({});
+
     const [anchoChicaCm, setAnchoChicaCm] = useState("");
     const [altoChicaCm, setAltoChicaCm] = useState("");
 
@@ -64,6 +90,72 @@ export default function AreaPersonalizacionEditor({
 
     const [error, setError] = useState("");
     const [mensaje, setMensaje] = useState("");
+
+    useEffect(() => {
+        let activa = true;
+
+        async function cargarCalibraciones() {
+            try {
+                const data = await getCalibracionesEstampa(producto.id);
+                if (activa) {
+                    setCalibraciones(Array.isArray(data) ? data : []);
+                }
+            } catch (err) {
+                console.error(err);
+                if (activa) {
+                    setError(
+                        err.message ||
+                        "No se pudieron cargar las calibraciones por talle."
+                    );
+                }
+            }
+        }
+
+        cargarCalibraciones();
+
+        return () => {
+            activa = false;
+        };
+    }, [producto.id]);
+
+    const calibracionActual = useMemo(
+        () => calibraciones.find(item => item.posicion === posicion) || null,
+        [calibraciones, posicion]
+    );
+
+    const borradorCalibracion = borradoresCalibracion[posicion] || {};
+    const punto1 = borradorCalibracion.punto1 || (
+        calibracionActual
+            ? { x: numero(calibracionActual.punto1X), y: numero(calibracionActual.punto1Y) }
+            : null
+    );
+    const punto2 = borradorCalibracion.punto2 || (
+        calibracionActual
+            ? { x: numero(calibracionActual.punto2X), y: numero(calibracionActual.punto2Y) }
+            : null
+    );
+    const medidasCmPorTalle =
+        borradorCalibracion.medidasCmPorTalle ||
+        calibracionActual?.medidasCmPorTalle ||
+        {};
+    const puntoPendiente = puntosPendientes[posicion] || null;
+
+    function actualizarBorradorCalibracion(cambios) {
+        setBorradoresCalibracion(actuales => ({
+            ...actuales,
+            [posicion]: {
+                ...actuales[posicion],
+                ...cambios
+            }
+        }));
+    }
+
+    function actualizarPuntoPendiente(valor) {
+        setPuntosPendientes(actuales => ({
+            ...actuales,
+            [posicion]: valor
+        }));
+    }
 
     const coloresConfigurados = useMemo(() => {
 
@@ -249,6 +341,93 @@ export default function AreaPersonalizacionEditor({
         obtenerUrlArchivo(
             areaExistente?.imagenMockup
         );
+
+    function marcarPunto(e) {
+        if (!puntoPendiente || !editorRef.current) {
+            return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const rect = editorRef.current.getBoundingClientRect();
+        const punto = {
+            x: Number(limitar(((e.clientX - rect.left) / rect.width) * 100, 0, 100).toFixed(3)),
+            y: Number(limitar(((e.clientY - rect.top) / rect.height) * 100, 0, 100).toFixed(3))
+        };
+
+        if (puntoPendiente === 1) {
+            actualizarBorradorCalibracion({ punto1: punto });
+            actualizarPuntoPendiente(2);
+        } else {
+            actualizarBorradorCalibracion({ punto2: punto });
+            actualizarPuntoPendiente(null);
+        }
+    }
+
+    async function guardarCalibracion() {
+        setError("");
+        setMensaje("");
+
+        if (!imagenActualUrl || !punto1 || !punto2) {
+            setError("Subí una foto y marcá los dos extremos de una medida conocida.");
+            return;
+        }
+
+        const talles = obtenerTallesCalibrables(producto);
+        const medidas = {};
+        const faltantes = [];
+
+        talles.forEach(talle => {
+            const valor = Number(medidasCmPorTalle[talle]);
+            if (!Number.isFinite(valor) || valor <= 0) {
+                faltantes.push(talle);
+            } else {
+                medidas[talle] = valor;
+            }
+        });
+
+        if (faltantes.length > 0) {
+            setError(`Completá la distancia en centímetros para estos talles: ${faltantes.join(", ")}.`);
+            return;
+        }
+
+        try {
+            setGuardando(true);
+            const guardada = await guardarCalibracionEstampa(
+                producto.id,
+                posicion,
+                {
+                    punto1X: punto1.x,
+                    punto1Y: punto1.y,
+                    punto2X: punto2.x,
+                    punto2Y: punto2.y,
+                    medidasCmPorTalle: medidas
+                }
+            );
+
+            setCalibraciones(actuales => [
+                ...actuales.filter(item => item.posicion !== posicion),
+                guardada
+            ]);
+            setBorradoresCalibracion(actuales => {
+                const copia = { ...actuales };
+                delete copia[posicion];
+                return copia;
+            });
+            setMensaje(
+                `Calibración de ${posicion.toLowerCase()} guardada para todos los colores.`
+            );
+        } catch (err) {
+            console.error(err);
+            setError(
+                err.message ||
+                "No se pudo guardar la calibración."
+            );
+        } finally {
+            setGuardando(false);
+        }
+    }
 
     function seleccionarImagen(archivo) {
         if (!archivo) {
@@ -759,6 +938,7 @@ export default function AreaPersonalizacionEditor({
                     <div
                         ref={editorRef}
                         className="area-admin-canvas"
+                        onPointerDownCapture={marcarPunto}
                     >
                         {imagenActualUrl ? (
                             <img
@@ -822,6 +1002,48 @@ export default function AreaPersonalizacionEditor({
                                 />
                             </div>
                         )}
+
+                        {punto1 && punto2 && (
+                            <div
+                                className="area-admin-calibration-line"
+                                style={{
+                                    left: `${punto1.x}%`,
+                                    top: `${punto1.y}%`,
+                                    width: `${Math.hypot(
+                                        punto2.x - punto1.x,
+                                        punto2.y - punto1.y
+                                    )}%`,
+                                    transform: `rotate(${Math.atan2(
+                                        punto2.y - punto1.y,
+                                        punto2.x - punto1.x
+                                    )}rad)`
+                                }}
+                            />
+                        )}
+
+                        {punto1 && (
+                            <div
+                                className="area-admin-calibration-point"
+                                style={{
+                                    left: `${punto1.x}%`,
+                                    top: `${punto1.y}%`
+                                }}
+                            >
+                                1
+                            </div>
+                        )}
+
+                        {punto2 && (
+                            <div
+                                className="area-admin-calibration-point second"
+                                style={{
+                                    left: `${punto2.x}%`,
+                                    top: `${punto2.y}%`
+                                }}
+                            >
+                                2
+                            </div>
+                        )}
                     </div>
 
                     <div className="area-admin-coordinates">
@@ -876,6 +1098,74 @@ export default function AreaPersonalizacionEditor({
                             }
                         />
                     </div>
+
+                    {producto.usaTalles && (
+                        <div className="area-medida-card area-calibracion-card">
+                            <strong>
+                                Calibración por talle · compartida entre colores
+                            </strong>
+                            <p>
+                                Marcá dos extremos de una medida de la prenda (por ejemplo, ancho de pecho de costura a costura, medido en plano) e ingresá esa distancia por talle. Se comparte entre colores; usá fotos con el mismo encuadre.
+                            </p>
+
+                            <div className="area-calibracion-puntos">
+                                <button
+                                    type="button"
+                                    className={puntoPendiente === 1 ? "active" : ""}
+                                    onClick={() => actualizarPuntoPendiente(1)}
+                                    disabled={!imagenActualUrl || guardando}
+                                >
+                                    {punto1 ? "Cambiar punto 1" : "Marcar punto 1"}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={puntoPendiente === 2 ? "active" : ""}
+                                    onClick={() => actualizarPuntoPendiente(2)}
+                                    disabled={!imagenActualUrl || guardando}
+                                >
+                                    {punto2 ? "Cambiar punto 2" : "Marcar punto 2"}
+                                </button>
+                            </div>
+
+                            <small>
+                                {puntoPendiente
+                                    ? `Tocá la foto para ubicar el punto ${puntoPendiente}.`
+                                    : "Elegí una distancia fácil de medir, por ejemplo, el ancho del pecho."}
+                            </small>
+
+                            <div className="area-calibracion-medidas">
+                                {obtenerTallesCalibrables(producto).map(talle => (
+                                    <label key={talle}>
+                                        Talle {talle} · cm
+                                        <input
+                                            type="number"
+                                            min="0.1"
+                                            max="300"
+                                            step="0.1"
+                                            value={medidasCmPorTalle[talle] ?? ""}
+                                            onChange={e => actualizarBorradorCalibracion({
+                                                medidasCmPorTalle: {
+                                                    ...medidasCmPorTalle,
+                                                    [talle]: e.target.value
+                                                }
+                                            })}
+                                        />
+                                    </label>
+                                ))}
+                            </div>
+
+                            <button
+                                type="button"
+                                className="area-admin-save area-calibracion-save"
+                                onClick={guardarCalibracion}
+                                disabled={guardando}
+                            >
+                                {guardando
+                                    ? "Guardando..."
+                                    : "Guardar calibración de esta vista"}
+                            </button>
+                        </div>
+                    )}
 
                     {producto.permiteEstampaChica && (
                         <div className="area-medida-card">

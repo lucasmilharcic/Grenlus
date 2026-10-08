@@ -23,6 +23,7 @@ import com.grenlus.backend.Entity.Usuario;
 import com.grenlus.backend.Exception.BadRequestException;
 import com.grenlus.backend.Exception.ResourceNotFoundException;
 import com.grenlus.backend.Repository.AreaPersonalizacionRepository;
+import com.grenlus.backend.Repository.CalibracionEstampaRepository;
 import com.grenlus.backend.Repository.PedidoRepository;
 import com.grenlus.backend.Repository.ProductoRepository;
 import com.grenlus.backend.Repository.UsuarioRepository;
@@ -40,6 +41,7 @@ class PedidoInvitadoServiceTest {
                 pedidoRepository,
                 mock(ProductoRepository.class),
                 mock(AreaPersonalizacionRepository.class),
+                mock(CalibracionEstampaRepository.class),
                 mock(UsuarioRepository.class),
                 mock(EnvioService.class)
         );
