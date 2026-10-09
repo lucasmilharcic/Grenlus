@@ -21,6 +21,10 @@ import {
 } from "../context/CarritoContext";
 
 import {
+    getColores
+} from "../services/colorService";
+
+import {
     GRUPOS_DE_TALLES,
     normalizarTalle,
     tallesDelProducto
@@ -389,6 +393,8 @@ export default function PersonalizadorProducto({ producto }) {
 
     const [areas, setAreas] = useState([]);
     const [calibraciones, setCalibraciones] = useState([]);
+
+    const [fichasDeColor, setFichasDeColor] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [posicion, setPosicion] = useState(null);
     const [disenosPorVista, setDisenosPorVista] = useState({});
@@ -419,7 +425,7 @@ export default function PersonalizadorProducto({ producto }) {
                 return null;
             }
 
-            return (producto.colores || []).find(
+            return fichasDeColor.find(
                 ficha =>
                     String(ficha?.nombre || "")
                         .trim()
@@ -427,7 +433,7 @@ export default function PersonalizadorProducto({ producto }) {
                     String(nombre).trim().toLowerCase()
             ) || null;
         },
-        [producto.colores]
+        [fichasDeColor]
     );
 
     const colorDisponibleEnTalle = useCallback(
@@ -593,6 +599,44 @@ export default function PersonalizadorProducto({ producto }) {
             activa = false;
         };
     }, [producto.id]);
+
+    /*
+     * Las fichas de color (adicional y talles donde no está)
+     * se piden aparte: no vienen dentro del producto.
+     */
+    useEffect(() => {
+        let activa = true;
+
+        async function cargarColores() {
+
+            if (!producto.usaColores) {
+                return;
+            }
+
+            try {
+                const data = await getColores(producto.id);
+
+                if (activa) {
+                    setFichasDeColor(
+                        Array.isArray(data) ? data : []
+                    );
+                }
+            } catch (err) {
+                /*
+                 * Sin fichas el producto se sigue pudiendo
+                 * comprar: los colores quedan sin adicional
+                 * y sin restricciones.
+                 */
+                console.error(err);
+            }
+        }
+
+        cargarColores();
+
+        return () => {
+            activa = false;
+        };
+    }, [producto.id, producto.usaColores]);
 
     useEffect(() => {
         if (areasActivas.length === 0) {

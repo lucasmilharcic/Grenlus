@@ -118,7 +118,13 @@ public class Indumentaria extends Producto {
     /*
      * Colores con su adicional de precio y los talles
      * donde no están disponibles.
+     *
+     * No viajan dentro del producto: se piden aparte en
+     * /indumentarias/{id}/colores. Si se serializaran acá,
+     * al no estar en el grafo de carga quedarían perezosos
+     * y romperían el JSON (open-in-view está apagado).
      */
+    @JsonIgnore
     @OneToMany(
             mappedBy = "indumentaria",
             cascade = CascadeType.ALL,
