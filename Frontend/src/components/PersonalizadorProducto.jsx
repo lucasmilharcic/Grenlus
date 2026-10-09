@@ -1,4 +1,5 @@
 import {
+    useCallback,
     useEffect,
     useMemo,
     useRef,
@@ -21,6 +22,7 @@ import {
 
 import {
     GRUPOS_DE_TALLES,
+    normalizarTalle,
     tallesDelProducto
 } from "../constants/talles";
 
@@ -405,6 +407,57 @@ export default function PersonalizadorProducto({ producto }) {
     const [mensaje, setMensaje] = useState("");
     const [error, setError] = useState("");
 
+    /*
+     * Ficha del color: adicional de precio y talles donde
+     * no está disponible. Un color sin ficha no cobra nada
+     * y está en todos los talles.
+     */
+    const fichaDeColor = useCallback(
+        nombre => {
+
+            if (!nombre) {
+                return null;
+            }
+
+            return (producto.colores || []).find(
+                ficha =>
+                    String(ficha?.nombre || "")
+                        .trim()
+                        .toLowerCase() ===
+                    String(nombre).trim().toLowerCase()
+            ) || null;
+        },
+        [producto.colores]
+    );
+
+    const colorDisponibleEnTalle = useCallback(
+        (nombre, talleElegido) => {
+
+            const ficha = fichaDeColor(nombre);
+
+            if (!ficha) {
+                return true;
+            }
+
+            if (ficha.activo === false) {
+                return false;
+            }
+
+            if (!talleElegido) {
+                return true;
+            }
+
+            return !(ficha.tallesExcluidos || []).includes(
+                normalizarTalle(talleElegido)
+            );
+        },
+        [fichaDeColor]
+    );
+
+    /*
+     * Colores con mockup cargado, filtrados por el talle
+     * elegido.
+     */
     const coloresDisponibles = useMemo(() => {
         if (!producto.usaColores) {
             return [];
@@ -420,8 +473,31 @@ export default function PersonalizadorProducto({ producto }) {
             }
         });
 
-        return Array.from(unicos.values());
-    }, [areas, producto.usaColores]);
+        return Array.from(unicos.values()).filter(nombre =>
+            colorDisponibleEnTalle(nombre, talle)
+        );
+    }, [
+        areas,
+        producto.usaColores,
+        colorDisponibleEnTalle,
+        talle
+    ]);
+
+    /*
+     * Al cambiar de talle soltamos el color si no está
+     * disponible en el talle nuevo.
+     */
+    function elegirTalle(nuevoTalle) {
+
+        setTalle(nuevoTalle);
+
+        if (
+            color &&
+            !colorDisponibleEnTalle(color, nuevoTalle)
+        ) {
+            setColor("");
+        }
+    }
 
     const areasActivas = useMemo(() => {
         if (!producto.usaColores) {
@@ -809,10 +885,17 @@ export default function PersonalizadorProducto({ producto }) {
             ? Number(producto.precioAdicionalTalleEspecial || 0)
             : 0;
 
+    /*
+     * Lo que suma el color elegido.
+     */
+    const precioAdicionalColor =
+        Number(fichaDeColor(color)?.precioAdicional || 0);
+
     const precioUnitario =
         Number(producto.precioBase || 0) +
         obtenerAdicional() +
-        precioAdicionalTalle;
+        precioAdicionalTalle +
+        precioAdicionalColor;
 
     const cantidadEnCarrito = items.reduce(
         (cantidadTotal, item) =>
@@ -837,7 +920,8 @@ export default function PersonalizadorProducto({ producto }) {
                     : 1
             ) +
         obtenerAdicional() +
-        precioAdicionalTalle;
+        precioAdicionalTalle +
+        precioAdicionalColor;
 
     const medidasRealesActuales = useMemo(() => {
         return calcularMedidasReales(
@@ -1663,7 +1747,7 @@ export default function PersonalizadorProducto({ producto }) {
 
                         <select
                             value={talle}
-                            onChange={e => setTalle(e.target.value)}
+                            onChange={e => elegirTalle(e.target.value)}
                         >
                             <option value="">Elegir talle</option>
 
@@ -1722,6 +1806,18 @@ export default function PersonalizadorProducto({ producto }) {
                                     }}
                                 >
                                     {item}
+
+                                    {Number(
+                                        fichaDeColor(item)
+                                            ?.precioAdicional || 0
+                                    ) > 0 && (
+                                        <span className="color-adicional">
+                                            +{moneda(
+                                                fichaDeColor(item)
+                                                    .precioAdicional
+                                            )}
+                                        </span>
+                                    )}
                                 </button>
                             ))}
                         </div>

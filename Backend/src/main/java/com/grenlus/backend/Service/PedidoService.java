@@ -477,9 +477,23 @@ public class PedidoService {
                                 producto,
                                 detalleDTO.getTalle());
 
+                /*
+                 * El talle y el color se validan contra lo que el
+                 * producto ofrece hoy, no contra lo que mande React.
+                 */
+                validarTalleYColor(
+                                producto,
+                                detalleDTO.getTalle(),
+                                detalle.getColor());
+
+                BigDecimal precioAdicionalColor = calcularPrecioAdicionalColor(
+                                producto,
+                                detalle.getColor());
+
                 BigDecimal precioUnitario = precioBaseMayorista
                                 .add(precioEstampa)
-                                .add(precioAdicionalTalle);
+                                .add(precioAdicionalTalle)
+                                .add(precioAdicionalColor);
 
                 BigDecimal subtotal = precioUnitario.multiply(
                                 BigDecimal.valueOf(
@@ -494,6 +508,9 @@ public class PedidoService {
 
                 detalle.setPrecioAdicionalTalle(
                                 precioAdicionalTalle);
+
+                detalle.setPrecioAdicionalColor(
+                                precioAdicionalColor);
 
                 detalle.setPrecioUnitario(
                                 precioUnitario);
@@ -1126,6 +1143,65 @@ public class PedidoService {
                 return indumentaria.calcularPrecioAdicionalTalleEspecial(talle);
         }
 
+        private BigDecimal calcularPrecioAdicionalColor(
+
+                        Producto producto,
+
+                        String color) {
+
+                if (!(producto instanceof Indumentaria indumentaria)) {
+                        return BigDecimal.ZERO;
+                }
+
+                return indumentaria.calcularPrecioAdicionalColor(color);
+        }
+
+        // =========================================================
+        // TALLE Y COLOR
+        // =========================================================
+
+        private void validarTalleYColor(
+
+                        Producto producto,
+
+                        String talle,
+
+                        String color) {
+
+                if (!(producto instanceof Indumentaria indumentaria)) {
+                        return;
+                }
+
+                String talleLimpio = limpiarTexto(talle);
+
+                if (indumentaria.isUsaTalles()
+                                && talleLimpio != null
+                                && !indumentaria.ofreceTalle(talleLimpio)) {
+
+                        throw new BadRequestException(
+                                        "El talle " + talleLimpio
+                                                        + " ya no está disponible para "
+                                                        + producto.getNombre() + ".");
+                }
+
+                if (color == null) {
+                        return;
+                }
+
+                if (!indumentaria.colorDisponibleParaTalle(
+                                color,
+                                talleLimpio)) {
+
+                        throw new BadRequestException(
+                                        "El color " + color
+                                                        + " no está disponible"
+                                                        + (talleLimpio != null
+                                                                        ? " en el talle " + talleLimpio
+                                                                        : "")
+                                                        + ".");
+                }
+        }
+
         private void limpiarDatosEnvio(
                         Pedido pedido) {
 
@@ -1501,6 +1577,9 @@ public class PedidoService {
 
                 dto.setPrecioAdicionalTalle(
                                 detalle.getPrecioAdicionalTalle());
+
+                dto.setPrecioAdicionalColor(
+                                detalle.getPrecioAdicionalColor());
 
                 dto.setPrecioUnitario(
                                 detalle.getPrecioUnitario());

@@ -36,6 +36,7 @@ public class DetallePedidoResponseDTO {
     private BigDecimal precioEstampa;
 
     private BigDecimal precioAdicionalTalle;
+    private BigDecimal precioAdicionalColor;
 
     private BigDecimal precioUnitario;
 

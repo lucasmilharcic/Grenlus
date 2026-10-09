@@ -61,10 +61,13 @@ public class DetallePedido {
 
     private BigDecimal precioAdicionalTalle;
 
+    private BigDecimal precioAdicionalColor;
+
     /**
      * Precio final unitario.
      *
      * precioBase + precioEstampa + precioAdicionalTalle
+     * + precioAdicionalColor
      */
     private BigDecimal precioUnitario;
 

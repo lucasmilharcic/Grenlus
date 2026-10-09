@@ -85,6 +85,70 @@ class ProductoTest {
     }
 
     @Test
+    void elColorSumaSuAdicionalYRespetaLosTallesExcluidos() {
+
+        Indumentaria producto = new Indumentaria();
+        producto.setUsaTalles(true);
+        producto.getTallesDisponibles()
+                .addAll(List.of("S", "M", "L", "XL"));
+
+        ColorProducto negro = new ColorProducto();
+        negro.setNombre("Negro");
+        negro.setPrecioAdicional(new BigDecimal("1500"));
+        negro.getTallesExcluidos().addAll(List.of("XL"));
+
+        producto.agregarColor(negro);
+
+        assertThat(producto.calcularPrecioAdicionalColor("Negro"))
+                .isEqualByComparingTo("1500");
+
+        // el nombre no distingue mayusculas ni espacios
+        assertThat(producto.calcularPrecioAdicionalColor("  negro "))
+                .isEqualByComparingTo("1500");
+
+        assertThat(producto.colorDisponibleParaTalle("Negro", "M"))
+                .isTrue();
+
+        assertThat(producto.colorDisponibleParaTalle("Negro", "XL"))
+                .isFalse();
+    }
+
+    @Test
+    void unColorApagadoNoSeOfreceNiCobra() {
+
+        Indumentaria producto = new Indumentaria();
+
+        ColorProducto verde = new ColorProducto();
+        verde.setNombre("Verde");
+        verde.setPrecioAdicional(new BigDecimal("900"));
+        verde.setActivo(false);
+
+        producto.agregarColor(verde);
+
+        assertThat(producto.calcularPrecioAdicionalColor("Verde"))
+                .isEqualByComparingTo("0");
+
+        assertThat(producto.colorDisponibleParaTalle("Verde", "M"))
+                .isFalse();
+    }
+
+    @Test
+    void unColorSinFichaSigueDisponibleYSinAdicional() {
+
+        /*
+         * Los colores salen de los mockups del area: si nadie
+         * les cargo ficha, no cobran ni se restringen.
+         */
+        Indumentaria producto = new Indumentaria();
+
+        assertThat(producto.calcularPrecioAdicionalColor("Blanco"))
+                .isEqualByComparingTo("0");
+
+        assertThat(producto.colorDisponibleParaTalle("Blanco", "M"))
+                .isTrue();
+    }
+
+    @Test
     void elProductoOfreceSoloLosTallesElegidos() {
 
         Indumentaria producto = new Indumentaria();

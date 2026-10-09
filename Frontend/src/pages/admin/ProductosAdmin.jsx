@@ -13,6 +13,8 @@ import {
     tallesDelProducto
 } from "../../constants/talles";
 
+import ColoresEditor from "../../components/ColoresEditor";
+
 import AreaPersonalizacionEditor
     from "../../components/AreaPersonalizacionEditor";
 
@@ -3479,6 +3481,25 @@ export default function ProductosAdmin() {
                                             }
                                         />
 
+                                    )}
+
+                                    {!cargandoAreas &&
+                                        editUsaColores && (
+
+                                        <ColoresEditor
+                                            producto={{
+                                                ...productoEditando,
+
+                                                usaTalles:
+                                                    editUsaTalles,
+
+                                                tallesOfrecidos:
+                                                    editTallesDisponibles
+                                            }}
+                                            areas={
+                                                areasPersonalizacion
+                                            }
+                                        />
                                     )}
 
                                 </div>

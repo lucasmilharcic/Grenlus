@@ -103,6 +103,19 @@ public class Indumentaria extends Producto {
     private List<AreaPersonalizacion> areasPersonalizacion =
             new ArrayList<>();
 
+    /*
+     * Colores con su adicional de precio y los talles
+     * donde no están disponibles.
+     */
+    @OneToMany(
+            mappedBy = "indumentaria",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @OrderBy("id ASC")
+    private List<ColorProducto> colores =
+            new ArrayList<>();
+
     @JsonIgnore
     @OneToMany(
             mappedBy = "indumentaria",
@@ -188,6 +201,70 @@ public class Indumentaria extends Producto {
 
         return CatalogoTalles.esEspecial(talle)
                 && ofreceTalle(talle);
+    }
+
+    // =========================================================
+    // COLORES
+    // =========================================================
+
+    public void agregarColor(ColorProducto color) {
+
+        colores.add(color);
+
+        color.setIndumentaria(this);
+    }
+
+    public void eliminarColor(ColorProducto color) {
+
+        colores.remove(color);
+
+        color.setIndumentaria(null);
+    }
+
+    public ColorProducto buscarColor(String nombre) {
+
+        if (nombre == null || colores == null) {
+            return null;
+        }
+
+        return colores.stream()
+                .filter(color -> color.tieneNombre(nombre))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /*
+     * Lo que suma el color sobre el precio base.
+     *
+     * Un color sin ficha cargada no suma nada.
+     */
+    public BigDecimal calcularPrecioAdicionalColor(
+            String nombre) {
+
+        ColorProducto color = buscarColor(nombre);
+
+        if (color == null
+                || !color.isActivo()
+                || color.getPrecioAdicional() == null) {
+
+            return BigDecimal.ZERO;
+        }
+
+        return color.getPrecioAdicional();
+    }
+
+    /*
+     * Si el color no tiene ficha lo damos por disponible:
+     * sale de los mockups del área y nadie lo restringió.
+     */
+    public boolean colorDisponibleParaTalle(
+            String nombre,
+            String talle) {
+
+        ColorProducto color = buscarColor(nombre);
+
+        return color == null
+                || color.disponibleParaTalle(talle);
     }
 
     public BigDecimal calcularPrecioAdicionalTalleEspecial(
