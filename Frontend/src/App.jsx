@@ -1,7 +1,8 @@
 ﻿import {
     BrowserRouter,
     Routes,
-    Route
+    Route,
+    Navigate
 } from "react-router-dom";
 
 import {
@@ -10,8 +11,6 @@ import {
 
 import Home from "./pages/Home";
 import Productos from "./pages/Productos";
-import Indumentaria from "./pages/Indumentaria";
-import Carteleria from "./pages/Carteleria";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
@@ -52,12 +51,32 @@ export default function App() {
 
                     <Route
                         path="/indumentaria"
-                        element={<Indumentaria />}
+                        element={
+                            <Navigate
+                                to="/productos?filtro=indumentaria"
+                                replace
+                            />
+                        }
+                    />
+
+                    <Route
+                        path="/articulos"
+                        element={
+                            <Navigate
+                                to="/productos?filtro=articulos"
+                                replace
+                            />
+                        }
                     />
 
                     <Route
                         path="/carteleria"
-                        element={<Carteleria />}
+                        element={
+                            <Navigate
+                                to="/productos?filtro=carteleria"
+                                replace
+                            />
+                        }
                     />
 
                     <Route

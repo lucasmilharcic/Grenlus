@@ -14,6 +14,8 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -28,6 +30,16 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 public class Indumentaria extends Producto {
+
+    /*
+     * Prenda o artículo (taza, botella, llavero).
+     *
+     * Comparten motor; solo cambia cómo se agrupan en la
+     * tienda. Null en los productos viejos: se leen como
+     * indumentaria.
+     */
+    @Enumerated(EnumType.STRING)
+    private TipoIndumentaria tipo = TipoIndumentaria.INDUMENTARIA;
 
     private boolean usaTalles;
 
@@ -206,6 +218,13 @@ public class Indumentaria extends Producto {
     // =========================================================
     // COLORES
     // =========================================================
+
+    public TipoIndumentaria getTipo() {
+
+        return tipo != null
+                ? tipo
+                : TipoIndumentaria.INDUMENTARIA;
+    }
 
     public void agregarColor(ColorProducto color) {
 

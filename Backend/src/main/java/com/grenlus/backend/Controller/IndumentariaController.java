@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.grenlus.backend.Entity.CatalogoTalles;
 import com.grenlus.backend.Entity.Indumentaria;
+import com.grenlus.backend.Entity.TipoIndumentaria;
 import com.grenlus.backend.Exception.BadRequestException;
 import com.grenlus.backend.Exception.ResourceNotFoundException;
 import com.grenlus.backend.Service.IndumentariaService;
@@ -140,7 +141,13 @@ public class IndumentariaController {
             /*
              * CONFIGURACIÓN
              */
-            @RequestParam(
+                        @RequestParam(
+                    value = "tipo",
+                    required = false
+            )
+            String tipo,
+
+@RequestParam(
                     value = "usaTalles",
                     required = false
             )
@@ -244,6 +251,8 @@ public class IndumentariaController {
                 largoEnvioCm,
                 anchoEnvioCm,
                 altoEnvioCm,
+                tipo,
+
                 usaTalles,
                 incluyeTallesInfantiles,
                 incluyeTallesEspeciales,
@@ -352,7 +361,13 @@ public class IndumentariaController {
             )
             Integer altoEnvioCm,
 
-            @RequestParam(
+                        @RequestParam(
+                    value = "tipo",
+                    required = false
+            )
+            String tipo,
+
+@RequestParam(
                     value = "usaTalles",
                     required = false
             )
@@ -459,6 +474,8 @@ public class IndumentariaController {
                 largoEnvioCm,
                 anchoEnvioCm,
                 altoEnvioCm,
+                tipo,
+
                 usaTalles,
                 incluyeTallesInfantiles,
                 incluyeTallesEspeciales,
@@ -518,6 +535,9 @@ public class IndumentariaController {
             Integer largoEnvioCm,
             Integer anchoEnvioCm,
             Integer altoEnvioCm,
+
+            String tipo,
+
 
             Boolean usaTalles,
             Boolean incluyeTallesInfantiles,
@@ -587,6 +607,30 @@ public class IndumentariaController {
         indumentaria.setLargoEnvioCm(largoEnvioCm);
         indumentaria.setAnchoEnvioCm(anchoEnvioCm);
         indumentaria.setAltoEnvioCm(altoEnvioCm);
+
+        /*
+         * Sin dato dejamos lo que ya tenía: los productos
+         * viejos son indumentaria.
+         */
+        if (tipo != null && !tipo.isBlank()) {
+
+            try {
+
+                indumentaria.setTipo(
+                        TipoIndumentaria.valueOf(
+                                tipo.trim().toUpperCase()));
+
+            } catch (IllegalArgumentException e) {
+
+                throw new BadRequestException(
+                        "Tipo de producto inválido: " + tipo + ".");
+            }
+
+        } else if (indumentaria.getTipo() == null) {
+
+            indumentaria.setTipo(
+                    TipoIndumentaria.INDUMENTARIA);
+        }
 
         indumentaria.setUsaTalles(
                 Boolean.TRUE.equals(

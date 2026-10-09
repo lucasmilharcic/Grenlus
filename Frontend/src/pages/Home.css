@@ -750,3 +750,35 @@
 main {
     padding-bottom: 60px;
 }
+/* =====================================================
+   DESTACADOS: CARGA AL BAJAR
+===================================================== */
+
+.products-sentinel {
+    display: flex;
+    justify-content: center;
+
+    padding: 28px 0 8px;
+
+    min-height: 1px;
+}
+
+.products-sentinel button {
+    padding: 12px 26px;
+
+    color: #07509a;
+    background: #ffffff;
+
+    border: 1px solid #cfdfec;
+    border-radius: 999px;
+
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.products-sentinel button:hover {
+    background: #eef5fb;
+}

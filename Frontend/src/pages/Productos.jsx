@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ProductCard from "../components/ProductCard";
@@ -10,32 +12,82 @@ import {
 
 import "./Productos.css";
 
-export default function Productos({ tipo = "indumentaria" }) {
+/*
+ * Un solo catálogo: indumentaria, artículos y cartelería
+ * salen juntos y se separan con estos filtros.
+ */
+const FILTROS = [
+    {
+        id: "todos",
+        etiqueta: "Todo",
+        titulo: "Nuestros productos",
+        descripcion:
+            "Indumentaria, artículos y cartelería personalizados."
+    },
+    {
+        id: "indumentaria",
+        etiqueta: "Indumentaria",
+        titulo: "Indumentaria",
+        descripcion: "Remeras, buzos y prendas personalizadas."
+    },
+    {
+        id: "articulos",
+        etiqueta: "Artículos",
+        titulo: "Artículos",
+        descripcion:
+            "Tazas, botellas, llaveros y más, con tu diseño."
+    },
+    {
+        id: "carteleria",
+        etiqueta: "Cartelería",
+        titulo: "Cartelería",
+        descripcion:
+            "Carteles, letras corpóreas y soluciones personalizadas."
+    }
+];
 
-    const [productos, setProductos] = useState([]);
+function esArticulo(producto) {
+    return (
+        String(producto?.tipo || "INDUMENTARIA").toUpperCase() ===
+        "ARTICULO"
+    );
+}
+
+export default function Productos({ tipo }) {
+
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    /*
+     * El filtro puede venir por la URL (desde el home) o
+     * por prop (rutas viejas /indumentaria y /carteleria).
+     */
+    const filtroActivo =
+        FILTROS.find(
+            filtro =>
+                filtro.id ===
+                (searchParams.get("filtro") || tipo)
+        )?.id || "todos";
+
+    const [indumentarias, setIndumentarias] = useState([]);
+    const [carteleria, setCarteleria] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        cargarProductos();
-    }, [tipo]);
-
-    async function cargarProductos() {
+    const cargarProductos = useCallback(async () => {
 
         try {
 
             setLoading(true);
             setError("");
 
-            let data;
+            const [datosIndumentaria, datosCarteleria] =
+                await Promise.all([
+                    getIndumentarias(),
+                    getCarteleria()
+                ]);
 
-            if (tipo === "carteleria") {
-                data = await getCarteleria();
-            } else {
-                data = await getIndumentarias();
-            }
-
-            setProductos(data || []);
+            setIndumentarias(datosIndumentaria || []);
+            setCarteleria(datosCarteleria || []);
 
         } catch (err) {
 
@@ -49,19 +101,55 @@ export default function Productos({ tipo = "indumentaria" }) {
         } finally {
 
             setLoading(false);
+        }
 
+    }, []);
+
+    useEffect(() => {
+
+        cargarProductos();
+
+    }, [cargarProductos]);
+
+    // =====================================================
+    // FILTRO
+    // =====================================================
+
+    const porFiltro = useMemo(() => {
+
+        const prendas = indumentarias.filter(
+            producto => !esArticulo(producto)
+        );
+
+        const articulos = indumentarias.filter(esArticulo);
+
+        return {
+            todos: [
+                ...prendas,
+                ...articulos,
+                ...carteleria
+            ],
+            indumentaria: prendas,
+            articulos,
+            carteleria
+        };
+
+    }, [indumentarias, carteleria]);
+
+    const productos = porFiltro[filtroActivo] || [];
+
+    const datosFiltro =
+        FILTROS.find(filtro => filtro.id === filtroActivo) ||
+        FILTROS[0];
+
+    function elegirFiltro(id) {
+
+        if (id === "todos") {
+            setSearchParams({});
+        } else {
+            setSearchParams({ filtro: id });
         }
     }
-
-    const titulo =
-        tipo === "carteleria"
-            ? "Cartelería"
-            : "Indumentaria";
-
-    const descripcion =
-        tipo === "carteleria"
-            ? "Carteles, letras corpóreas y soluciones personalizadas."
-            : "Remeras, buzos y prendas personalizadas.";
 
     return (
         <>
@@ -78,11 +166,11 @@ export default function Productos({ tipo = "indumentaria" }) {
                         </span>
 
                         <h1>
-                            {titulo}
+                            {datosFiltro.titulo}
                         </h1>
 
                         <p>
-                            {descripcion}
+                            {datosFiltro.descripcion}
                         </p>
 
                     </div>
@@ -92,6 +180,31 @@ export default function Productos({ tipo = "indumentaria" }) {
                 <section className="productos-listado">
 
                     <div className="container">
+
+                        <div className="productos-filtros">
+
+                            {FILTROS.map(filtro => (
+                                <button
+                                    key={filtro.id}
+                                    type="button"
+                                    className={
+                                        filtro.id === filtroActivo
+                                            ? "activo"
+                                            : ""
+                                    }
+                                    onClick={() =>
+                                        elegirFiltro(filtro.id)
+                                    }
+                                >
+                                    {filtro.etiqueta}
+
+                                    <span>
+                                        {(porFiltro[filtro.id] || []).length}
+                                    </span>
+                                </button>
+                            ))}
+
+                        </div>
 
                         {loading && (
                             <div className="productos-estado">
@@ -109,7 +222,8 @@ export default function Productos({ tipo = "indumentaria" }) {
                             !error &&
                             productos.length === 0 && (
                                 <div className="productos-estado">
-                                    Todavía no hay productos disponibles.
+                                    Todavía no hay productos
+                                    en esta categoría.
                                 </div>
                             )
                         }
@@ -122,7 +236,7 @@ export default function Productos({ tipo = "indumentaria" }) {
 
                                     {productos.map((producto) => (
                                         <ProductCard
-                                            key={producto.id}
+                                            key={`${producto.tipo || "P"}-${producto.id}`}
                                             producto={producto}
                                         />
                                     ))}

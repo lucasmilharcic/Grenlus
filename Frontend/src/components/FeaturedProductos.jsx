@@ -1,12 +1,21 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getProductos } from "../services/productoService";
 import ProductCard from "./ProductCard";
+
+/*
+ * Cuántos productos se suman cada vez que el visitante
+ * llega al final de la grilla.
+ */
+const TANDA = 8;
 
 export default function FeaturedProductos() {
 
     const [productos, setProductos] = useState([]);
+    const [visibles, setVisibles] = useState(TANDA);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const finDeLaGrilla = useRef(null);
 
     useEffect(() => {
 
@@ -20,9 +29,15 @@ export default function FeaturedProductos() {
                     ? data.filter(producto => producto.activo !== false)
                     : [];
 
-                setProductos(
-                    productosActivos.slice(0, 6)
+                /*
+                 * Los últimos cargados primero, así lo nuevo
+                 * aparece arriba.
+                 */
+                productosActivos.sort(
+                    (a, b) => Number(b.id || 0) - Number(a.id || 0)
                 );
+
+                setProductos(productosActivos);
 
             } catch (error) {
 
@@ -44,6 +59,45 @@ export default function FeaturedProductos() {
 
     }, []);
 
+    /*
+     * Al llegar al final de la grilla mostramos otra tanda.
+     * No hay tope: se siguen sumando mientras haya productos.
+     */
+    useEffect(() => {
+
+        const marca = finDeLaGrilla.current;
+
+        if (!marca || visibles >= productos.length) {
+            return;
+        }
+
+        const observador = new IntersectionObserver(
+            entradas => {
+
+                if (entradas[0]?.isIntersecting) {
+
+                    setVisibles(
+                        actuales =>
+                            Math.min(
+                                actuales + TANDA,
+                                productos.length
+                            )
+                    );
+                }
+            },
+            { rootMargin: "200px" }
+        );
+
+        observador.observe(marca);
+
+        return () => observador.disconnect();
+
+    }, [productos.length, visibles]);
+
+    const mostrados = productos.slice(0, visibles);
+
+    const quedan = productos.length - mostrados.length;
+
     return (
         <section className="featured-products">
 
@@ -54,7 +108,7 @@ export default function FeaturedProductos() {
                 </h2>
 
                 <p>
-                    Algunos de nuestros productos personalizados
+                    Todo lo que hacemos, personalizado
                 </p>
 
             </div>
@@ -95,18 +149,42 @@ export default function FeaturedProductos() {
                 !error &&
                 productos.length > 0 && (
 
-                    <div className="products-grid">
+                    <>
+                        <div className="products-grid">
 
-                        {productos.map(producto => (
+                            {mostrados.map(producto => (
 
-                            <ProductCard
-                                key={producto.id}
-                                producto={producto}
-                            />
+                                <ProductCard
+                                    key={producto.id}
+                                    producto={producto}
+                                />
 
-                        ))}
+                            ))}
 
-                    </div>
+                        </div>
+
+                        <div
+                            ref={finDeLaGrilla}
+                            className="products-sentinel"
+                        >
+                            {quedan > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setVisibles(
+                                            actuales =>
+                                                Math.min(
+                                                    actuales + TANDA,
+                                                    productos.length
+                                                )
+                                        )
+                                    }
+                                >
+                                    Ver más ({quedan})
+                                </button>
+                            )}
+                        </div>
+                    </>
                 )}
 
         </section>

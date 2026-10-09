@@ -6,6 +6,29 @@ import {
     obtenerUrlArchivo
 } from "../services/productoService";
 
+/*
+ * Indumentaria, artículo o cartelería.
+ *
+ * Los productos de cartelería no tienen "tipo"; los de
+ * indumentaria siempre lo traen.
+ */
+function etiquetaCategoria(producto) {
+
+    const tipo = String(producto?.tipo || "").toUpperCase();
+
+    if (tipo === "ARTICULO") {
+        return "Artículo";
+    }
+
+    if (tipo === "INDUMENTARIA") {
+        return "Indumentaria";
+    }
+
+    return producto?.usaTalles !== undefined
+        ? "Indumentaria"
+        : "Cartelería";
+}
+
 export default function ProductCard({
     producto
 }) {
@@ -131,13 +154,7 @@ export default function ProductCard({
 
                     <span className="product-card-category">
 
-                        {
-                            producto
-                                .usaTalles !==
-                            undefined
-                                ? "Indumentaria"
-                                : "Cartelería"
-                        }
+                        {etiquetaCategoria(producto)}
 
                     </span>
 

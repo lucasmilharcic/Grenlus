@@ -155,6 +155,17 @@ export default function ProductosAdmin() {
 
     // CONFIG INDUMENTARIA
 
+    /*
+     * Prenda o artículo (taza, botella, llavero).
+     *
+     * Ojo: "tipo" acá arriba ya se usa para separar
+     * indumentaria de cartelería, por eso este va aparte.
+     */
+    const [
+        tipoIndumentaria,
+        setTipoIndumentaria
+    ] = useState("INDUMENTARIA");
+
     const [
         usaTalles,
         setUsaTalles
@@ -328,6 +339,11 @@ export default function ProductosAdmin() {
     const [editAltoEnvioCm, setEditAltoEnvioCm] = useState("");
 
     // INDUMENTARIA
+
+    const [
+        editTipoIndumentaria,
+        setEditTipoIndumentaria
+    ] = useState("INDUMENTARIA");
 
     const [
         editUsaTalles,
@@ -513,6 +529,7 @@ export default function ProductosAdmin() {
         setAnchoEnvioCm("");
         setAltoEnvioCm("");
 
+        setTipo("INDUMENTARIA");
         setUsaTalles(true);
         setIncluyeTallesInfantiles(true);
         setIncluyeTallesEspeciales(false);
@@ -658,6 +675,8 @@ export default function ProductosAdmin() {
                     largoEnvioCm,
                     anchoEnvioCm,
                     altoEnvioCm,
+
+                    tipo: tipoIndumentaria,
 
                     usaTalles,
                     incluyeTallesInfantiles,
@@ -819,6 +838,10 @@ export default function ProductosAdmin() {
 
         setEditUsaTalles(
             Boolean(producto.usaTalles)
+        );
+
+        setEditTipoIndumentaria(
+            producto.tipo || "INDUMENTARIA"
         );
 
         setEditIncluyeTallesInfantiles(
@@ -1088,6 +1111,9 @@ export default function ProductosAdmin() {
                         altoEnvioCm:
                             editAltoEnvioCm,
 
+                        tipo:
+                            editTipoIndumentaria,
+
                         usaTalles:
                             editUsaTalles,
 
@@ -1224,6 +1250,9 @@ export default function ProductosAdmin() {
 
                     altoEnvioCm:
                         editAltoEnvioCm,
+
+                    tipo:
+                        editTipoIndumentaria,
 
                     usaTalles:
                         editUsaTalles,
@@ -1935,6 +1964,39 @@ export default function ProductosAdmin() {
 
                                     </div>
 
+                                    <div className="campo-tipo">
+
+                                        <label>Indumentaria o artículo</label>
+
+                                        <select
+
+                                            value={tipoIndumentaria}
+
+                                            onChange={(e) => setTipoIndumentaria(e.target.value)}
+
+                                        >
+
+                                            <option value="INDUMENTARIA">
+
+                                                Indumentaria (remeras, buzos)
+
+                                            </option>
+
+                                            <option value="ARTICULO">
+
+                                                Artículo (tazas, botellas, llaveros)
+
+                                            </option>
+
+                                        </select>
+
+                                        <small>
+                                            Define en qué filtro de la tienda aparece.
+
+                                        </small>
+
+                                    </div>
+
                                     <div className="checkbox-grid">
 
                                         <label className="checkbox-option">
@@ -2234,6 +2296,39 @@ export default function ProductosAdmin() {
                                         <h3>
                                             Información requerida
                                         </h3>
+
+                                    </div>
+
+                                    <div className="campo-tipo">
+
+                                        <label>Indumentaria o artículo</label>
+
+                                        <select
+
+                                            value={editTipoIndumentaria}
+
+                                            onChange={(e) => setEditTipoIndumentaria(e.target.value)}
+
+                                        >
+
+                                            <option value="INDUMENTARIA">
+
+                                                Indumentaria (remeras, buzos)
+
+                                            </option>
+
+                                            <option value="ARTICULO">
+
+                                                Artículo (tazas, botellas, llaveros)
+
+                                            </option>
+
+                                        </select>
+
+                                        <small>
+                                            Define en qué filtro de la tienda aparece.
+
+                                        </small>
 
                                     </div>
 
@@ -3489,6 +3584,9 @@ export default function ProductosAdmin() {
                                         <ColoresEditor
                                             producto={{
                                                 ...productoEditando,
+
+                                                tipo:
+                                                    editTipoIndumentaria,
 
                                                 usaTalles:
                                                     editUsaTalles,
