@@ -19,6 +19,11 @@ import {
     useCarrito
 } from "../context/CarritoContext";
 
+import {
+    GRUPOS_DE_TALLES,
+    tallesDelProducto
+} from "../constants/talles";
+
 import "./PersonalizadorProducto.css";
 
 const TAMANOS = {
@@ -386,6 +391,14 @@ export default function PersonalizadorProducto({ producto }) {
     const [posicion, setPosicion] = useState(null);
     const [disenosPorVista, setDisenosPorVista] = useState({});
     const [talle, setTalle] = useState("");
+
+    /*
+     * Talles que este producto ofrece, elegidos en el panel.
+     */
+    const tallesOfrecidos = useMemo(
+        () => tallesDelProducto(producto),
+        [producto]
+    );
     const [color, setColor] = useState("");
     const [cantidad, setCantidad] = useState(1);
     const [subiendo, setSubiendo] = useState(false);
@@ -1654,42 +1667,33 @@ export default function PersonalizadorProducto({ producto }) {
                         >
                             <option value="">Elegir talle</option>
 
-                            {producto.incluyeTallesInfantiles !== false && (
-                                <optgroup label="Infantil">
-                                    <option value="4">4</option>
-                                    <option value="6">6</option>
-                                    <option value="8">8</option>
-                                    <option value="10">10</option>
-                                    <option value="12">12</option>
-                                    <option value="14">14</option>
-                                    <option value="16">16</option>
-                                    <option value="18">18</option>
-                                </optgroup>
-                            )}
+                            {GRUPOS_DE_TALLES.map(grupo => {
 
-                            {producto.incluyeTallesEspeciales === true && (
-                                <optgroup label="Talles especiales">
-                                    <option value="T6">T6</option>
-                                    <option value="T8">T8</option>
-                                    <option value="T10">T10</option>
+                                const delGrupo = grupo.talles.filter(
+                                    talleGrupo =>
+                                        tallesOfrecidos.includes(talleGrupo)
+                                );
 
-                                    {producto.incluyeTallesEspecialesGrandes !==
-                                        false && (
-                                        <>
-                                            <option value="T14">T14</option>
-                                            <option value="T16">T16</option>
-                                        </>
-                                    )}
-                                </optgroup>
-                            )}
+                                if (delGrupo.length === 0) {
+                                    return null;
+                                }
 
-                            <optgroup label="Adulto">
-                                <option value="S">S</option>
-                                <option value="M">M</option>
-                                <option value="L">L</option>
-                                <option value="XL">XL</option>
-                                <option value="XXL">XXL</option>
-                            </optgroup>
+                                return (
+                                    <optgroup
+                                        key={grupo.nombre}
+                                        label={grupo.nombre}
+                                    >
+                                        {delGrupo.map(talleGrupo => (
+                                            <option
+                                                key={talleGrupo}
+                                                value={talleGrupo}
+                                            >
+                                                {talleGrupo}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                );
+                            })}
                         </select>
                     </div>
                 )}

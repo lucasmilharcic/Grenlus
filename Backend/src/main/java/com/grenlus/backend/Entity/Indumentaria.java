@@ -2,12 +2,20 @@ package com.grenlus.backend.Entity;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 
@@ -37,6 +45,21 @@ public class Indumentaria extends Producto {
     private Boolean incluyeTallesEspecialesGrandes = true;
 
     private BigDecimal precioAdicionalTalleEspecial = BigDecimal.ZERO;
+
+    /*
+     * Talles que este producto ofrece, elegidos uno por uno
+     * desde el panel.
+     *
+     * Vacio = producto cargado antes de esta opcion: ahi
+     * caemos en los interruptores viejos (infantiles /
+     * especiales) para no cambiarle los talles de golpe.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "indumentaria_talle",
+            joinColumns = @JoinColumn(name = "indumentaria_id"))
+    @Column(name = "talle")
+    private Set<String> tallesDisponibles = new LinkedHashSet<>();
 
     private boolean usaColores;
 
@@ -106,27 +129,65 @@ public class Indumentaria extends Producto {
     }
 
     /*
-     * Talles especiales que el producto ofrece hoy.
+     * Talles que el producto ofrece, en el orden del catalogo.
      *
-     * T14 y T16 dependen de la opción aparte.
+     * Si nadie eligio talles todavia, reconstruimos la lista
+     * con los interruptores viejos para que los productos ya
+     * cargados sigan mostrando lo mismo.
+     */
+    @JsonProperty("tallesOfrecidos")
+    public Set<String> obtenerTallesOfrecidos() {
+
+        if (tallesDisponibles != null
+                && !tallesDisponibles.isEmpty()) {
+
+            return CatalogoTalles.ordenar(tallesDisponibles);
+        }
+
+        List<String> heredados = new ArrayList<>();
+
+        if (!Boolean.FALSE.equals(incluyeTallesInfantiles)) {
+            heredados.addAll(CatalogoTalles.INFANTILES);
+        }
+
+        if (Boolean.TRUE.equals(incluyeTallesEspeciales)) {
+
+            for (String especial : CatalogoTalles.ESPECIALES) {
+
+                boolean esGrande =
+                        List.of("T14", "T16").contains(especial);
+
+                if (!esGrande
+                        || !Boolean.FALSE.equals(
+                                incluyeTallesEspecialesGrandes)) {
+
+                    heredados.add(especial);
+                }
+            }
+        }
+
+        heredados.addAll(CatalogoTalles.ADULTOS);
+
+        return CatalogoTalles.ordenar(heredados);
+    }
+
+    public boolean ofreceTalle(String talle) {
+
+        String normalizado =
+                CatalogoTalles.normalizar(talle);
+
+        return normalizado != null
+                && obtenerTallesOfrecidos().contains(normalizado);
+    }
+
+    /*
+     * Talles especiales que el producto ofrece hoy.
      */
     public boolean ofreceTalleEspecial(
             String talle) {
 
-        if (!Boolean.TRUE.equals(incluyeTallesEspeciales)
-                || talle == null) {
-            return false;
-        }
-
-        String normalizado = talle.trim().toUpperCase();
-
-        if (List.of("T14", "T16").contains(normalizado)) {
-            return !Boolean.FALSE.equals(
-                    incluyeTallesEspecialesGrandes);
-        }
-
-        return List.of("T6", "T8", "T10")
-                .contains(normalizado);
+        return CatalogoTalles.esEspecial(talle)
+                && ofreceTalle(talle);
     }
 
     public BigDecimal calcularPrecioAdicionalTalleEspecial(

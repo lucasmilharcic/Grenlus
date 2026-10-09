@@ -242,6 +242,9 @@ export async function crearIndumentaria({
     incluyeTallesEspeciales,
 
     incluyeTallesEspecialesGrandes,
+
+
+    tallesDisponibles,
     precioAdicionalTalleEspecial,
     usaColores,
 
@@ -373,6 +376,14 @@ export async function crearIndumentaria({
         incluyeTallesEspecialesGrandes
     );
 
+    /*
+     * Los talles van uno por uno: el backend los recibe
+     * como lista.
+     */
+    (tallesDisponibles || []).forEach((talle) =>
+        formData.append("tallesDisponibles", talle)
+    );
+
     agregarBoolean(
         formData,
         "usaColores",
@@ -470,6 +481,9 @@ export async function editarIndumentaria(
         incluyeTallesEspeciales,
 
         incluyeTallesEspecialesGrandes,
+
+
+        tallesDisponibles,
         precioAdicionalTalleEspecial,
         usaColores,
 
@@ -600,6 +614,14 @@ export async function editarIndumentaria(
         formData,
         "incluyeTallesEspecialesGrandes",
         incluyeTallesEspecialesGrandes
+    );
+
+    /*
+     * Los talles van uno por uno: el backend los recibe
+     * como lista.
+     */
+    (tallesDisponibles || []).forEach((talle) =>
+        formData.append("tallesDisponibles", talle)
     );
 
     agregarBoolean(

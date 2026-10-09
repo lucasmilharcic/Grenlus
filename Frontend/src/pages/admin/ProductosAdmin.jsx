@@ -6,6 +6,13 @@ import {
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 
+import SelectorTalles from "../../components/SelectorTalles";
+
+import {
+    TALLES_ADULTOS,
+    tallesDelProducto
+} from "../../constants/talles";
+
 import AreaPersonalizacionEditor
     from "../../components/AreaPersonalizacionEditor";
 
@@ -21,6 +28,12 @@ import {
 } from "../../services/productoService";
 
 import "./ProductosAdmin.css";
+
+/*
+ * Un producto nuevo arranca con los talles de adulto,
+ * que son los que casi siempre se venden.
+ */
+const TALLES_POR_DEFECTO = [...TALLES_ADULTOS];
 
 // =====================================================
 // HELPERS
@@ -159,6 +172,11 @@ export default function ProductosAdmin() {
         incluyeTallesEspecialesGrandes,
         setIncluyeTallesEspecialesGrandes
     ] = useState(true);
+
+    const [
+        tallesDisponibles,
+        setTallesDisponibles
+    ] = useState(TALLES_POR_DEFECTO);
 
     const [
         precioAdicionalTalleEspecial,
@@ -330,6 +348,11 @@ export default function ProductosAdmin() {
     ] = useState(true);
 
     const [
+        editTallesDisponibles,
+        setEditTallesDisponibles
+    ] = useState([]);
+
+    const [
         editPrecioAdicionalTalleEspecial,
         setEditPrecioAdicionalTalleEspecial
     ] = useState("0");
@@ -492,6 +515,7 @@ export default function ProductosAdmin() {
         setIncluyeTallesInfantiles(true);
         setIncluyeTallesEspeciales(false);
         setIncluyeTallesEspecialesGrandes(true);
+        setTallesDisponibles(TALLES_POR_DEFECTO);
         setPrecioAdicionalTalleEspecial("0");
         setUsaColores(true);
 
@@ -638,6 +662,8 @@ export default function ProductosAdmin() {
                     incluyeTallesEspeciales,
 
                     incluyeTallesEspecialesGrandes,
+
+                    tallesDisponibles,
                     precioAdicionalTalleEspecial,
                     usaColores,
 
@@ -803,6 +829,10 @@ export default function ProductosAdmin() {
 
         setEditIncluyeTallesEspecialesGrandes(
             producto.incluyeTallesEspecialesGrandes !== false
+        );
+
+        setEditTallesDisponibles(
+            tallesDelProducto(producto)
         );
 
         setEditPrecioAdicionalTalleEspecial(
@@ -1068,6 +1098,9 @@ export default function ProductosAdmin() {
                         incluyeTallesEspecialesGrandes:
                             editIncluyeTallesEspecialesGrandes,
 
+                        tallesDisponibles:
+                            editTallesDisponibles,
+
                         precioAdicionalTalleEspecial:
                             editPrecioAdicionalTalleEspecial || 0,
 
@@ -1201,6 +1234,9 @@ export default function ProductosAdmin() {
 
                     incluyeTallesEspecialesGrandes:
                         editIncluyeTallesEspecialesGrandes,
+
+                    tallesDisponibles:
+                        editTallesDisponibles,
 
                     precioAdicionalTalleEspecial:
                         editPrecioAdicionalTalleEspecial || 0,
@@ -1917,60 +1953,17 @@ export default function ProductosAdmin() {
 
                                         </label>
 
-                                        <label className="checkbox-option">
+                                        <div className="campo-talles">
+                                            <label className="campo-talles-titulo">
+                                                Talles que ofrece este producto
+                                            </label>
 
-                                            <input
-                                                type="checkbox"
-                                                checked={incluyeTallesInfantiles}
-                                                onChange={(e) =>
-                                                    setIncluyeTallesInfantiles(
-                                                        e.target.checked
-                                                    )
-                                                }
+                                            <SelectorTalles
+                                                valor={tallesDisponibles}
+                                                deshabilitado={!usaTalles}
+                                                onChange={setTallesDisponibles}
                                             />
-
-                                            <span>
-                                                Incluye talles infantiles (4–18)
-                                            </span>
-
-                                        </label>
-
-                                        <label className="checkbox-option">
-
-                                            <input
-                                                type="checkbox"
-                                                checked={incluyeTallesEspeciales}
-                                                onChange={(e) =>
-                                                    setIncluyeTallesEspeciales(
-                                                        e.target.checked
-                                                    )
-                                                }
-                                            />
-
-                                            <span>
-                                                Incluye talles especiales (T6, T8, T10)
-                                            </span>
-
-                                        </label>
-
-                                        <label className="checkbox-option">
-
-                                            <input
-                                                type="checkbox"
-                                                checked={incluyeTallesEspecialesGrandes}
-                                                disabled={!incluyeTallesEspeciales}
-                                                onChange={(e) =>
-                                                    setIncluyeTallesEspecialesGrandes(
-                                                        e.target.checked
-                                                    )
-                                                }
-                                            />
-
-                                            <span>
-                                                Incluye además T14 y T16
-                                            </span>
-
-                                        </label>
+                                        </div>
 
                                         <label className="checkbox-option">
 
@@ -3050,68 +3043,17 @@ export default function ProductosAdmin() {
 
                                             </label>
 
-                                            <label className="checkbox-option">
+                                            <div className="campo-talles">
+                                                <label className="campo-talles-titulo">
+                                                    Talles que ofrece este producto
+                                                </label>
 
-                                                <input
-                                                    type="checkbox"
-                                                    checked={
-                                                        editIncluyeTallesInfantiles
-                                                    }
-                                                    onChange={(e) =>
-                                                        setEditIncluyeTallesInfantiles(
-                                                            e.target.checked
-                                                        )
-                                                    }
+                                                <SelectorTalles
+                                                    valor={editTallesDisponibles}
+                                                    deshabilitado={!editUsaTalles}
+                                                    onChange={setEditTallesDisponibles}
                                                 />
-
-                                                <span>
-                                                    Incluye talles infantiles (4–18)
-                                                </span>
-
-                                            </label>
-
-                                            <label className="checkbox-option">
-
-                                                <input
-                                                    type="checkbox"
-                                                    checked={
-                                                        editIncluyeTallesEspeciales
-                                                    }
-                                                    onChange={(e) =>
-                                                        setEditIncluyeTallesEspeciales(
-                                                            e.target.checked
-                                                        )
-                                                    }
-                                                />
-
-                                                <span>
-                                                    Incluye talles especiales (T6, T8, T10)
-                                                </span>
-
-                                            </label>
-
-                                            <label className="checkbox-option">
-
-                                                <input
-                                                    type="checkbox"
-                                                    checked={
-                                                        editIncluyeTallesEspecialesGrandes
-                                                    }
-                                                    disabled={
-                                                        !editIncluyeTallesEspeciales
-                                                    }
-                                                    onChange={(e) =>
-                                                        setEditIncluyeTallesEspecialesGrandes(
-                                                            e.target.checked
-                                                        )
-                                                    }
-                                                />
-
-                                                <span>
-                                                    Incluye además T14 y T16
-                                                </span>
-
-                                            </label>
+                                            </div>
 
                                             <label className="checkbox-option">
 

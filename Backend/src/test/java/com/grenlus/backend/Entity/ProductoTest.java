@@ -85,6 +85,57 @@ class ProductoTest {
     }
 
     @Test
+    void elProductoOfreceSoloLosTallesElegidos() {
+
+        Indumentaria producto = new Indumentaria();
+        producto.setUsaTalles(true);
+        producto.getTallesDisponibles()
+                .addAll(List.of("8", "10", "M", "L", "T16"));
+
+        assertThat(producto.obtenerTallesOfrecidos())
+                .containsExactly("8", "10", "T16", "M", "L");
+
+        assertThat(producto.ofreceTalle("4")).isFalse();
+        assertThat(producto.ofreceTalle("6")).isFalse();
+        assertThat(producto.ofreceTalle("8")).isTrue();
+
+        // minusculas y espacios tambien valen
+        assertThat(producto.ofreceTalle(" m ")).isTrue();
+    }
+
+    @Test
+    void elAdicionalSigueALosTallesEspecialesElegidos() {
+
+        Indumentaria producto = new Indumentaria();
+        producto.setUsaTalles(true);
+        producto.setPrecioAdicionalTalleEspecial(new BigDecimal("2500"));
+        producto.getTallesDisponibles()
+                .addAll(List.of("T6", "M"));
+
+        assertThat(producto.calcularPrecioAdicionalTalleEspecial("T6"))
+                .isEqualByComparingTo("2500");
+
+        assertThat(producto.calcularPrecioAdicionalTalleEspecial("T16"))
+                .isEqualByComparingTo("0");
+
+        assertThat(producto.calcularPrecioAdicionalTalleEspecial("M"))
+                .isEqualByComparingTo("0");
+    }
+
+    @Test
+    void sinTallesElegidosSeUsanLosInterruptoresViejos() {
+
+        Indumentaria producto = new Indumentaria();
+        producto.setUsaTalles(true);
+        producto.setIncluyeTallesInfantiles(false);
+        producto.setIncluyeTallesEspeciales(true);
+        producto.setIncluyeTallesEspecialesGrandes(false);
+
+        assertThat(producto.obtenerTallesOfrecidos())
+                .containsExactly("T6", "T8", "T10", "S", "M", "L", "XL", "XXL");
+    }
+
+    @Test
     void losProductosViejosSiguenOfreciendoT14YT16() {
 
         /*

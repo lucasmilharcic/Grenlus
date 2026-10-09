@@ -9,6 +9,10 @@ import {
     obtenerUrlArchivo
 } from "../services/productoService";
 
+import {
+    tallesDelProducto
+} from "../constants/talles";
+
 import "./AreaPersonalizacionEditor.css";
 
 const POSICIONES = [
@@ -25,10 +29,6 @@ const AREA_INICIAL = {
     height: 50
 };
 
-const TALLES_ADULTOS = ["S", "M", "L", "XL", "XXL"];
-const TALLES_INFANTILES = ["4", "6", "8", "10", "12", "14", "16", "18"];
-const TALLES_ESPECIALES = ["T6", "T8", "T10"];
-const TALLES_ESPECIALES_GRANDES = ["T14", "T16"];
 
 function numero(valor) {
     const parsed = Number(valor);
@@ -40,26 +40,11 @@ function limitar(valor, min, max) {
 }
 
 function obtenerTallesCalibrables(producto) {
-    if (!producto.usaTalles) {
-        return [];
-    }
-
-    const especiales =
-        producto.incluyeTallesEspeciales === true;
-
-    return [
-        ...(producto.incluyeTallesInfantiles !== false
-            ? TALLES_INFANTILES
-            : []),
-        ...(especiales
-            ? TALLES_ESPECIALES
-            : []),
-        ...(especiales &&
-            producto.incluyeTallesEspecialesGrandes !== false
-            ? TALLES_ESPECIALES_GRANDES
-            : []),
-        ...TALLES_ADULTOS
-    ];
+    /*
+     * Solo pedimos calibración de los talles que el
+     * producto realmente ofrece.
+     */
+    return tallesDelProducto(producto);
 }
 
 export default function AreaPersonalizacionEditor({

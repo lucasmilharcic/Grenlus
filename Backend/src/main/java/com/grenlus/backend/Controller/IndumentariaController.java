@@ -2,6 +2,7 @@ package com.grenlus.backend.Controller;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.grenlus.backend.Entity.CatalogoTalles;
 import com.grenlus.backend.Entity.Indumentaria;
 import com.grenlus.backend.Exception.BadRequestException;
 import com.grenlus.backend.Exception.ResourceNotFoundException;
@@ -163,6 +165,12 @@ public class IndumentariaController {
             Boolean incluyeTallesEspecialesGrandes,
 
             @RequestParam(
+                    value = "tallesDisponibles",
+                    required = false
+            )
+            List<String> tallesDisponibles,
+
+            @RequestParam(
                     value = "precioAdicionalTalleEspecial",
                     required = false
             )
@@ -241,6 +249,9 @@ public class IndumentariaController {
                 incluyeTallesEspeciales,
 
                 incluyeTallesEspecialesGrandes,
+
+
+                tallesDisponibles,
                 precioAdicionalTalleEspecial,
                 usaColores,
                 permiteFrente,
@@ -366,6 +377,12 @@ public class IndumentariaController {
             Boolean incluyeTallesEspecialesGrandes,
 
             @RequestParam(
+                    value = "tallesDisponibles",
+                    required = false
+            )
+            List<String> tallesDisponibles,
+
+            @RequestParam(
                     value = "precioAdicionalTalleEspecial",
                     required = false
             )
@@ -447,6 +464,9 @@ public class IndumentariaController {
                 incluyeTallesEspeciales,
 
                 incluyeTallesEspecialesGrandes,
+
+
+                tallesDisponibles,
                 precioAdicionalTalleEspecial,
                 usaColores,
                 permiteFrente,
@@ -504,6 +524,9 @@ public class IndumentariaController {
             Boolean incluyeTallesEspeciales,
 
             Boolean incluyeTallesEspecialesGrandes,
+
+
+            List<String> tallesDisponibles,
             BigDecimal precioAdicionalTalleEspecial,
             Boolean usaColores,
 
@@ -592,6 +615,37 @@ public class IndumentariaController {
                         incluyeTallesEspecialesGrandes
                 )
         );
+
+        /*
+         * Talles elegidos uno por uno en el panel.
+         *
+         * Si el pedido no trae la lista no la tocamos: puede ser
+         * un cliente viejo y no queremos vaciarle los talles.
+         */
+        if (tallesDisponibles != null) {
+
+            for (String talle : tallesDisponibles) {
+
+                if (!CatalogoTalles.existe(talle)) {
+
+                    throw new BadRequestException(
+                            "El talle " + talle + " no existe.");
+                }
+            }
+
+            Set<String> elegidos =
+                    CatalogoTalles.ordenar(tallesDisponibles);
+
+            if (Boolean.TRUE.equals(usaTalles)
+                    && elegidos.isEmpty()) {
+
+                throw new BadRequestException(
+                        "Elegí al menos un talle para el producto.");
+            }
+
+            indumentaria.getTallesDisponibles().clear();
+            indumentaria.getTallesDisponibles().addAll(elegidos);
+        }
 
         BigDecimal adicionalTalle = precioAdicionalTalleEspecial != null
                 ? precioAdicionalTalleEspecial
