@@ -237,6 +237,9 @@ export async function crearIndumentaria({
     anchoEnvioCm,
     altoEnvioCm,
 
+    tipo,
+
+
     usaTalles,
     incluyeTallesInfantiles,
     incluyeTallesEspeciales,
@@ -352,7 +355,14 @@ export async function crearIndumentaria({
     // CONFIGURACIÃ“N
     // =========================
 
-    agregarBoolean(
+        /*
+     * Indumentaria o articulo.
+     */
+    if (tipo) {
+        formData.append("tipo", tipo);
+    }
+
+agregarBoolean(
         formData,
         "usaTalles",
         usaTalles
@@ -476,6 +486,9 @@ export async function editarIndumentaria(
         anchoEnvioCm,
         altoEnvioCm,
 
+        tipo,
+
+
         usaTalles,
         incluyeTallesInfantiles,
         incluyeTallesEspeciales,
@@ -592,7 +605,14 @@ export async function editarIndumentaria(
     // CONFIGURACIÃ“N
     // =========================
 
-    agregarBoolean(
+        /*
+     * Indumentaria o articulo.
+     */
+    if (tipo) {
+        formData.append("tipo", tipo);
+    }
+
+agregarBoolean(
         formData,
         "usaTalles",
         usaTalles

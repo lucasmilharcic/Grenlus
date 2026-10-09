@@ -4,9 +4,12 @@ import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -55,6 +58,44 @@ public class GlobalExceptionHandler {
                 HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
                 ex.getMessage());
         return new ResponseEntity<>(errorResponse, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    /*
+     * Dirección que no existe.
+     *
+     * Sin esto caía en el manejador genérico y se reportaba
+     * como 500 "error inesperado", que hace perder tiempo
+     * buscando una falla del servidor que no existe.
+     */
+    @ExceptionHandler({
+            NoResourceFoundException.class,
+            NoHandlerFoundException.class
+    })
+    @ResponseBody
+    public ResponseEntity<ApiErrorResponse> handleNoEncontrado(Exception ex) {
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                "La dirección solicitada no existe en el servidor.");
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    /*
+     * Método equivocado sobre una dirección que sí existe
+     * (por ejemplo un GET donde se espera un POST).
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseBody
+    public ResponseEntity<ApiErrorResponse> handleMetodoNoSoportado(
+            HttpRequestMethodNotSupportedException ex) {
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.METHOD_NOT_ALLOWED.value(),
+                HttpStatus.METHOD_NOT_ALLOWED.getReasonPhrase(),
+                "El método " + ex.getMethod()
+                        + " no está permitido en esta dirección.");
+        return new ResponseEntity<>(errorResponse, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     @ExceptionHandler(Exception.class)

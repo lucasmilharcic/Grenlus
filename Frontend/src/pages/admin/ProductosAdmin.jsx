@@ -777,7 +777,13 @@ export default function ProductosAdmin() {
 
         setProductoEditando({
             ...producto,
-            tipo: tipoProducto
+
+            /*
+             * Marcador interno del panel: indumentaria o
+             * carteleria. Va aparte de producto.tipo, que es
+             * el campo del backend (prenda o articulo).
+             */
+            familiaProducto: tipoProducto
         });
 
         setEditNombre(
@@ -1021,7 +1027,7 @@ export default function ProductosAdmin() {
             }
 
             if (
-                productoEditando.tipo === "indumentaria" ||
+                productoEditando.familiaProducto === "indumentaria" ||
                 !editEsCotizable
             ) {
                 const descuentoMayorista =
@@ -1039,7 +1045,7 @@ export default function ProductosAdmin() {
             }
 
             if (
-                productoEditando.tipo ===
+                productoEditando.familiaProducto ===
                 "indumentaria"
             ) {
 
@@ -2299,39 +2305,6 @@ export default function ProductosAdmin() {
 
                                     </div>
 
-                                    <div className="campo-tipo">
-
-                                        <label>Indumentaria o artículo</label>
-
-                                        <select
-
-                                            value={editTipoIndumentaria}
-
-                                            onChange={(e) => setEditTipoIndumentaria(e.target.value)}
-
-                                        >
-
-                                            <option value="INDUMENTARIA">
-
-                                                Indumentaria (remeras, buzos)
-
-                                            </option>
-
-                                            <option value="ARTICULO">
-
-                                                Artículo (tazas, botellas, llaveros)
-
-                                            </option>
-
-                                        </select>
-
-                                        <small>
-                                            Define en qué filtro de la tienda aparece.
-
-                                        </small>
-
-                                    </div>
-
                                     <div className="checkbox-grid">
 
                                         <label className="checkbox-option">
@@ -2820,10 +2793,44 @@ export default function ProductosAdmin() {
 
                                 {/* INDUMENTARIA EDICIÓN */}
 
-                                {productoEditando.tipo ===
+                                {productoEditando.familiaProducto ===
                                     "indumentaria" && (
 
                                     <>
+
+                                        <div className="admin-config-section">
+
+                                            <div className="campo-tipo">
+
+                                                <label>
+                                                    Indumentaria o artículo
+                                                </label>
+
+                                                <select
+                                                    value={editTipoIndumentaria}
+                                                    onChange={(e) =>
+                                                        setEditTipoIndumentaria(
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                >
+                                                    <option value="INDUMENTARIA">
+                                                        Indumentaria (remeras, buzos)
+                                                    </option>
+
+                                                    <option value="ARTICULO">
+                                                        Artículo (tazas, botellas, llaveros)
+                                                    </option>
+                                                </select>
+
+                                                <small>
+                                                    Define en qué filtro de la
+                                                    tienda aparece.
+                                                </small>
+
+                                            </div>
+
+                                        </div>
 
                                         <div className="admin-config-section">
 
@@ -3289,7 +3296,7 @@ export default function ProductosAdmin() {
 
                                 {/* CARTELERÍA EDICIÓN */}
 
-                                {productoEditando.tipo ===
+                                {productoEditando.familiaProducto ===
                                     "carteleria" && (
 
                                     <>
@@ -3514,7 +3521,7 @@ export default function ProductosAdmin() {
                                 MOCKUPS ADMIN
                             ================================================= */}
 
-                            {productoEditando.tipo ===
+                            {productoEditando.familiaProducto ===
                                 "indumentaria" && (
 
                                 <div className="mockups-admin-wrapper">
