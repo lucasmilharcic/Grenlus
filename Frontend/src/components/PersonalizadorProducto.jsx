@@ -22,97 +22,85 @@ import {
 import "./PersonalizadorProducto.css";
 
 const TAMANOS = {
-    CHICA: {
-        label: "Chica"
-    },
-
-    MEDIA: {
-        label: "Mediana"
-    },
-
-    GRANDE: {
-        label: "Grande"
-    }
+    CHICA: "Chica",
+    MEDIA: "Mediana",
+    GRANDE: "Grande"
 };
 
+const TALLES_ESPECIALES = [
+    "T6",
+    "T8",
+    "T10",
+    "T14",
+    "T16"
+];
+
 function moneda(valor) {
-    return new Intl.NumberFormat(
-        "es-AR",
-        {
-            style: "currency",
-            currency: "ARS",
-            maximumFractionDigits: 0
-        }
-    ).format(
-        Number(valor || 0)
-    );
+    return new Intl.NumberFormat("es-AR", {
+        style: "currency",
+        currency: "ARS",
+        maximumFractionDigits: 0
+    }).format(Number(valor || 0));
 }
 
-function clamp(
-    valor,
-    min,
-    max
-) {
-    return Math.min(
-        Math.max(
-            valor,
-            min
-        ),
-        max
-    );
+function clamp(valor, min, max) {
+    return Math.min(Math.max(valor, min), max);
+}
+
+function obtenerCategoriaEstampa(medidas) {
+    const ancho = Number(medidas?.ancho || 0);
+    const alto = Number(medidas?.alto || 0);
+
+    if (ancho <= 0 || alto <= 0) {
+        return "CHICA";
+    }
+
+    if (ancho <= 20 && alto <= 20) {
+        return "CHICA";
+    }
+
+    if (ancho <= 30 && alto <= 30) {
+        return "MEDIA";
+    }
+
+    return "GRANDE";
 }
 
 async function recortarMargenTransparente(archivo) {
-
     if (
-        ![
-            "image/png",
-            "image/webp",
-            "image/avif"
-        ].includes(archivo.type) ||
+        !["image/png", "image/webp", "image/avif"].includes(archivo.type) ||
         typeof createImageBitmap !== "function"
     ) {
         return archivo;
     }
 
-    const imagen =
-        await createImageBitmap(archivo);
+    const imagen = await createImageBitmap(archivo);
 
     try {
+        const escala = Math.min(
+            1,
+            512 / Math.max(imagen.width, imagen.height)
+        );
 
-        const escala =
-            Math.min(
-                1,
-                512 /
-                    Math.max(
-                        imagen.width,
-                        imagen.height
-                    )
-            );
+        const anchoMuestra = Math.max(
+            1,
+            Math.ceil(imagen.width * escala)
+        );
 
-        const anchoMuestra =
-            Math.max(
-                1,
-                Math.ceil(imagen.width * escala)
-            );
+        const altoMuestra = Math.max(
+            1,
+            Math.ceil(imagen.height * escala)
+        );
 
-        const altoMuestra =
-            Math.max(
-                1,
-                Math.ceil(imagen.height * escala)
-            );
-
-        const lienzoMuestra =
-            document.createElement("canvas");
+        const lienzoMuestra = document.createElement("canvas");
 
         lienzoMuestra.width = anchoMuestra;
         lienzoMuestra.height = altoMuestra;
 
-        const contextoMuestra =
-            lienzoMuestra.getContext(
-                "2d",
-                { willReadFrequently: true }
-            );
+        const contextoMuestra = lienzoMuestra.getContext(
+            "2d",
+            { willReadFrequently: true }
+        );
 
         if (!contextoMuestra) {
             throw new Error(
@@ -128,33 +116,21 @@ async function recortarMargenTransparente(archivo) {
             altoMuestra
         );
 
-        const pixeles =
-            contextoMuestra.getImageData(
-                0,
-                0,
-                anchoMuestra,
-                altoMuestra
-            ).data;
+        const pixeles = contextoMuestra.getImageData(
+            0,
+            0,
+            anchoMuestra,
+            altoMuestra
+        ).data;
 
         let izquierda = anchoMuestra;
         let arriba = altoMuestra;
         let derecha = -1;
         let abajo = -1;
 
-        for (
-            let y = 0;
-            y < altoMuestra;
-            y += 1
-        ) {
-            for (
-                let x = 0;
-                x < anchoMuestra;
-                x += 1
-            ) {
-                const alpha =
-                    pixeles[
-                        (y * anchoMuestra + x) * 4 + 3
-                    ];
+        for (let y = 0; y < altoMuestra; y += 1) {
+            for (let x = 0; x < anchoMuestra; x += 1) {
+                const alpha = pixeles[(y * anchoMuestra + x) * 4 + 3];
 
                 if (alpha > 8) {
                     izquierda = Math.min(izquierda, x);
@@ -170,29 +146,39 @@ async function recortarMargenTransparente(archivo) {
         }
 
         const margenMuestra = 2;
-        const origenX =
-            Math.max(0, izquierda - margenMuestra);
-        const origenY =
-            Math.max(0, arriba - margenMuestra);
-        const finalX =
-            Math.min(anchoMuestra, derecha + margenMuestra + 1);
-        const finalY =
-            Math.min(altoMuestra, abajo + margenMuestra + 1);
 
-        const recorteX =
-            Math.floor(origenX / escala);
-        const recorteY =
-            Math.floor(origenY / escala);
-        const recorteAncho =
-            Math.min(
-                imagen.width - recorteX,
-                Math.ceil((finalX - origenX) / escala)
-            );
-        const recorteAlto =
-            Math.min(
-                imagen.height - recorteY,
-                Math.ceil((finalY - origenY) / escala)
-            );
+        const origenX = Math.max(
+            0,
+            izquierda - margenMuestra
+        );
+
+        const origenY = Math.max(
+            0,
+            arriba - margenMuestra
+        );
+
+        const finalX = Math.min(
+            anchoMuestra,
+            derecha + margenMuestra + 1
+        );
+
+        const finalY = Math.min(
+            altoMuestra,
+            abajo + margenMuestra + 1
+        );
+
+        const recorteX = Math.floor(origenX / escala);
+        const recorteY = Math.floor(origenY / escala);
+
+        const recorteAncho = Math.min(
+            imagen.width - recorteX,
+            Math.ceil((finalX - origenX) / escala)
+        );
+
+        const recorteAlto = Math.min(
+            imagen.height - recorteY,
+            Math.ceil((finalY - origenY) / escala)
+        );
 
         if (
             recorteX === 0 &&
@@ -203,14 +189,12 @@ async function recortarMargenTransparente(archivo) {
             return archivo;
         }
 
-        const lienzoRecorte =
-            document.createElement("canvas");
+        const lienzoRecorte = document.createElement("canvas");
 
         lienzoRecorte.width = recorteAncho;
         lienzoRecorte.height = recorteAlto;
 
-        const contextoRecorte =
-            lienzoRecorte.getContext("2d");
+        const contextoRecorte = lienzoRecorte.getContext("2d");
 
         if (!contextoRecorte) {
             throw new Error(
@@ -230,26 +214,24 @@ async function recortarMargenTransparente(archivo) {
             recorteAlto
         );
 
-        const blob =
-            await new Promise((resolve, reject) => {
-                lienzoRecorte.toBlob(
-                    resultado => {
-                        if (resultado) {
-                            resolve(resultado);
-                        } else {
-                            reject(
-                                new Error(
-                                    "No se pudo generar la imagen recortada."
-                                )
-                            );
-                        }
-                    },
-                    "image/png"
-                );
-            });
+        const blob = await new Promise((resolve, reject) => {
+            lienzoRecorte.toBlob(
+                resultado => {
+                    if (resultado) {
+                        resolve(resultado);
+                    } else {
+                        reject(
+                            new Error(
+                                "No se pudo generar la imagen recortada."
+                            )
+                        );
+                    }
+                },
+                "image/png"
+            );
+        });
 
-        const nombreBase =
-            archivo.name.replace(/\.[^.]+$/, "");
+        const nombreBase = archivo.name.replace(/\.[^.]+$/, "");
 
         return new File(
             [blob],
@@ -259,18 +241,14 @@ async function recortarMargenTransparente(archivo) {
                 lastModified: Date.now()
             }
         );
-
     } finally {
         imagen.close();
     }
 }
 
 async function obtenerAspectRatioImagen(archivo) {
-
     if (typeof createImageBitmap === "function") {
-
-        const imagen =
-            await createImageBitmap(archivo);
+        const imagen = await createImageBitmap(archivo);
 
         try {
             return imagen.width / imagen.height;
@@ -279,20 +257,18 @@ async function obtenerAspectRatioImagen(archivo) {
         }
     }
 
-    const url =
-        URL.createObjectURL(archivo);
+    const url = URL.createObjectURL(archivo);
 
     try {
-
         const imagen = new Image();
 
         return await new Promise((resolve, reject) => {
             imagen.onload = () => {
                 resolve(
-                    imagen.naturalWidth /
-                    imagen.naturalHeight
+                    imagen.naturalWidth / imagen.naturalHeight
                 );
             };
+
             imagen.onerror = () => {
                 reject(
                     new Error(
@@ -300,9 +276,9 @@ async function obtenerAspectRatioImagen(archivo) {
                     )
                 );
             };
+
             imagen.src = url;
         });
-
     } finally {
         URL.revokeObjectURL(url);
     }
@@ -313,7 +289,6 @@ function crearDisenoVacio() {
         archivo: null,
         preview: null,
         ruta: null,
-
         logo: {
             x: 0,
             y: 0,
@@ -324,265 +299,108 @@ function crearDisenoVacio() {
     };
 }
 
-export default function PersonalizadorProducto({
-    producto
-}) {
+export default function PersonalizadorProducto({ producto }) {
+    const { items, agregarAlCarrito } = useCarrito();
 
-    const {
-        items,
-        agregarAlCarrito
-    } = useCarrito();
+    const canvasRef = useRef(null);
+    const fileInputRef = useRef(null);
+    const dragRef = useRef(null);
+    const resizeRef = useRef(null);
 
-    const canvasRef =
-        useRef(null);
+    const [areas, setAreas] = useState([]);
+    const [calibraciones, setCalibraciones] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const [posicion, setPosicion] = useState(null);
+    const [disenosPorVista, setDisenosPorVista] = useState({});
+    const [talle, setTalle] = useState("");
+    const [color, setColor] = useState("");
+    const [cantidad, setCantidad] = useState(1);
+    const [subiendo, setSubiendo] = useState(false);
+    const [mensaje, setMensaje] = useState("");
+    const [error, setError] = useState("");
 
-    const fileInputRef =
-        useRef(null);
+    const coloresDisponibles = useMemo(() => {
+        if (!producto.usaColores) {
+            return [];
+        }
 
-    const dragRef =
-        useRef(null);
+        const unicos = new Map();
 
-    const resizeRef =
-        useRef(null);
+        areas.forEach(area => {
+            const valor = String(area.color || "").trim();
 
-    const [
-        areas,
-        setAreas
-    ] = useState([]);
-
-    const [
-        calibraciones,
-        setCalibraciones
-    ] = useState([]);
-
-    const [
-        cargando,
-        setCargando
-    ] = useState(true);
-
-    const [
-        posicion,
-        setPosicion
-    ] = useState(null);
-
-    const [
-        tamano,
-        setTamano
-    ] = useState(null);
-
-    /*
-     * IMPORTANTE:
-     *
-     * Cada vista tiene SU propio diseño.
-     *
-     * {
-     *   FRENTE: {...},
-     *   ESPALDA: {...},
-     *   MANGA_DERECHA: {...}
-     * }
-     */
-    const [
-        disenosPorVista,
-        setDisenosPorVista
-    ] = useState({});
-
-    const [
-        talle,
-        setTalle
-    ] = useState("");
-
-    const [
-        color,
-        setColor
-    ] = useState("");
-
-    const coloresDisponibles =
-        useMemo(() => {
-
-            if (!producto.usaColores) {
-                return [];
+            if (valor) {
+                unicos.set(valor.toLowerCase(), valor);
             }
+        });
 
-            const unicos =
-                new Map();
+        return Array.from(unicos.values());
+    }, [areas, producto.usaColores]);
 
-            areas.forEach(
-                area => {
-
-                    const valor =
-                        String(
-                            area.color ||
-                            ""
-                        ).trim();
-
-                    if (valor) {
-                        unicos.set(
-                            valor.toLowerCase(),
-                            valor
-                        );
-                    }
-                }
+    const areasActivas = useMemo(() => {
+        if (!producto.usaColores) {
+            const genericas = areas.filter(
+                area => !String(area.color || "").trim()
             );
 
-            return Array.from(
-                unicos.values()
-            );
+            return genericas.length > 0 ? genericas : areas;
+        }
 
-        }, [
-            areas,
-            producto.usaColores
-        ]);
+        if (!color) {
+            return [];
+        }
 
-    const areasActivas =
-        useMemo(() => {
-
-            if (!producto.usaColores) {
-
-                const genericas =
-                    areas.filter(
-                        area =>
-                            !String(
-                                area.color ||
-                                ""
-                            ).trim()
-                    );
-
-                return genericas.length > 0
-                    ? genericas
-                    : areas;
-            }
-
-            if (!color) {
-                return [];
-            }
-
-            return areas.filter(
-                area =>
-                    String(
-                        area.color ||
-                        ""
-                    )
-                        .trim()
-                        .toLowerCase() ===
-                    String(color)
-                        .trim()
-                        .toLowerCase()
-            );
-
-        }, [
-            areas,
-            color,
-            producto.usaColores
-        ]);
-
-    const [
-        cantidad,
-        setCantidad
-    ] = useState(1);
-
-    const [
-        subiendo,
-        setSubiendo
-    ] = useState(false);
-
-    const [
-        mensaje,
-        setMensaje
-    ] = useState("");
-
-    const [
-        error,
-        setError
-    ] = useState("");
+        return areas.filter(
+            area =>
+                String(area.color || "").trim().toLowerCase() ===
+                String(color).trim().toLowerCase()
+        );
+    }, [areas, color, producto.usaColores]);
 
     // =====================================================
-    // CARGAR ÁREAS / MOCKUPS
+    // CARGAR ÁREAS Y CALIBRACIONES
     // =====================================================
 
     useEffect(() => {
-
         async function cargarAreas() {
-
             try {
-
                 setCargando(true);
                 setError("");
 
-                const data =
-                    await getAreasPersonalizacion(
-                        producto.id
-                    );
-
-                const lista =
-                    Array.isArray(data)
-                        ? data
-                        : [];
+                const data = await getAreasPersonalizacion(producto.id);
+                const lista = Array.isArray(data) ? data : [];
 
                 setAreas(lista);
 
-                if (
-                    lista.length > 0 &&
-                    !producto.usaColores
-                ) {
-
-                    setPosicion(
-                        lista[0].posicion
-                    );
+                if (lista.length > 0 && !producto.usaColores) {
+                    setPosicion(lista[0].posicion);
                 }
 
-                if (
-                    producto.usaColores
-                ) {
+                if (producto.usaColores) {
+                    const colores = Array.from(
+                        new Map(
+                            lista
+                                .map(area => String(area.color || "").trim())
+                                .filter(Boolean)
+                                .map(valor => [valor.toLowerCase(), valor])
+                        ).values()
+                    );
 
-                    const colores =
-                        Array.from(
-                            new Map(
-                                lista
-                                    .map(
-                                        area =>
-                                            String(
-                                                area.color ||
-                                                ""
-                                            ).trim()
-                                    )
-                                    .filter(Boolean)
-                                    .map(
-                                        valor => [
-                                            valor.toLowerCase(),
-                                            valor
-                                        ]
-                                    )
-                            ).values()
-                        );
-
-                    if (
-                        colores.length > 0
-                    ) {
-
-                        setColor(
-                            actual =>
-                                actual ||
-                                colores[0]
-                        );
+                    if (colores.length > 0) {
+                        setColor(actual => actual || colores[0]);
                     }
                 }
-
             } catch (err) {
-
                 console.error(err);
-
                 setError(
                     "No se pudieron cargar las vistas de personalización."
                 );
-
             } finally {
-
                 setCargando(false);
             }
         }
 
         cargarAreas();
-
     }, [producto.id, producto.usaColores]);
 
     useEffect(() => {
@@ -591,11 +409,13 @@ export default function PersonalizadorProducto({
         async function cargarCalibraciones() {
             try {
                 const data = await getCalibracionesEstampa(producto.id);
+
                 if (activa) {
                     setCalibraciones(Array.isArray(data) ? data : []);
                 }
             } catch (err) {
                 console.error(err);
+
                 if (activa) {
                     setError(
                         err.message ||
@@ -613,298 +433,51 @@ export default function PersonalizadorProducto({
     }, [producto.id]);
 
     useEffect(() => {
-
-        if (
-            areasActivas.length === 0
-        ) {
+        if (areasActivas.length === 0) {
             setPosicion(null);
             return;
         }
 
         if (
-            !areasActivas.some(
-                area =>
-                    area.posicion ===
-                    posicion
-            )
+            !areasActivas.some(area => area.posicion === posicion)
         ) {
-
-            setPosicion(
-                areasActivas[0].posicion
-            );
+            setPosicion(areasActivas[0].posicion);
         }
 
-        setDisenosPorVista(
-            actual => {
+        setDisenosPorVista(actual => {
+            const copia = { ...actual };
 
-                const copia = {
-                    ...actual
-                };
+            areasActivas.forEach(area => {
+                if (!copia[area.posicion]) {
+                    copia[area.posicion] = crearDisenoVacio();
+                }
+            });
 
-                areasActivas.forEach(
-                    area => {
+            return copia;
+        });
+    }, [areasActivas, posicion]);
 
-                        if (
-                            !copia[
-                                area.posicion
-                            ]
-                        ) {
+    // =====================================================
+    // ÁREA Y DISEÑO ACTUAL
+    // =====================================================
 
-                            copia[
-                                area.posicion
-                            ] =
-                                crearDisenoVacio();
-                        }
-                    }
-                );
-
-                return copia;
-            }
+    const areaActual = useMemo(() => {
+        return (
+            areasActivas.find(area => area.posicion === posicion) ||
+            null
         );
+    }, [areasActivas, posicion]);
 
-    }, [
-        areasActivas,
-        posicion
-    ]);
+    const disenoActual = posicion
+        ? disenosPorVista[posicion] || crearDisenoVacio()
+        : crearDisenoVacio();
 
-    // =====================================================
-    // ÁREA ACTUAL
-    // =====================================================
-
-    const areaActual =
-        useMemo(() => {
-
-            return (
-                areasActivas.find(
-                    area =>
-                        area.posicion ===
-                        posicion
-                ) ||
-                null
-            );
-
-        }, [
-            areasActivas,
-            posicion
-        ]);
-
-    const disenoActual =
-        posicion
-            ? (
-                disenosPorVista[
-                    posicion
-                ] ||
-                crearDisenoVacio()
-            )
-            : crearDisenoVacio();
-
-    const logo =
-        disenoActual.logo;
-
-    const previewLogo =
-        disenoActual.preview;
+    const logo = disenoActual.logo;
+    const previewLogo = disenoActual.preview;
 
     // =====================================================
-    // TAMAÑOS DISPONIBLES
+    // CALIBRACIÓN: CM POR UNIDAD VISUAL
     // =====================================================
-
-    const tamanosDisponibles =
-        useMemo(() => {
-
-            const lista = [];
-
-            if (
-                producto.permiteEstampaChica
-            ) {
-                lista.push("CHICA");
-            }
-
-            if (
-                producto.permiteEstampaMedia
-            ) {
-                lista.push("MEDIA");
-            }
-
-            if (
-                producto.permiteEstampaGrande
-            ) {
-                lista.push("GRANDE");
-            }
-
-            return lista;
-
-        }, [producto]);
-
-    useEffect(() => {
-
-        if (
-            !tamano &&
-            tamanosDisponibles.length > 0
-        ) {
-
-            setTamano(
-                tamanosDisponibles[0]
-            );
-        }
-
-    }, [
-        tamanosDisponibles,
-        tamano
-    ]);
-
-    // =====================================================
-    // PRECIO
-    // =====================================================
-
-    function obtenerAdicional() {
-
-        if (
-            tamano === "CHICA"
-        ) {
-
-            return Number(
-                producto
-                    .precioEstampaChica ||
-                0
-            );
-        }
-
-        if (
-            tamano === "MEDIA"
-        ) {
-
-            return Number(
-                producto
-                    .precioEstampaMedia ||
-                0
-            );
-        }
-
-        if (
-            tamano === "GRANDE"
-        ) {
-
-            return Number(
-                producto
-                    .precioEstampaGrande ||
-                0
-            );
-        }
-
-        return 0;
-    }
-
-    const precioAdicionalTalle =
-        producto.incluyeTallesEspeciales === true &&
-        ["T6", "T8", "T10", "T14", "T16"].includes(
-            String(talle).trim().toUpperCase()
-        )
-            ? Number(producto.precioAdicionalTalleEspecial || 0)
-            : 0;
-
-    const precioUnitario =
-        Number(producto.precioBase || 0) +
-        obtenerAdicional() +
-        precioAdicionalTalle;
-
-    const cantidadEnCarrito =
-        items.reduce(
-            (cantidadTotal, item) =>
-                String(item.productoId) === String(producto.id)
-                    ? cantidadTotal + Number(item.cantidad || 0)
-                    : cantidadTotal,
-            0
-        );
-
-    const descuentoMayoristaPorcentaje =
-        Number(producto.descuentoMayoristaPorcentaje || 0);
-
-    const aplicaDescuentoMayorista =
-        cantidadEnCarrito + Number(cantidad || 0) > 5 &&
-        descuentoMayoristaPorcentaje > 0;
-
-    const precioUnitarioMostrado =
-        Number(producto.precioBase || 0) *
-            (aplicaDescuentoMayorista
-                ? 1 - descuentoMayoristaPorcentaje / 100
-                : 1) +
-        obtenerAdicional() +
-        precioAdicionalTalle;
-
-    // =====================================================
-    // MEDIDAS MÁXIMAS EN CM
-    // =====================================================
-
-    function obtenerMedidasMaximas(
-        area = areaActual
-    ) {
-
-        if (!area) {
-
-            return {
-                ancho: 0,
-                alto: 0
-            };
-        }
-
-        if (
-            tamano === "CHICA"
-        ) {
-
-            return {
-                ancho:
-                    Number(
-                        area
-                            .anchoChicaCm ||
-                        0
-                    ),
-
-                alto:
-                    Number(
-                        area
-                            .altoChicaCm ||
-                        0
-                    )
-            };
-        }
-
-        if (
-            tamano === "MEDIA"
-        ) {
-
-            return {
-                ancho:
-                    Number(
-                        area
-                            .anchoMediaCm ||
-                        0
-                    ),
-
-                alto:
-                    Number(
-                        area
-                            .altoMediaCm ||
-                        0
-                    )
-            };
-        }
-
-        return {
-            ancho:
-                Number(
-                    area
-                        .anchoGrandeCm ||
-                    0
-                ),
-
-            alto:
-                Number(
-                    area
-                        .altoGrandeCm ||
-                    0
-                )
-        };
-    }
 
     function obtenerEscalaCmPorcentaje(
         area = areaActual,
@@ -917,9 +490,13 @@ export default function PersonalizadorProducto({
         const calibracion = calibraciones.find(
             item => item.posicion === area.posicion
         );
+
         const medidasPorTalle = calibracion?.medidasCmPorTalle || {};
+
         const distanciaCm = Number(
-            medidasPorTalle[String(talleSeleccionado).trim().toUpperCase()] || 0
+            medidasPorTalle[
+                String(talleSeleccionado).trim().toUpperCase()
+            ] || 0
         );
 
         if (
@@ -941,646 +518,503 @@ export default function PersonalizadorProducto({
     }
 
     // =====================================================
-    // TAMAÑO VISUAL MÁXIMO DEL LOGO
+    // LÍMITE VISUAL
     //
-    // El ÁREA GENERAL NO cambia.
-    //
-    // CHICA / MEDIA / GRANDE solamente determinan
-    // cuánto puede medir el diseño.
-    //
-    // El usuario puede moverlo por todo el mockup.
+    // No depende del talle ni de la categoría de precio.
+    // El límite es el área completa configurada por el admin.
     // =====================================================
 
-    function obtenerMaximoVisual(
-        area = areaActual
-    ) {
-
+    function obtenerMaximoVisual(area = areaActual) {
         if (!area) {
-
             return {
                 width: 0,
                 height: 0
             };
         }
 
-        const anchoGrande =
-            Number(
-                area.anchoGrandeCm ||
-                0
-            );
-
-        const altoGrande =
-            Number(
-                area.altoGrandeCm ||
-                0
-            );
-
-        const medidas =
-            obtenerMedidasMaximas(
-                area
-            );
-
-        const escalaCmPorcentaje =
-            obtenerEscalaCmPorcentaje(area);
-
-        if (
-            escalaCmPorcentaje > 0 &&
-            medidas.ancho > 0 &&
-            medidas.alto > 0
-        ) {
-            return {
-                width: Math.min(
-                    Number(area.width),
-                    medidas.ancho / escalaCmPorcentaje
-                ),
-                height: Math.min(
-                    Number(area.height),
-                    medidas.alto / escalaCmPorcentaje
-                )
-            };
-        }
-
-        /*
-         * Si faltan medidas físicas,
-         * usamos el área completa como fallback.
-         */
-        if (
-            anchoGrande <= 0 ||
-            altoGrande <= 0 ||
-            medidas.ancho <= 0 ||
-            medidas.alto <= 0
-        ) {
-
-            return {
-                width:
-                    Number(
-                        area.width
-                    ),
-
-                height:
-                    Number(
-                        area.height
-                    )
-            };
-        }
-
-        const proporcionAncho =
-            clamp(
-                medidas.ancho /
-                    anchoGrande,
-                0,
-                1
-            );
-
-        const proporcionAlto =
-            clamp(
-                medidas.alto /
-                    altoGrande,
-                0,
-                1
-            );
-
         return {
-            width:
-                Number(
-                    area.width
-                ) *
-                proporcionAncho,
-
-            height:
-                Number(
-                    area.height
-                ) *
-                proporcionAlto
+            width: Math.max(0, Number(area.width || 0)),
+            height: Math.max(0, Number(area.height || 0))
         };
     }
 
     // =====================================================
-    // ACTUALIZAR DISEÑO DE UNA VISTA
+    // MEDIDAS FÍSICAS
+    //
+    // Con calibración: utiliza la escala del talle elegido.
+    // Sin calibración: utiliza las dimensiones grandes
+    // configuradas como referencia para el área.
     // =====================================================
 
-    function actualizarDisenoVista(
-        posicionVista,
-        cambios
+    function calcularMedidasReales(
+        area,
+        logoVista,
+        talleSeleccionado = talle
     ) {
-
-        setDisenosPorVista(
-            actual => {
-
-                const anterior =
-                    actual[
-                        posicionVista
-                    ] ||
-                    crearDisenoVacio();
-
-                return {
-                    ...actual,
-
-                    [posicionVista]: {
-                        ...anterior,
-                        ...cambios
-                    }
-                };
-            }
-        );
-    }
-
-    function actualizarLogoVista(
-        posicionVista,
-        nuevoLogo
-    ) {
-
-        setDisenosPorVista(
-            actual => {
-
-                const anterior =
-                    actual[
-                        posicionVista
-                    ] ||
-                    crearDisenoVacio();
-                const logoActualizado =
-                    typeof nuevoLogo === "function"
-                        ? nuevoLogo(anterior.logo)
-                        : nuevoLogo;
-
-                return {
-                    ...actual,
-
-                    [posicionVista]: {
-                        ...anterior,
-                        logo: logoActualizado
-                    }
-                };
-            }
-        );
-    }
-
-    // =====================================================
-    // CUANDO CAMBIA TAMAÑO
-    //
-    // NO centra obligatoriamente los diseños ya existentes.
-    //
-    // Solo:
-    // - limita el tamaño máximo
-    // - corrige posición si quedara afuera
-    //
-    // Si una vista todavía no tiene tamaño inicial,
-    // arranca centrada.
-    // =====================================================
-
-    useEffect(() => {
-
-        if (
-            !tamano ||
-            areasActivas.length === 0
-        ) {
-            return;
+        if (!area || !logoVista) {
+            return {
+                ancho: 0,
+                alto: 0
+            };
         }
 
-        setDisenosPorVista(
-            actual => {
+        const anchoVisual = Number(logoVista.width || 0);
+        const altoVisual = Number(logoVista.height || 0);
 
-                const copia = {
-                    ...actual
-                };
+        if (anchoVisual <= 0 || altoVisual <= 0) {
+            return {
+                ancho: 0,
+                alto: 0
+            };
+        }
 
-                areasActivas.forEach(
-                    area => {
+        const escala = obtenerEscalaCmPorcentaje(
+            area,
+            talleSeleccionado
+        );
 
-                        const anterior =
-                            copia[
-                                area.posicion
-                            ] ||
-                            crearDisenoVacio();
+        if (escala > 0) {
+            return {
+                ancho: Number((anchoVisual * escala).toFixed(1)),
+                alto: Number((altoVisual * escala).toFixed(1))
+            };
+        }
 
-                        const max =
-                            obtenerMaximoVisual(
-                                area
-                            );
+        const anchoReferencia = Number(area.anchoGrandeCm || 0);
+        const altoReferencia = Number(area.altoGrandeCm || 0);
+        const anchoArea = Number(area.width || 0);
+        const altoArea = Number(area.height || 0);
 
-                        let width =
-                            Number(
-                                anterior
-                                    .logo
-                                    .width ||
-                                0
-                            );
+        if (
+            anchoReferencia <= 0 ||
+            altoReferencia <= 0 ||
+            anchoArea <= 0 ||
+            altoArea <= 0
+        ) {
+            return {
+                ancho: 0,
+                alto: 0
+            };
+        }
 
-                        let height =
-                            Number(
-                                anterior
-                                    .logo
-                                    .height ||
-                                0
-                            );
-                        const aspectRatio =
-                            Number(
-                                anterior.logo.aspectRatio
-                            ) ||
-                            (
-                                width > 0 && height > 0
-                                    ? width / height
-                                    : 1
-                            );
+        return {
+            ancho: Number(
+                (anchoVisual / anchoArea * anchoReferencia).toFixed(1)
+            ),
+            alto: Number(
+                (altoVisual / altoArea * altoReferencia).toFixed(1)
+            )
+        };
+    }
 
-                        const nuncaInicializado =
-                            width <= 0 ||
-                            height <= 0;
+    // =====================================================
+    // CATEGORÍA AUTOMÁTICA
+    //
+    // Si hay varios diseños, se cobra según el más grande.
+    // =====================================================
 
-                        if (
-                            nuncaInicializado
-                        ) {
+    const categoriaEstampa = useMemo(() => {
+        let categoriaMayor = "CHICA";
 
-                            width = Math.min(
-                                max.width * 0.6,
-                                max.height * 0.6 * aspectRatio
-                            );
+        const prioridad = {
+            CHICA: 1,
+            MEDIA: 2,
+            GRANDE: 3
+        };
 
-                            height =
-                                width / aspectRatio;
-                        } else {
+        Object.entries(disenosPorVista).forEach(
+            ([posicionVista, diseno]) => {
+                if (
+                    !diseno?.archivo &&
+                    !diseno?.ruta
+                ) {
+                    return;
+                }
 
-                            const escala =
-                                Math.min(
-                                    1,
-                                    max.width / width,
-                                    max.height / height
-                                );
-
-                            width *= escala;
-                            height *= escala;
-                        }
-
-                        let x =
-                            Number(
-                                anterior
-                                    .logo
-                                    .x ||
-                                0
-                            );
-
-                        let y =
-                            Number(
-                                anterior
-                                    .logo
-                                    .y ||
-                                0
-                            );
-
-                        if (
-                            nuncaInicializado
-                        ) {
-
-                            x =
-                                Number(
-                                    area.x
-                                ) +
-                                (
-                                    Number(
-                                        area.width
-                                    ) -
-                                    width
-                                ) /
-                                2;
-
-                            y =
-                                Number(
-                                    area.y
-                                ) +
-                                (
-                                    Number(
-                                        area.height
-                                    ) -
-                                    height
-                                ) /
-                                2;
-
-                        } else {
-
-                            x =
-                                clamp(
-                                    x,
-                                    Number(area.x),
-                                    Number(area.x) +
-                                        Number(area.width) -
-                                        width
-                                );
-
-                            y =
-                                clamp(
-                                    y,
-                                    Number(area.y),
-                                    Number(area.y) +
-                                        Number(area.height) -
-                                        height
-                                );
-                        }
-
-                        copia[
-                            area.posicion
-                        ] = {
-                            ...anterior,
-
-                            logo: {
-                                x,
-                                y,
-                                width,
-                                height,
-                                aspectRatio
-                            }
-                        };
-                    }
+                const area = areas.find(
+                    item => item.posicion === posicionVista
                 );
 
-                return copia;
+                if (!area) {
+                    return;
+                }
+
+                const medidas = calcularMedidasReales(
+                    area,
+                    diseno.logo,
+                    talle
+                );
+
+                const categoria = obtenerCategoriaEstampa(medidas);
+
+                if (prioridad[categoria] > prioridad[categoriaMayor]) {
+                    categoriaMayor = categoria;
+                }
             }
         );
 
+        return categoriaMayor;
     }, [
-        tamano,
-        areasActivas,
+        disenosPorVista,
+        areas,
         talle,
         calibraciones
     ]);
 
+    function obtenerAdicional(categoria = categoriaEstampa) {
+        if (categoria === "CHICA") {
+            return Number(producto.precioEstampaChica || 0);
+        }
+
+        if (categoria === "MEDIA") {
+            return Number(producto.precioEstampaMedia || 0);
+        }
+
+        if (categoria === "GRANDE") {
+            return Number(producto.precioEstampaGrande || 0);
+        }
+
+        return 0;
+    }
+
+    const precioAdicionalTalle =
+        producto.incluyeTallesEspeciales === true &&
+        TALLES_ESPECIALES.includes(
+            String(talle).trim().toUpperCase()
+        )
+            ? Number(producto.precioAdicionalTalleEspecial || 0)
+            : 0;
+
+    const precioUnitario =
+        Number(producto.precioBase || 0) +
+        obtenerAdicional() +
+        precioAdicionalTalle;
+
+    const cantidadEnCarrito = items.reduce(
+        (cantidadTotal, item) =>
+            String(item.productoId) === String(producto.id)
+                ? cantidadTotal + Number(item.cantidad || 0)
+                : cantidadTotal,
+        0
+    );
+
+    const descuentoMayoristaPorcentaje =
+        Number(producto.descuentoMayoristaPorcentaje || 0);
+
+    const aplicaDescuentoMayorista =
+        cantidadEnCarrito + Number(cantidad || 0) > 5 &&
+        descuentoMayoristaPorcentaje > 0;
+
+    const precioUnitarioMostrado =
+        Number(producto.precioBase || 0) *
+            (
+                aplicaDescuentoMayorista
+                    ? 1 - descuentoMayoristaPorcentaje / 100
+                    : 1
+            ) +
+        obtenerAdicional() +
+        precioAdicionalTalle;
+
+    const medidasRealesActuales = useMemo(() => {
+        return calcularMedidasReales(
+            areaActual,
+            logo,
+            talle
+        );
+    }, [
+        areaActual,
+        logo,
+        talle,
+        calibraciones
+    ]);
+
+    const calibracionActual = calibraciones.find(
+        item => item.posicion === posicion
+    ) || null;
+
+    const escalaCalibradaActual =
+        obtenerEscalaCmPorcentaje(areaActual, talle);
+
     // =====================================================
-    // ARCHIVO DE LA VISTA ACTUAL
+    // ACTUALIZAR DISEÑOS POR VISTA
     // =====================================================
 
-    async function procesarArchivo(
-        archivo
-    ) {
+    function actualizarDisenoVista(posicionVista, cambios) {
+        setDisenosPorVista(actual => {
+            const anterior =
+                actual[posicionVista] || crearDisenoVacio();
 
-        if (
-            !archivo ||
-            !posicion
-        ) {
+            return {
+                ...actual,
+                [posicionVista]: {
+                    ...anterior,
+                    ...cambios
+                }
+            };
+        });
+    }
+
+    function actualizarLogoVista(posicionVista, nuevoLogo) {
+        setDisenosPorVista(actual => {
+            const anterior =
+                actual[posicionVista] || crearDisenoVacio();
+
+            const logoActualizado =
+                typeof nuevoLogo === "function"
+                    ? nuevoLogo(anterior.logo)
+                    : nuevoLogo;
+
+            return {
+                ...actual,
+                [posicionVista]: {
+                    ...anterior,
+                    logo: logoActualizado
+                }
+            };
+        });
+    }
+
+    // =====================================================
+    // INICIALIZAR DISEÑO
+    //
+    // Solo inicializa diseños vacíos.
+    // No se ejecuta al cambiar talle ni precio.
+    // =====================================================
+
+    useEffect(() => {
+        if (areasActivas.length === 0) {
             return;
         }
 
-        if (
-            !archivo.type.startsWith(
-                "image/"
-            )
-        ) {
+        setDisenosPorVista(actual => {
+            const copia = { ...actual };
+            let huboCambios = false;
 
-            setError(
-                "El archivo debe ser una imagen."
-            );
+            areasActivas.forEach(area => {
+                const anterior =
+                    copia[area.posicion] || crearDisenoVacio();
 
+                const width = Number(anterior.logo.width || 0);
+                const height = Number(anterior.logo.height || 0);
+
+                if (width > 0 && height > 0) {
+                    return;
+                }
+
+                const maximo = obtenerMaximoVisual(area);
+
+                const aspectRatio =
+                    Number(anterior.logo.aspectRatio) || 1;
+
+                let nuevoAncho = Math.min(
+                    maximo.width * 0.6,
+                    maximo.height * 0.6 * aspectRatio
+                );
+
+                let nuevoAlto = nuevoAncho / aspectRatio;
+
+                if (nuevoAlto > maximo.height * 0.6) {
+                    nuevoAlto = maximo.height * 0.6;
+                    nuevoAncho = nuevoAlto * aspectRatio;
+                }
+
+                const x =
+                    Number(area.x) +
+                    (Number(area.width) - nuevoAncho) / 2;
+
+                const y =
+                    Number(area.y) +
+                    (Number(area.height) - nuevoAlto) / 2;
+
+                copia[area.posicion] = {
+                    ...anterior,
+                    logo: {
+                        x,
+                        y,
+                        width: nuevoAncho,
+                        height: nuevoAlto,
+                        aspectRatio
+                    }
+                };
+
+                huboCambios = true;
+            });
+
+            return huboCambios ? copia : actual;
+        });
+    }, [areasActivas]);
+
+    // =====================================================
+    // CARGAR ARCHIVO
+    // =====================================================
+
+    async function procesarArchivo(archivo) {
+        if (!archivo || !posicion || !areaActual) {
+            return;
+        }
+
+        if (!archivo.type.startsWith("image/")) {
+            setError("El archivo debe ser una imagen.");
             return;
         }
 
         try {
-
             const archivoRecortado =
-                await recortarMargenTransparente(
-                    archivo
-                );
+                await recortarMargenTransparente(archivo);
 
             const aspectRatio =
-                await obtenerAspectRatioImagen(
-                    archivoRecortado
-                );
+                await obtenerAspectRatioImagen(archivoRecortado);
 
-            const maximo =
-                obtenerMaximoVisual(
-                    areaActual
-                );
+            const maximo = obtenerMaximoVisual(areaActual);
 
-            const width = Math.min(
+            let width = Math.min(
                 maximo.width * 0.6,
                 maximo.height * 0.6 * aspectRatio
             );
 
-            const height =
-                width / aspectRatio;
+            let height = width / aspectRatio;
 
-            const x =
-                clamp(
-                    Number(areaActual?.x || 0) +
-                        (
-                            Number(areaActual?.width || 100) -
-                            width
-                        ) / 2,
-                    Number(areaActual?.x || 0),
-                    Number(areaActual?.x || 0) +
-                        Number(areaActual?.width || 100) -
-                        width
-                );
-
-            const y =
-                clamp(
-                    Number(areaActual?.y || 0) +
-                        (
-                            Number(areaActual?.height || 100) -
-                            height
-                        ) / 2,
-                    Number(areaActual?.y || 0),
-                    Number(areaActual?.y || 0) +
-                        Number(areaActual?.height || 100) -
-                        height
-                );
-
-            const anterior =
-                disenosPorVista[
-                    posicion
-                ];
-
-            if (anterior?.preview) {
-                URL.revokeObjectURL(
-                    anterior.preview
-                );
+            if (height > maximo.height * 0.6) {
+                height = maximo.height * 0.6;
+                width = height * aspectRatio;
             }
 
-            actualizarDisenoVista(
-                posicion,
-                {
-                    archivo: archivoRecortado,
-                    ruta: null,
-                    logo: {
-                        x,
-                        y,
-                        width,
-                        height,
-                        aspectRatio
-                    },
-
-                    preview:
-                        URL.createObjectURL(
-                            archivoRecortado
-                        )
-                }
+            const x = clamp(
+                Number(areaActual.x || 0) +
+                    (Number(areaActual.width || 100) - width) / 2,
+                Number(areaActual.x || 0),
+                Number(areaActual.x || 0) +
+                    Number(areaActual.width || 100) -
+                    width
             );
+
+            const y = clamp(
+                Number(areaActual.y || 0) +
+                    (Number(areaActual.height || 100) - height) / 2,
+                Number(areaActual.y || 0),
+                Number(areaActual.y || 0) +
+                    Number(areaActual.height || 100) -
+                    height
+            );
+
+            const anterior = disenosPorVista[posicion];
+
+            if (anterior?.preview) {
+                URL.revokeObjectURL(anterior.preview);
+            }
+
+            actualizarDisenoVista(posicion, {
+                archivo: archivoRecortado,
+                ruta: null,
+                logo: {
+                    x,
+                    y,
+                    width,
+                    height,
+                    aspectRatio
+                },
+                preview: URL.createObjectURL(archivoRecortado)
+            });
 
             setMensaje("");
             setError("");
-
         } catch (err) {
-
             console.error(err);
-
-            setError(
-                err.message ||
-                "No se pudo preparar la imagen."
-            );
+            setError(err.message || "No se pudo preparar la imagen.");
         }
     }
 
     function handleDrop(e) {
-
         e.preventDefault();
 
-        const archivo =
-            e.dataTransfer
-                .files?.[0];
+        const archivo = e.dataTransfer.files?.[0];
 
-        procesarArchivo(
-            archivo
-        );
+        procesarArchivo(archivo);
     }
 
     // =====================================================
-    // MOVER LOGO
-    //
-    // El diseño debe permanecer dentro del área de impresión.
+    // MOVER DISEÑO
     // =====================================================
 
     function iniciarMover(e) {
-
-        if (
-            !previewLogo ||
-            !posicion
-        ) {
+        if (!previewLogo || !posicion) {
             return;
         }
 
-        if (
-            e.target.classList.contains(
-                "personalizador-resize"
-            )
-        ) {
+        if (e.target.classList.contains("personalizador-resize")) {
             return;
         }
 
         e.preventDefault();
 
         dragRef.current = {
-
-            pointerId:
-                e.pointerId,
-
+            pointerId: e.pointerId,
             posicion,
-
-            clientX:
-                e.clientX,
-
-            clientY:
-                e.clientY,
-
-            inicial:
-                { ...logo }
+            clientX: e.clientX,
+            clientY: e.clientY,
+            inicial: { ...logo }
         };
 
-        e.currentTarget
-            .setPointerCapture(
-                e.pointerId
-            );
+        e.currentTarget.setPointerCapture(e.pointerId);
     }
 
     function moverLogo(e) {
-
-        const drag =
-            dragRef.current;
+        const drag = dragRef.current;
 
         if (
             !drag ||
-            drag.pointerId !==
-                e.pointerId ||
+            drag.pointerId !== e.pointerId ||
             !canvasRef.current
         ) {
             return;
         }
 
-        const area =
-            areasActivas.find(
-                item =>
-                    item.posicion ===
-                    drag.posicion
-            );
+        const area = areasActivas.find(
+            item => item.posicion === drag.posicion
+        );
 
         if (!area) {
             return;
         }
 
-        const rect =
-            canvasRef.current
-                .getBoundingClientRect();
+        const rect = canvasRef.current.getBoundingClientRect();
 
-        const dx =
-            (
-                (
-                    e.clientX -
-                    drag.clientX
-                ) /
-                rect.width
-            ) *
-            100;
+        const dx = ((e.clientX - drag.clientX) / rect.width) * 100;
+        const dy = ((e.clientY - drag.clientY) / rect.height) * 100;
 
-        const dy =
-            (
-                (
-                    e.clientY -
-                    drag.clientY
-                ) /
-                rect.height
-            ) *
-            100;
+        actualizarLogoVista(drag.posicion, {
+            ...drag.inicial,
 
-        actualizarLogoVista(
-            drag.posicion,
-            {
-                ...drag.inicial,
+            x: clamp(
+                drag.inicial.x + dx,
+                Number(area.x),
+                Number(area.x) +
+                    Number(area.width) -
+                    drag.inicial.width
+            ),
 
-                x:
-                    clamp(
-                        drag.inicial.x +
-                            dx,
-                        Number(area.x),
-                        Number(area.x) +
-                            Number(area.width) -
-                            drag.inicial.width
-                    ),
-
-                y:
-                    clamp(
-                        drag.inicial.y +
-                            dy,
-                        Number(area.y),
-                        Number(area.y) +
-                            Number(area.height) -
-                            drag.inicial.height
-                    )
-            }
-        );
+            y: clamp(
+                drag.inicial.y + dy,
+                Number(area.y),
+                Number(area.y) +
+                    Number(area.height) -
+                    drag.inicial.height
+            )
+        });
     }
 
     function terminarMover() {
-
-        dragRef.current =
-            null;
+        dragRef.current = null;
     }
 
     // =====================================================
-    // REDIMENSIONAR
+    // REDIMENSIONAR DISEÑO
     //
-    // El máximo depende de CHICA/MEDIA/GRANDE.
-    //
-    // Y siempre debe quedar dentro del área configurada.
+    // Sin límite de 20 o 30 cm.
+    // El único límite es el área de impresión.
     // =====================================================
 
     function iniciarResize(e) {
-
         if (!posicion) {
             return;
         }
@@ -1589,81 +1023,43 @@ export default function PersonalizadorProducto({
         e.stopPropagation();
 
         resizeRef.current = {
-
-            pointerId:
-                e.pointerId,
-
+            pointerId: e.pointerId,
             posicion,
-
-            clientX:
-                e.clientX,
-
-            clientY:
-                e.clientY,
-
-            inicial:
-                { ...logo }
+            clientX: e.clientX,
+            clientY: e.clientY,
+            inicial: { ...logo }
         };
 
-        e.currentTarget
-            .setPointerCapture(
-                e.pointerId
-            );
+        e.currentTarget.setPointerCapture(e.pointerId);
     }
 
     function resizeLogo(e) {
-
-        const resize =
-            resizeRef.current;
+        const resize = resizeRef.current;
 
         if (
             !resize ||
-            resize.pointerId !==
-                e.pointerId ||
+            resize.pointerId !== e.pointerId ||
             !canvasRef.current
         ) {
             return;
         }
 
-        const area =
-            areasActivas.find(
-                item =>
-                    item.posicion ===
-                    resize.posicion
-            );
+        const area = areasActivas.find(
+            item => item.posicion === resize.posicion
+        );
 
         if (!area) {
             return;
         }
 
-        const rect =
-            canvasRef.current
-                .getBoundingClientRect();
+        const rect = canvasRef.current.getBoundingClientRect();
 
-        const dx =
-            (
-                (
-                    e.clientX -
-                    resize.clientX
-                ) /
-                rect.width
-            ) *
-            100;
+        const dx = ((e.clientX - resize.clientX) / rect.width) * 100;
+        const dy = ((e.clientY - resize.clientY) / rect.height) * 100;
 
-        const dy =
-            (
-                (
-                    e.clientY -
-                    resize.clientY
-                ) /
-                rect.height
-            ) *
-            100;
-
-        const maximoTamano =
-            obtenerMaximoVisual(
-                area
-            );
+        const aspectRatio =
+            Number(resize.inicial.aspectRatio) ||
+            resize.inicial.width / resize.inicial.height;
 
         const maxWidthPorPosicion =
             Number(area.x) +
@@ -1675,212 +1071,89 @@ export default function PersonalizadorProducto({
             Number(area.height) -
             resize.inicial.y;
 
-        const maxWidth =
-            Math.min(
-                maximoTamano.width,
-                maximoTamano.height *
-                    (
-                        Number(resize.inicial.aspectRatio) ||
-                        resize.inicial.width /
-                            resize.inicial.height
-                    ),
-                maxWidthPorPosicion,
-                maxHeightPorPosicion *
-                    (
-                        Number(resize.inicial.aspectRatio) ||
-                        resize.inicial.width /
-                            resize.inicial.height
-                    )
-            );
+        const maximo = obtenerMaximoVisual(area);
 
-        const aspectRatio =
-            Number(resize.inicial.aspectRatio) ||
-            resize.inicial.width /
-                resize.inicial.height;
+        const maxWidth = Math.max(
+            0,
+            Math.min(
+                maximo.width,
+                maximo.height * aspectRatio,
+                maxWidthPorPosicion,
+                maxHeightPorPosicion * aspectRatio
+            )
+        );
 
         const anchoSolicitado =
             Math.abs(dx) >= Math.abs(dy) * aspectRatio
                 ? resize.inicial.width + dx
-                : (
-                    resize.inicial.height + dy
-                ) * aspectRatio;
+                : (resize.inicial.height + dy) * aspectRatio;
 
-        const width =
-            clamp(
-                anchoSolicitado,
-                Math.min(3, maxWidth),
-                maxWidth
-            );
-
-        actualizarLogoVista(
-            resize.posicion,
-            {
-                ...resize.inicial,
-
-                width,
-                height: width / aspectRatio
-            }
+        const width = clamp(
+            anchoSolicitado,
+            Math.min(0.5, maxWidth),
+            maxWidth
         );
+
+        actualizarLogoVista(resize.posicion, {
+            ...resize.inicial,
+            width,
+            height: width / aspectRatio
+        });
     }
 
     function terminarResize() {
-
-        resizeRef.current =
-            null;
+        resizeRef.current = null;
     }
-
-    // =====================================================
-    // MEDIDAS REALES DE UNA VISTA
-    // =====================================================
-
-    function calcularMedidasReales(
-        area,
-        logoVista
-    ) {
-
-        if (
-            !area ||
-            !logoVista
-        ) {
-
-            return {
-                ancho: 0,
-                alto: 0
-            };
-        }
-
-        const maxVisual =
-            obtenerMaximoVisual(
-                area
-            );
-
-        const maxCm =
-            obtenerMedidasMaximas(
-                area
-            );
-
-        const escalaCmPorcentaje =
-            obtenerEscalaCmPorcentaje(area);
-
-        if (escalaCmPorcentaje > 0) {
-            return {
-                ancho: Number(
-                    (Number(logoVista.width) * escalaCmPorcentaje).toFixed(1)
-                ),
-                alto: Number(
-                    (Number(logoVista.height) * escalaCmPorcentaje).toFixed(1)
-                )
-            };
-        }
-
-        if (
-            maxVisual.width <= 0 ||
-            maxVisual.height <= 0 ||
-            maxCm.ancho <= 0 ||
-            maxCm.alto <= 0
-        ) {
-
-            return {
-                ancho: 0,
-                alto: 0
-            };
-        }
-
-        return {
-            ancho:
-                Number(
-                    (
-                        maxCm.ancho *
-                        (
-                            logoVista.width /
-                            maxVisual.width
-                        )
-                    ).toFixed(1)
-                ),
-
-            alto:
-                Number(
-                    (
-                        maxCm.alto *
-                        (
-                            logoVista.height /
-                            maxVisual.height
-                        )
-                    ).toFixed(1)
-                )
-        };
-    }
-
-    const medidasRealesActuales =
-        useMemo(() => {
-
-            return calcularMedidasReales(
-                areaActual,
-                logo
-            );
-
-        }, [
-            areaActual,
-            logo,
-            tamano,
-            talle,
-            calibraciones
-        ]);
-
-    const calibracionActual = calibraciones.find(
-        item => item.posicion === posicion
-    ) || null;
-
-    const escalaCalibradaActual =
-        obtenerEscalaCmPorcentaje(areaActual);
 
     // =====================================================
     // AGREGAR AL CARRITO
     // =====================================================
 
     async function handleAgregarCarrito() {
-
         setError("");
         setMensaje("");
 
-        if (
-            areasActivas.length === 0
-        ) {
-
+        if (areasActivas.length === 0) {
             setError(
                 "Este producto todavía no tiene áreas de personalización configuradas."
             );
-
             return;
         }
 
-        const disenosConArchivo =
-            Object.entries(
-                disenosPorVista
-            ).filter(
-                ([, diseno]) =>
-                    Boolean(
-                        diseno.archivo ||
-                        diseno.ruta
-                    )
-            );
+        if (
+            producto.usaTalles &&
+            !talle
+        ) {
+            setError("Seleccioná un talle.");
+            return;
+        }
+
+        if (
+            producto.usaColores &&
+            !color
+        ) {
+            setError("Seleccioná un color.");
+            return;
+        }
+
+        const disenosConArchivo = Object.entries(
+            disenosPorVista
+        ).filter(
+            ([, diseno]) => Boolean(diseno.archivo || diseno.ruta)
+        );
 
         if (
             producto.requiereImagen &&
-            disenosConArchivo.length ===
-                0
+            disenosConArchivo.length === 0
         ) {
-
             setError(
                 "Subí al menos un diseño antes de agregar el producto."
             );
-
             return;
         }
 
         const disenoSinCalibracion =
-            producto.usaTalles &&
-            talle
+            producto.usaTalles && talle
                 ? disenosConArchivo.find(([posicionVista]) => {
                     const calibracion = calibraciones.find(
                         item => item.posicion === posicionVista
@@ -1900,217 +1173,112 @@ export default function PersonalizadorProducto({
 
         if (disenoSinCalibracion) {
             setError(
-                `Falta calibrar el talle ${talle} para la vista ${disenoSinCalibracion[0].toLowerCase().replaceAll("_", " ")}.`
+                `Falta calibrar el talle ${talle} para la vista ${disenoSinCalibracion[0]
+                    .toLowerCase()
+                    .replaceAll("_", " ")}.`
             );
-            return;
-        }
-
-        if (
-            producto.usaTalles &&
-            !talle
-        ) {
-
-            setError(
-                "Seleccioná un talle."
-            );
-
-            return;
-        }
-
-        if (
-            producto.usaColores &&
-            !color
-        ) {
-
-            setError(
-                "Seleccioná un color."
-            );
-
             return;
         }
 
         try {
-
             setSubiendo(true);
 
             const disenosFinales = [];
 
-            for (
-                const [
-                    posicionVista,
-                    diseno
-                ] of Object.entries(
-                    disenosPorVista
-                )
-            ) {
-
-                if (
-                    !diseno.archivo &&
-                    !diseno.ruta
-                ) {
+            for (const [posicionVista, diseno] of Object.entries(
+                disenosPorVista
+            )) {
+                if (!diseno.archivo && !diseno.ruta) {
                     continue;
                 }
 
-                let ruta =
-                    diseno.ruta;
+                let ruta = diseno.ruta;
 
-                if (
-                    diseno.archivo &&
-                    !ruta
-                ) {
+                if (diseno.archivo && !ruta) {
+                    const respuesta = await subirImagen(diseno.archivo);
 
-                    const respuesta =
-                        await subirImagen(
-                            diseno.archivo
-                        );
+                    ruta = respuesta.ruta;
 
-                    ruta =
-                        respuesta.ruta;
-
-                    actualizarDisenoVista(
-                        posicionVista,
-                        {
-                            ruta
-                        }
-                    );
+                    actualizarDisenoVista(posicionVista, { ruta });
                 }
 
-                const area =
-                    areas.find(
-                        item =>
-                            item.posicion ===
-                            posicionVista
-                    );
+                const area = areas.find(
+                    item => item.posicion === posicionVista
+                );
 
                 if (!area) {
                     continue;
                 }
 
-                const medidas =
-                    calcularMedidasReales(
-                        area,
-                        diseno.logo
-                    );
+                const medidas = calcularMedidasReales(
+                    area,
+                    diseno.logo,
+                    talle
+                );
+
+                const categoriaDiseno =
+                    obtenerCategoriaEstampa(medidas);
 
                 disenosFinales.push({
-                    rutaImagen:
-                        ruta,
+                    rutaImagen: ruta,
+                    posicion: posicionVista,
 
-                    posicion:
-                        posicionVista,
+                    tamano: categoriaDiseno,
 
-                    tamano,
+                    posicionX: Number(diseno.logo.x.toFixed(3)),
+                    posicionY: Number(diseno.logo.y.toFixed(3)),
 
-                    posicionX:
-                        Number(
-                            diseno.logo.x
-                                .toFixed(3)
-                        ),
+                    ancho: Number(diseno.logo.width.toFixed(3)),
+                    alto: Number(diseno.logo.height.toFixed(3)),
 
-                    posicionY:
-                        Number(
-                            diseno.logo.y
-                                .toFixed(3)
-                        ),
+                    anchoCm: medidas.ancho,
+                    altoCm: medidas.alto,
 
-                    ancho:
-                        Number(
-                            diseno.logo.width
-                                .toFixed(3)
-                        ),
-
-                    alto:
-                        Number(
-                            diseno.logo.height
-                                .toFixed(3)
-                        ),
-
-                    anchoCm:
-                        medidas.ancho,
-
-                    altoCm:
-                        medidas.alto,
-
-                    previewLocal:
-                        diseno.preview,
-
-                    imagenBase:
-                        area.imagenMockup
+                    previewLocal: diseno.preview,
+                    imagenBase: area.imagenMockup
                 });
             }
 
             agregarAlCarrito({
+                productoId: producto.id,
+                productoNombre: producto.nombre,
+                imagenPrincipal: producto.imagenPrincipal,
 
-                productoId:
-                    producto.id,
+                cantidad: Number(cantidad),
 
-                productoNombre:
-                    producto.nombre,
+                talle: talle || null,
+                color: color || null,
 
-                imagenPrincipal:
-                    producto.imagenPrincipal,
+                tamanoEstampa: categoriaEstampa,
 
-                cantidad:
-                    Number(cantidad),
-
-                talle:
-                    talle ||
-                    null,
-
-                color:
-                    color ||
-                    null,
-
-                tamanoEstampa:
-                    tamano,
-
-                precioBase:
-                    Number(
-                        producto
-                            .precioBase ||
-                        0
-                    ),
+                precioBase: Number(producto.precioBase || 0),
 
                 descuentoMayoristaPorcentaje:
-                    Number(
-                        producto.descuentoMayoristaPorcentaje || 0
-                    ),
+                    Number(producto.descuentoMayoristaPorcentaje || 0),
 
-                precioEstampa:
-                    obtenerAdicional(),
+                precioEstampa: obtenerAdicional(categoriaEstampa),
 
                 precioAdicionalTalle,
 
                 precioUnitario,
 
-                subtotal:
-                    precioUnitario *
-                    Number(
-                        cantidad
-                    ),
+                subtotal: precioUnitario * Number(cantidad),
 
-                disenos:
-                    disenosFinales
+                disenos: disenosFinales
             });
 
             setMensaje(
-                disenosFinales.length ===
-                    1
+                disenosFinales.length === 1
                     ? "Producto agregado al carrito con 1 diseño."
                     : `Producto agregado al carrito con ${disenosFinales.length} diseños.`
             );
-
         } catch (err) {
-
             console.error(err);
 
             setError(
-                err.message ||
-                "No se pudo agregar el producto."
+                err.message || "No se pudo agregar el producto."
             );
-
         } finally {
-
             setSubiendo(false);
         }
     }
@@ -2120,7 +1288,6 @@ export default function PersonalizadorProducto({
     // =====================================================
 
     if (cargando) {
-
         return (
             <div className="personalizador-loading">
                 Cargando personalizador...
@@ -2135,225 +1302,112 @@ export default function PersonalizadorProducto({
             coloresDisponibles.length === 0
         )
     ) {
-
         return (
-
             <div className="personalizador-no-config">
-
                 {producto.usaColores
                     ? "Este producto todavía no tiene colores con mockups configurados."
                     : "Este producto todavía no tiene mockups configurados."}
-
             </div>
         );
     }
 
-    const imagenMockup =
-        obtenerUrlArchivo(
-            areaActual
-                ?.imagenMockup
-        );
+    const imagenMockup = obtenerUrlArchivo(
+        areaActual?.imagenMockup
+    );
 
     // =====================================================
-    // RENDER
+    // INTERFAZ
     // =====================================================
 
     return (
-
         <section className="personalizador">
-
             <div className="personalizador-visual">
-
-                {/* =========================================
-                    VISTAS DEL PRODUCTO
-                ========================================= */}
-
                 <div className="personalizador-tabs">
-
                     {areasActivas.map(area => {
-
-                        const tieneDiseno =
-                            Boolean(
-                                disenosPorVista[
-                                    area.posicion
-                                ]?.archivo ||
-                                disenosPorVista[
-                                    area.posicion
-                                ]?.ruta
-                            );
+                        const tieneDiseno = Boolean(
+                            disenosPorVista[area.posicion]?.archivo ||
+                            disenosPorVista[area.posicion]?.ruta
+                        );
 
                         return (
-
                             <button
-                                key={
-                                    area.id
-                                }
+                                key={area.id}
                                 type="button"
                                 className={
-                                    posicion ===
-                                    area.posicion
-                                        ? "active"
-                                        : ""
+                                    posicion === area.posicion ? "active" : ""
                                 }
-                                onClick={() =>
-                                    setPosicion(
-                                        area.posicion
-                                    )
-                                }
+                                onClick={() => setPosicion(area.posicion)}
                             >
-
-                                {area.posicion ===
-                                "FRENTE"
+                                {area.posicion === "FRENTE"
                                     ? "Frente"
-                                    : area.posicion ===
-                                      "ESPALDA"
+                                    : area.posicion === "ESPALDA"
                                         ? "Espalda"
                                         : area.posicion
-                                              .replaceAll(
-                                                  "_",
-                                                  " "
-                                              )
-                                              .toLowerCase()}
+                                            .replaceAll("_", " ")
+                                            .toLowerCase()}
 
-                                {tieneDiseno
-                                    ? " ✓"
-                                    : ""}
-
+                                {tieneDiseno ? " ✓" : ""}
                             </button>
                         );
                     })}
-
                 </div>
-
-                {/* =========================================
-                    MOCKUP
-                ========================================= */}
 
                 <div
                     ref={canvasRef}
                     className="personalizador-canvas"
-                    onDragOver={(e) =>
-                        e.preventDefault()
-                    }
-                    onDrop={
-                        handleDrop
-                    }
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={handleDrop}
                 >
-
                     {imagenMockup && (
-
                         <img
                             className="personalizador-base"
-                            src={
-                                imagenMockup
-                            }
-                            alt={
-                                `${producto.nombre} ${posicion || ""}`
-                            }
+                            src={imagenMockup}
+                            alt={`${producto.nombre} ${posicion || ""}`}
                             draggable="false"
                         />
-
                     )}
 
-                    {/* =====================================
-                        ÁREA GENERAL DEL ADMIN
-
-                        ESTA NO CAMBIA ENTRE
-                        CHICA / MEDIA / GRANDE.
-                    ===================================== */}
-
                     {areaActual && (
-
                         <div
                             className="personalizador-area"
                             style={{
-                                left:
-                                    `${areaActual.x}%`,
-
-                                top:
-                                    `${areaActual.y}%`,
-
-                                width:
-                                    `${areaActual.width}%`,
-
-                                height:
-                                    `${areaActual.height}%`
+                                left: `${areaActual.x}%`,
+                                top: `${areaActual.y}%`,
+                                width: `${areaActual.width}%`,
+                                height: `${areaActual.height}%`
                             }}
                             onClick={() => {
-
-                                if (
-                                    !previewLogo
-                                ) {
-
-                                    fileInputRef.current
-                                        ?.click();
+                                if (!previewLogo) {
+                                    fileInputRef.current?.click();
                                 }
                             }}
                         >
-
                             {!previewLogo && (
-
                                 <div className="personalizador-placeholder">
-
-                                    <strong>
-                                        TU LOGO
-                                    </strong>
-
-                                    <span>
-                                        AQUÍ
-                                    </span>
-
-                                    <small>
-                                        Click o arrastrá una imagen
-                                    </small>
-
+                                    <strong>TU LOGO</strong>
+                                    <span>AQUÍ</span>
+                                    <small>Click o arrastrá una imagen</small>
                                 </div>
-
                             )}
-
                         </div>
-
                     )}
 
-                    {/* =====================================
-                        DISEÑO DE ESTA VISTA
-                    ===================================== */}
-
                     {previewLogo && (
-
                         <div
                             className="personalizador-logo"
                             style={{
-                                left:
-                                    `${logo.x}%`,
-
-                                top:
-                                    `${logo.y}%`,
-
-                                width:
-                                    `${logo.width}%`,
-
-                                height:
-                                    `${logo.height}%`
+                                left: `${logo.x}%`,
+                                top: `${logo.y}%`,
+                                width: `${logo.width}%`,
+                                height: `${logo.height}%`
                             }}
-                            onPointerDown={
-                                iniciarMover
-                            }
-                            onPointerMove={
-                                moverLogo
-                            }
-                            onPointerUp={
-                                terminarMover
-                            }
-                            onPointerCancel={
-                                terminarMover
-                            }
+                            onPointerDown={iniciarMover}
+                            onPointerMove={moverLogo}
+                            onPointerUp={terminarMover}
+                            onPointerCancel={terminarMover}
                         >
-
                             <img
-                                src={
-                                    previewLogo
-                                }
+                                src={previewLogo}
                                 alt={`Diseño ${posicion || ""}`}
                                 draggable="false"
                             />
@@ -2362,24 +1416,13 @@ export default function PersonalizadorProducto({
                                 type="button"
                                 className="personalizador-resize"
                                 aria-label="Redimensionar diseño"
-                                onPointerDown={
-                                    iniciarResize
-                                }
-                                onPointerMove={
-                                    resizeLogo
-                                }
-                                onPointerUp={
-                                    terminarResize
-                                }
-                                onPointerCancel={
-                                    terminarResize
-                                }
+                                onPointerDown={iniciarResize}
+                                onPointerMove={resizeLogo}
+                                onPointerUp={terminarResize}
+                                onPointerCancel={terminarResize}
                             />
-
                         </div>
-
                     )}
-
                 </div>
 
                 <input
@@ -2387,83 +1430,48 @@ export default function PersonalizadorProducto({
                     hidden
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
-
-                        procesarArchivo(
-                            e.target
-                                .files?.[0]
-                        );
-
-                        /*
-                         * Permite volver a elegir
-                         * el mismo archivo después.
-                         */
+                    onChange={e => {
+                        procesarArchivo(e.target.files?.[0]);
                         e.target.value = "";
                     }}
                 />
 
                 {previewLogo && (
-
                     <button
                         type="button"
                         className="cambiar-diseno"
-                        onClick={() =>
-                            fileInputRef.current
-                                ?.click()
-                        }
+                        onClick={() => fileInputRef.current?.click()}
                     >
                         Cambiar diseño de esta vista
                     </button>
-
                 )}
 
                 <p className="personalizador-consulta-colores">
-                    ¿Querés ver mejor los colores? Consultanos por mail o WhatsApp y te enviamos fotos para que puedas elegir con más precisión.
+                    ¿Querés ver mejor los colores? Consultanos por mail o
+                    WhatsApp y te enviamos fotos para que puedas elegir con
+                    más precisión.
                 </p>
-
             </div>
 
-            {/* =================================================
-                CONTROLES
-            ================================================= */}
-
             <div className="personalizador-controles">
-
                 <span className="personalizador-eyebrow">
                     PERSONALIZÁ TU PRODUCTO
                 </span>
 
-                <h1>
-                    {producto.nombre}
-                </h1>
+                <h1>{producto.nombre}</h1>
 
                 <p className="personalizador-descripcion">
                     {producto.descripcion}
                 </p>
 
                 <div className="personalizador-precio">
+                    <strong>{moneda(precioUnitarioMostrado)}</strong>
 
-                    <strong>
-                        {moneda(
-                            precioUnitarioMostrado
-                        )}
-                    </strong>
-
-                    {obtenerAdicional() >
-                        0 && (
-
+                    {obtenerAdicional() > 0 && (
                         <span>
-                            {moneda(
-                                producto.precioBase
-                            )}
-                            {" "}+
-                            {" "}
-                            {moneda(
-                                obtenerAdicional()
-                            )}
-                            {" "}estampa
+                            {moneda(producto.precioBase)} +{" "}
+                            {moneda(obtenerAdicional())} estampa
                         </span>
-
                     )}
 
                     {precioAdicionalTalle > 0 && (
@@ -2472,7 +1480,6 @@ export default function PersonalizadorProducto({
                             {moneda(precioAdicionalTalle)}
                         </span>
                     )}
-
                 </div>
 
                 {Number(producto.descuentoMayoristaPorcentaje) > 0 && (
@@ -2480,128 +1487,61 @@ export default function PersonalizadorProducto({
                         {aplicaDescuentoMayorista
                             ? "Descuento mayorista aplicado: "
                             : "Comprando 6 o más unidades de este producto: "}
-                        {Number(producto.descuentoMayoristaPorcentaje)}% de
-                        descuento sobre el precio base.
+                        {Number(producto.descuentoMayoristaPorcentaje)}%
+                        {" "}de descuento sobre el precio base.
                     </p>
                 )}
 
-                {/* =========================================
-                    TAMAÑO
-                ========================================= */}
+                {/* TAMAÑO Y PRECIO AUTOMÁTICOS */}
 
                 <div className="control-section">
+                    <label>Tamaño de estampa</label>
 
-                    <label>
-                        Tamaño de estampa
-                    </label>
+                    <div className="medida-actual">
+                        <strong>
+                            Categoría: {TAMANOS[categoriaEstampa]}
+                        </strong>
 
-                    <div className="tamano-options">
+                        <span>
+                            Chica: hasta 20 × 20 cm. Mediana: hasta 30 × 30 cm.
+                            Grande: supera los 30 cm de ancho o alto.
+                        </span>
 
-                        {tamanosDisponibles.map(
-                            item => (
+                        <span>
+                            Agrandá o achicá el diseño directamente sobre el
+                            producto. El precio se actualiza automáticamente.
+                        </span>
 
-                                <button
-                                    type="button"
-                                    key={
-                                        item
-                                    }
-                                    className={
-                                        tamano ===
-                                        item
-                                            ? "active"
-                                            : ""
-                                    }
-                                    onClick={() =>
-                                        setTamano(
-                                            item
-                                        )
-                                    }
-                                >
-
-                                    <strong>
-                                        {
-                                            TAMANOS[
-                                                item
-                                            ].label
-                                        }
-                                    </strong>
-
-                                    <span>
-                                        +
-                                        {moneda(
-                                            item ===
-                                            "CHICA"
-                                                ? producto
-                                                      .precioEstampaChica
-                                                : item ===
-                                                  "MEDIA"
-                                                    ? producto
-                                                          .precioEstampaMedia
-                                                    : producto
-                                                          .precioEstampaGrande
-                                        )}
-                                    </span>
-
-                                </button>
-
-                            )
-                        )}
-
-                    </div>
-
-                    {areaActual && (
-                        <div className="medida-actual">
+                        {medidasRealesActuales.ancho > 0 &&
+                        medidasRealesActuales.alto > 0 ? (
+                            <strong>
+                                {escalaCalibradaActual > 0
+                                    ? `Medida aproximada para talle ${talle}: `
+                                    : "Medida aproximada: "}
+                                {medidasRealesActuales.ancho} ×{" "}
+                                {medidasRealesActuales.alto} cm
+                            </strong>
+                        ) : (
                             <span>
-                                Mové y ajustá tu diseño dentro del área marcada.
+                                {producto.usaTalles && calibracionActual && talle
+                                    ? `Falta cargar la medida de referencia del talle ${talle} para esta vista.`
+                                    : "Las medidas en centímetros se mostrarán cuando haya una calibración o medidas de referencia configuradas."}
                             </span>
-
-                            {medidasRealesActuales.ancho > 0 &&
-                            medidasRealesActuales.alto > 0 ? (
-                                <strong>
-                                    {escalaCalibradaActual > 0
-                                        ? `Medida aproximada para talle ${talle}: `
-                                        : "Medida aproximada según límites generales de estampa: "}
-                                    {medidasRealesActuales.ancho} ×{" "}
-                                    {medidasRealesActuales.alto} cm
-                                </strong>
-                            ) : (
-                                <span>
-                                    {producto.usaTalles && calibracionActual && talle
-                                        ? `Falta cargar la medida de referencia del talle ${talle} para esta vista.`
-                                        : "Las medidas en cm se muestran cuando están configuradas para esta vista y talle."}
-                                </span>
-                            )}
-                        </div>
-                    )}
-
+                        )}
+                    </div>
                 </div>
 
-                {/* =========================================
-                    TALLE
-                ========================================= */}
+                {/* TALLE */}
 
                 {producto.usaTalles && (
-
                     <div className="control-section">
-
-                        <label>
-                            Talle
-                        </label>
+                        <label>Talle</label>
 
                         <select
-                            value={
-                                talle
-                            }
-                            onChange={(e) =>
-                                setTalle(
-                                    e.target.value
-                                )
-                            }
+                            value={talle}
+                            onChange={e => setTalle(e.target.value)}
                         >
-
-                            <option value="">
-                                Elegir talle
-                            </option>
+                            <option value="">Elegir talle</option>
 
                             {producto.incluyeTallesInfantiles !== false && (
                                 <optgroup label="Infantil">
@@ -2627,184 +1567,118 @@ export default function PersonalizadorProducto({
                             )}
 
                             <optgroup label="Adulto">
-                                <option value="XS">XS</option>
                                 <option value="S">S</option>
                                 <option value="M">M</option>
                                 <option value="L">L</option>
                                 <option value="XL">XL</option>
                                 <option value="XXL">XXL</option>
                             </optgroup>
-
                         </select>
-
                     </div>
-
                 )}
 
-                {/* =========================================
-                    COLOR
-                ========================================= */}
+                {/* COLOR */}
 
                 {producto.usaColores && (
-
                     <div className="control-section">
-
-                        <label>
-                            Color
-                        </label>
+                        <label>Color</label>
 
                         <div className="color-options">
-
-                            {coloresDisponibles.map(
-                                item => (
-
-                                    <button
-                                        type="button"
-                                        key={item}
-                                        className={
-                                            String(color).toLowerCase() ===
-                                            item.toLowerCase()
-                                                ? "active"
-                                                : ""
-                                        }
-                                        onClick={() => {
-                                            setColor(item);
-                                            setError("");
-                                            setMensaje("");
-                                        }}
-                                    >
-                                        {item}
-                                    </button>
-
-                                )
-                            )}
-
+                            {coloresDisponibles.map(item => (
+                                <button
+                                    type="button"
+                                    key={item}
+                                    className={
+                                        String(color).toLowerCase() ===
+                                        item.toLowerCase()
+                                            ? "active"
+                                            : ""
+                                    }
+                                    onClick={() => {
+                                        setColor(item);
+                                        setError("");
+                                        setMensaje("");
+                                    }}
+                                >
+                                    {item}
+                                </button>
+                            ))}
                         </div>
-
                     </div>
-
                 )}
 
-                {/* =========================================
-                    CANTIDAD
-                ========================================= */}
+                {/* CANTIDAD */}
 
                 <div className="control-section">
-
-                    <label>
-                        Cantidad
-                    </label>
+                    <label>Cantidad</label>
 
                     <input
                         type="number"
                         min="1"
-                        value={
-                            cantidad
-                        }
-                        onChange={(e) =>
+                        value={cantidad}
+                        onChange={e => {
+                            const valor = Number(e.target.value);
                             setCantidad(
-                                e.target.value
-                            )
-                        }
+                                Number.isFinite(valor)
+                                    ? Math.max(1, valor)
+                                    : 1
+                            );
+                        }}
                     />
-
                 </div>
 
-                {/* =========================================
-                    RESUMEN DE DISEÑOS
-                ========================================= */}
+                {/* RESUMEN DE DISEÑOS */}
 
                 <div className="control-section">
-
-                    <label>
-                        Diseños cargados
-                    </label>
+                    <label>Diseños cargados</label>
 
                     <div className="personalizador-tabs">
-
                         {areasActivas.map(area => {
-
-                            const cargado =
-                                Boolean(
-                                    disenosPorVista[
-                                        area.posicion
-                                    ]?.archivo ||
-                                    disenosPorVista[
-                                        area.posicion
-                                    ]?.ruta
-                                );
+                            const cargado = Boolean(
+                                disenosPorVista[area.posicion]?.archivo ||
+                                disenosPorVista[area.posicion]?.ruta
+                            );
 
                             return (
-
                                 <span
-                                    key={
-                                        `resumen-${area.id}`
-                                    }
-                                    className={
-                                        cargado
-                                            ? "active"
-                                            : ""
-                                    }
+                                    key={`resumen-${area.id}`}
+                                    className={cargado ? "active" : ""}
                                 >
-                                    {
-                                        area.posicion
-                                            .replaceAll(
-                                                "_",
-                                                " "
-                                            )
-                                            .toLowerCase()
-                                    }
-                                    {cargado
-                                        ? " ✓"
-                                        : ""}
+                                    {area.posicion
+                                        .replaceAll("_", " ")
+                                        .toLowerCase()}
+                                    {cargado ? " ✓" : ""}
                                 </span>
                             );
                         })}
-
                     </div>
-
                 </div>
 
                 {error && (
-
                     <div className="personalizador-message error">
                         {error}
                     </div>
-
                 )}
 
                 {mensaje && (
-
                     <div className="personalizador-message success">
                         {mensaje}
                     </div>
-
                 )}
 
                 <button
                     type="button"
                     className="agregar-carrito-button"
-                    disabled={
-                        subiendo
-                    }
-                    onClick={
-                        handleAgregarCarrito
-                    }
+                    disabled={subiendo}
+                    onClick={handleAgregarCarrito}
                 >
-
                     {subiendo
                         ? "Preparando..."
                         : `Agregar al carrito · ${moneda(
-                              precioUnitarioMostrado *
-                              Number(
-                                  cantidad
-                              )
-                          )}`}
-
+                            precioUnitarioMostrado * Number(cantidad)
+                        )}`}
                 </button>
-
             </div>
-
         </section>
     );
 }
