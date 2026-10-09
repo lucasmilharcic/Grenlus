@@ -68,14 +68,14 @@ async function manejarError(
 }
 
 // =====================================================
-// ADMIN - LISTAR ENVÃOS
+// ADMIN - LISTAR ENVÍOS
 // =====================================================
 
 /*
  * estado es opcional.
  *
  * Sin estado trae todos los pedidos
- * con envÃ­o a domicilio.
+ * con envío a domicilio.
  */
 export async function getEnvios(
     estado,
@@ -110,7 +110,7 @@ export async function getEnvios(
 
         await manejarError(
             response,
-            "No se pudieron cargar los envÃ­os."
+            "No se pudieron cargar los envíos."
         );
     }
 
@@ -118,7 +118,7 @@ export async function getEnvios(
 }
 
 // =====================================================
-// ADMIN - OBTENER UN ENVÃO
+// ADMIN - OBTENER UN ENVÍO
 // =====================================================
 
 export async function getEnvio(
@@ -138,7 +138,7 @@ export async function getEnvio(
 
         await manejarError(
             response,
-            "No se pudo cargar el envÃ­o."
+            "No se pudo cargar el envío."
         );
     }
 
@@ -162,12 +162,12 @@ export async function getPortalMiCorreo() {
 }
 
 // =====================================================
-// ADMIN - ACTUALIZAR ENVÃO
+// ADMIN - ACTUALIZAR ENVÍO
 // =====================================================
 
 /*
  * Sirve para avanzar el estado, para cargar
- * el cÃ³digo de seguimiento, o para las dos
+ * el código de seguimiento, o para las dos
  * cosas a la vez.
  */
 export async function actualizarEnvio(
@@ -193,7 +193,7 @@ export async function actualizarEnvio(
 
         await manejarError(
             response,
-            "No se pudo actualizar el envÃ­o."
+            "No se pudo actualizar el envío."
         );
     }
 
@@ -201,7 +201,7 @@ export async function actualizarEnvio(
 }
 
 // =====================================================
-// CLIENTE - MIS ENVÃOS
+// CLIENTE - MIS ENVÍOS
 // =====================================================
 
 export async function getMisEnvios() {
@@ -220,7 +220,7 @@ export async function getMisEnvios() {
 
         await manejarError(
             response,
-            "No se pudieron cargar tus envÃ­os."
+            "No se pudieron cargar tus envíos."
         );
     }
 

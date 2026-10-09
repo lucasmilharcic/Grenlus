@@ -148,7 +148,7 @@ public class PedidoService {
                 if (dto.getMetodoPago() == null) {
 
                         throw new BadRequestException(
-                                        "DebÃ©s seleccionar un medio de pago.");
+                                        "Debés seleccionar un medio de pago.");
                 }
 
                 pedido.setMetodoPago(dto.getMetodoPago());
@@ -194,7 +194,7 @@ public class PedidoService {
                 if (metodoEntrega == null) {
 
                         throw new BadRequestException(
-                                        "DebÃ©s seleccionar una forma de entrega.");
+                                        "Debés seleccionar una forma de entrega.");
                 }
 
                 pedido.setMetodoEntrega(metodoEntrega);
@@ -227,7 +227,7 @@ public class PedidoService {
                 } else {
 
                         throw new BadRequestException(
-                                        "MÃ©todo de entrega invÃ¡lido.");
+                                        "Método de entrega inválido.");
                 }
 
                 // =====================================================
@@ -418,11 +418,11 @@ public class PedidoService {
                         throw new BadRequestException(
                                         "El producto \""
                                                         + producto.getNombre()
-                                                        + "\" no estÃ¡ disponible.");
+                                                        + "\" no está disponible.");
                 }
 
                 /*
-                 * CartelerÃ­a a cotizar jamÃ¡s entra
+                 * Cartelería a cotizar jamás entra
                  * en pedido/carrito.
                  */
                 if (producto instanceof Carteleria carteleria) {
@@ -432,7 +432,7 @@ public class PedidoService {
                                 throw new BadRequestException(
                                                 "El producto \""
                                                                 + producto.getNombre()
-                                                                + "\" requiere cotizaciÃ³n y no puede agregarse al carrito.");
+                                                                + "\" requiere cotización y no puede agregarse al carrito.");
                         }
                 }
 
@@ -515,10 +515,10 @@ public class PedidoService {
                                 /*
                                  * IMPORTANTE:
                                  *
-                                 * Ahora tambiÃ©n enviamos el COLOR elegido
+                                 * Ahora también enviamos el COLOR elegido
                                  * en este detalle.
                                  *
-                                 * AsÃ­ podemos encontrar:
+                                 * Así podemos encontrar:
                                  *
                                  * Frente + Negro
                                  * Frente + Blanco
@@ -557,20 +557,20 @@ public class PedidoService {
                 if (dto == null) {
 
                         throw new BadRequestException(
-                                        "El diseÃ±o no puede ser nulo.");
+                                        "El diseño no puede ser nulo.");
                 }
 
                 if (dto.getRutaImagen() == null ||
                                 dto.getRutaImagen().isBlank()) {
 
                         throw new BadRequestException(
-                                        "El diseÃ±o debe tener una imagen.");
+                                        "El diseño debe tener una imagen.");
                 }
 
                 if (dto.getPosicion() == null) {
 
                         throw new BadRequestException(
-                                        "El diseÃ±o debe indicar su posiciÃ³n.");
+                                        "El diseño debe indicar su posición.");
                 }
 
                 DisenoPedido diseno = new DisenoPedido();
@@ -618,7 +618,7 @@ public class PedidoService {
                  * INDUMENTARIA
                  * =====================================================
                  *
-                 * Ahora el Ã¡rea se busca por:
+                 * Ahora el área se busca por:
                  *
                  * PRODUCTO + POSICIÃ“N + COLOR
                  *
@@ -629,7 +629,7 @@ public class PedidoService {
                  * + Negro
                  *
                  * Si el producto no trabaja con colores,
-                 * buscamos el Ã¡rea genÃ©rica con color NULL.
+                 * buscamos el área genérica con color NULL.
                  */
                 if (producto instanceof Indumentaria indumentaria) {
 
@@ -650,7 +650,7 @@ public class PedidoService {
                                                                 dto.getPosicion(),
                                                                 colorNormalizado)
                                                 .orElseThrow(() -> new BadRequestException(
-                                                                "No existe un Ã¡rea de personalizaciÃ³n configurada para "
+                                                                "No existe un área de personalización configurada para "
                                                                                 + dto.getPosicion().name()
                                                                                 + " en el color "
                                                                                 + colorNormalizado
@@ -659,7 +659,7 @@ public class PedidoService {
                         } else {
 
                                 // =============================================
-                                // PRODUCTO SIN COLOR / ÃREA GENÃ‰RICA
+                                // PRODUCTO SIN COLOR / ÁREA GENÃ‰RICA
                                 // =============================================
 
                                 area = areaRepository
@@ -667,13 +667,13 @@ public class PedidoService {
                                                                 indumentaria.getId(),
                                                                 dto.getPosicion())
                                                 .orElseThrow(() -> new BadRequestException(
-                                                                "No existe un Ã¡rea de personalizaciÃ³n configurada para "
+                                                                "No existe un área de personalización configurada para "
                                                                                 + dto.getPosicion().name()
                                                                                 + "."));
                         }
 
                         // =================================================
-                        // VALIDAR QUE EL DISEÃ‘O QUEDE DENTRO DEL ÃREA
+                        // VALIDAR QUE EL DISEÃ‘O QUEDE DENTRO DEL ÁREA
                         // =================================================
 
                         validarDisenoDentroDelArea(
@@ -685,10 +685,10 @@ public class PedidoService {
                          * SNAPSHOT
                          * =================================================
                          *
-                         * Guardamos en el pedido el mockup y el Ã¡rea
+                         * Guardamos en el pedido el mockup y el área
                          * tal como estaban en el momento de la compra.
                          *
-                         * Esto es importante porque despuÃ©s vos podÃ©s
+                         * Esto es importante porque después vos podés
                          * modificar el producto desde Admin sin alterar
                          * pedidos viejos.
                          */
@@ -765,7 +765,7 @@ public class PedidoService {
                                 !Double.isFinite(dto.getAlto())) {
 
                         throw new BadRequestException(
-                                        "El diseÃ±o debe informar posiciÃ³n y tamaÃ±o.");
+                                        "El diseño debe informar posición y tamaño.");
                 }
 
                 double x = dto.getPosicionX();
@@ -780,7 +780,7 @@ public class PedidoService {
                                 height <= 0) {
 
                         throw new BadRequestException(
-                                        "El diseÃ±o debe tener un tamaÃ±o vÃ¡lido.");
+                                        "El diseño debe tener un tamaño válido.");
                 }
 
                 double margen = 0.01;
@@ -805,7 +805,7 @@ public class PedidoService {
                                 saleAbajo) {
 
                         throw new BadRequestException(
-                                        "El diseÃ±o estÃ¡ fuera del Ã¡rea de estampado permitida.");
+                                        "El diseño está fuera del área de estampado permitida.");
                 }
         }
 
@@ -827,28 +827,28 @@ public class PedidoService {
                                 !Double.isFinite(dto.getAltoCm())) {
 
                         throw new BadRequestException(
-                                        "El diseÃ±o debe informar sus medidas reales.");
+                                        "El diseño debe informar sus medidas reales.");
                 }
 
                 if (dto.getAnchoCm() <= 0 ||
                                 dto.getAltoCm() <= 0) {
 
                         throw new BadRequestException(
-                                        "Las medidas reales del diseÃ±o deben ser mayores a cero.");
+                                        "Las medidas reales del diseño deben ser mayores a cero.");
                 }
 
                 if (anchoMax != null &&
                                 dto.getAnchoCm() > anchoMax + 0.01) {
 
                         throw new BadRequestException(
-                                        "El diseÃ±o supera el ancho mÃ¡ximo permitido.");
+                                        "El diseño supera el ancho máximo permitido.");
                 }
 
                 if (altoMax != null &&
                                 dto.getAltoCm() > altoMax + 0.01) {
 
                         throw new BadRequestException(
-                                        "El diseÃ±o supera el alto mÃ¡ximo permitido.");
+                                        "El diseño supera el alto máximo permitido.");
                 }
         }
 
@@ -953,14 +953,14 @@ public class PedidoService {
                         Producto producto) {
 
                 /*
-                 * CartelerÃ­a precio fijo.
+                 * Cartelería precio fijo.
                  */
                 if (producto instanceof Carteleria carteleria) {
 
                         if (carteleria.isEsCotizable()) {
 
                                 throw new BadRequestException(
-                                                "Esta cartelerÃ­a requiere cotizaciÃ³n.");
+                                                "Esta cartelería requiere cotización.");
                         }
 
                         if (carteleria.getPrecioFijo() != null) {
@@ -1024,7 +1024,7 @@ public class PedidoService {
                 } catch (IllegalArgumentException e) {
 
                         throw new BadRequestException(
-                                        "TamaÃ±o de estampa invÃ¡lido: "
+                                        "Tamaño de estampa inválido: "
                                                         + valor
                                                         + ". Valores permitidos: CHICA, MEDIA o GRANDE.");
                 }
@@ -1046,7 +1046,7 @@ public class PedidoService {
                 }
 
                 /*
-                 * CartelerÃ­a:
+                 * Cartelería:
                  * no suma estampa.
                  */
                 if (producto instanceof Carteleria) {
@@ -1056,7 +1056,7 @@ public class PedidoService {
 
                 /*
                  * Validamos que el admin tenga ese
-                 * tamaÃ±o habilitado.
+                 * tamaño habilitado.
                  */
                 if (producto instanceof Indumentaria indumentaria) {
 
@@ -1132,7 +1132,7 @@ public class PedidoService {
         }
 
         // =========================================================
-        // VALIDAR PRODUCTOS PARA ENVÃO
+        // VALIDAR PRODUCTOS PARA ENVÍO
         // =========================================================
 
         private void validarProductosParaEnvio(
@@ -1163,15 +1163,15 @@ public class PedidoService {
                                         throw new BadRequestException(
                                                         "El producto \""
                                                                         + producto.getNombre()
-                                                                        + "\" no admite envÃ­o a domicilio. "
-                                                                        + "SeleccionÃ¡ retiro o quitÃ¡ este producto.");
+                                                                        + "\" no admite envío a domicilio. "
+                                                                        + "Seleccioná retiro o quitá este producto.");
                                 }
                         }
                 }
         }
 
         // =========================================================
-        // VALIDAR DATOS DE ENVÃO
+        // VALIDAR DATOS DE ENVÍO
         // =========================================================
 
         private void validarDatosEnvio(
@@ -1188,28 +1188,28 @@ public class PedidoService {
                                 dto.getDireccion().isBlank()) {
 
                         throw new BadRequestException(
-                                        "La direcciÃ³n es obligatoria para el envÃ­o.");
+                                        "La dirección es obligatoria para el envío.");
                 }
 
                 if (dto.getCiudad() == null ||
                                 dto.getCiudad().isBlank()) {
 
                         throw new BadRequestException(
-                                        "La ciudad es obligatoria para el envÃ­o.");
+                                        "La ciudad es obligatoria para el envío.");
                 }
 
                 if (dto.getProvincia() == null ||
                                 dto.getProvincia().isBlank()) {
 
                         throw new BadRequestException(
-                                        "La provincia es obligatoria para el envÃ­o.");
+                                        "La provincia es obligatoria para el envío.");
                 }
 
                 if (dto.getCodigoPostal() == null ||
                                 dto.getCodigoPostal().isBlank()) {
 
                         throw new BadRequestException(
-                                        "El cÃ³digo postal es obligatorio para el envÃ­o.");
+                                        "El código postal es obligatorio para el envío.");
                 }
         }
 
@@ -1244,7 +1244,7 @@ public class PedidoService {
                                 dto.getTelefono().isBlank()) {
 
                         throw new BadRequestException(
-                                        "El telÃ©fono del cliente es obligatorio.");
+                                        "El teléfono del cliente es obligatorio.");
                 }
         }
 
@@ -1254,7 +1254,7 @@ public class PedidoService {
                 if (dto == null) {
 
                         throw new BadRequestException(
-                                        "Hay un producto invÃ¡lido en el carrito.");
+                                        "Hay un producto inválido en el carrito.");
                 }
 
                 if (dto.getProductoId() == null) {

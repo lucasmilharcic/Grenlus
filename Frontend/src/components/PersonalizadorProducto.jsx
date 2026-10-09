@@ -47,12 +47,64 @@ function clamp(valor, min, max) {
     return Math.min(Math.max(valor, min), max);
 }
 
-function obtenerCategoriaEstampa(medidas) {
+/*
+ * Medidas maximas en cm que el admin configuro en el area,
+ * para la categoria pedida.
+ *
+ * Devuelve null si esa categoria no tiene medidas cargadas.
+ */
+function obtenerMaximoCm(area, categoria) {
+    if (!area) {
+        return null;
+    }
+
+    const campos = {
+        CHICA: ["anchoChicaCm", "altoChicaCm"],
+        MEDIA: ["anchoMediaCm", "altoMediaCm"],
+        GRANDE: ["anchoGrandeCm", "altoGrandeCm"]
+    }[categoria];
+
+    if (!campos) {
+        return null;
+    }
+
+    const ancho = Number(area[campos[0]] || 0);
+    const alto = Number(area[campos[1]] || 0);
+
+    return ancho > 0 && alto > 0
+        ? { ancho, alto }
+        : null;
+}
+
+/*
+ * La categoria sale de las medidas del area configuradas
+ * en el admin, que son las mismas que valida el backend.
+ *
+ * Si el area no tiene medidas cargadas caemos en los
+ * valores de referencia de siempre (20 / 30 cm).
+ */
+function obtenerCategoriaEstampa(medidas, area) {
     const ancho = Number(medidas?.ancho || 0);
     const alto = Number(medidas?.alto || 0);
 
     if (ancho <= 0 || alto <= 0) {
         return "CHICA";
+    }
+
+    for (const categoria of ["CHICA", "MEDIA", "GRANDE"]) {
+        const max = obtenerMaximoCm(area, categoria);
+
+        if (max && ancho <= max.ancho && alto <= max.alto) {
+            return categoria;
+        }
+    }
+
+    if (obtenerMaximoCm(area, "GRANDE")) {
+        /*
+         * Hay medidas configuradas y el diseño no entra en
+         * ninguna: queda GRANDE y el editor ya lo limita.
+         */
+        return "GRANDE";
     }
 
     if (ancho <= 20 && alto <= 20) {
@@ -524,7 +576,10 @@ export default function PersonalizadorProducto({ producto }) {
     // El límite es el área completa configurada por el admin.
     // =====================================================
 
-    function obtenerMaximoVisual(area = areaActual) {
+    function obtenerMaximoVisual(
+        area = areaActual,
+        talleSeleccionado = talle
+    ) {
         if (!area) {
             return {
                 width: 0,
@@ -532,9 +587,47 @@ export default function PersonalizadorProducto({ producto }) {
             };
         }
 
+        const width = Math.max(0, Number(area.width || 0));
+        const alto = Math.max(0, Number(area.height || 0));
+
+        /*
+         * Tope fisico: el diseño no puede pasar la medida
+         * GRANDE del area, porque es la que valida el backend
+         * al confirmar el pedido.
+         *
+         * Restamos medio milimetro porque las medidas se
+         * redondean a un decimal antes de enviarlas.
+         */
+        const maxCm = obtenerMaximoCm(area, "GRANDE");
+
+        const escala = obtenerEscalaCmPorcentaje(
+            area,
+            talleSeleccionado
+        );
+
+        if (maxCm && escala > 0) {
+            const MARGEN_CM = 0.05;
+
+            return {
+                width: Math.min(
+                    width,
+                    Math.max(0, maxCm.ancho - MARGEN_CM) / escala
+                ),
+                height: Math.min(
+                    alto,
+                    Math.max(0, maxCm.alto - MARGEN_CM) / escala
+                )
+            };
+        }
+
+        /*
+         * Sin calibracion las medidas se derivan del area
+         * completa tomando GRANDE como referencia, asi que
+         * el area ya es el tope.
+         */
         return {
-            width: Math.max(0, Number(area.width || 0)),
-            height: Math.max(0, Number(area.height || 0))
+            width,
+            height: alto
         };
     }
 
@@ -645,7 +738,7 @@ export default function PersonalizadorProducto({ producto }) {
                     talle
                 );
 
-                const categoria = obtenerCategoriaEstampa(medidas);
+                const categoria = obtenerCategoriaEstampa(medidas, area);
 
                 if (prioridad[categoria] > prioridad[categoriaMayor]) {
                     categoriaMayor = categoria;
@@ -1217,7 +1310,7 @@ export default function PersonalizadorProducto({ producto }) {
                 );
 
                 const categoriaDiseno =
-                    obtenerCategoriaEstampa(medidas);
+                    obtenerCategoriaEstampa(medidas, area);
 
                 disenosFinales.push({
                     rutaImagen: ruta,

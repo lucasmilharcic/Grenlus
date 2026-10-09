@@ -230,7 +230,7 @@ export async function crearIndumentaria({
     descuentoMayoristaPorcentaje,
 
     // =========================
-    // DATOS DE ENVÃO
+    // DATOS DE ENVÍO
     // =========================
     pesoGramos,
     largoEnvioCm,
@@ -450,7 +450,7 @@ export async function editarIndumentaria(
         descuentoMayoristaPorcentaje,
 
         // =========================
-        // DATOS DE ENVÃO
+        // DATOS DE ENVÍO
         // =========================
         pesoGramos,
         largoEnvioCm,
@@ -682,7 +682,7 @@ export async function eliminarIndumentaria(id) {
 }
 
 // =====================================================
-// ÃREAS DE PERSONALIZACIÃ“N
+// ÁREAS DE PERSONALIZACIÃ“N
 // =====================================================
 
 export async function getAreasPersonalizacion(
@@ -713,7 +713,7 @@ export async function getAreasPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudieron cargar las Ã¡reas de personalizaciÃ³n."
+                "No se pudieron cargar las áreas de personalización."
             )
         );
     }
@@ -736,7 +736,7 @@ export async function getAreaPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo cargar el Ã¡rea de personalizaciÃ³n."
+                "No se pudo cargar el área de personalización."
             )
         );
     }
@@ -927,7 +927,7 @@ export async function crearAreaPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo crear el Ã¡rea de personalizaciÃ³n."
+                "No se pudo crear el área de personalización."
             )
         );
     }
@@ -961,7 +961,7 @@ export async function editarAreaPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo editar el Ã¡rea de personalizaciÃ³n."
+                "No se pudo editar el área de personalización."
             )
         );
     }
@@ -988,7 +988,7 @@ export async function eliminarAreaPersonalizacion(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo eliminar el Ã¡rea de personalizaciÃ³n."
+                "No se pudo eliminar el área de personalización."
             )
         );
     }
@@ -997,7 +997,7 @@ export async function eliminarAreaPersonalizacion(
 }
 
 // =====================================================
-// CARTELERÃA
+// CARTELERÍA
 // =====================================================
 
 export async function getCarteleria() {
@@ -1012,7 +1012,7 @@ export async function getCarteleria() {
         throw new Error(
             await leerError(
                 response,
-                "No se pudo cargar la cartelerÃ­a."
+                "No se pudo cargar la cartelería."
             )
         );
     }
@@ -1032,7 +1032,7 @@ export async function getCarteleriaById(id) {
         throw new Error(
             await leerError(
                 response,
-                "No se pudo cargar la cartelerÃ­a."
+                "No se pudo cargar la cartelería."
             )
         );
     }
@@ -1133,7 +1133,7 @@ export async function crearCarteleria({
         throw new Error(
             await leerError(
                 response,
-                "No se pudo crear la cartelerÃ­a."
+                "No se pudo crear la cartelería."
             )
         );
     }
@@ -1237,7 +1237,7 @@ export async function editarCarteleria(
         throw new Error(
             await leerError(
                 response,
-                "No se pudo editar la cartelerÃ­a."
+                "No se pudo editar la cartelería."
             )
         );
     }
@@ -1261,7 +1261,7 @@ export async function eliminarCarteleria(id) {
         throw new Error(
             await leerError(
                 response,
-                "No se pudo eliminar la cartelerÃ­a."
+                "No se pudo eliminar la cartelería."
             )
         );
     }
