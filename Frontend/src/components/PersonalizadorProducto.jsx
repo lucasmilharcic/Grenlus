@@ -55,7 +55,7 @@ function obtenerCategoriaEstampa(medidas) {
         return "CHICA";
     }
 
-    if (ancho <= 10 && alto <= 10) {
+    if (ancho <= 20 && alto <= 20) {
         return "CHICA";
     }
 
@@ -519,6 +519,9 @@ export default function PersonalizadorProducto({ producto }) {
 
     // =====================================================
     // LÍMITE VISUAL
+    //
+    // No depende del talle ni de la categoría de precio.
+    // El límite es el área completa configurada por el admin.
     // =====================================================
 
     function obtenerMaximoVisual(area = areaActual) {
@@ -537,6 +540,10 @@ export default function PersonalizadorProducto({ producto }) {
 
     // =====================================================
     // MEDIDAS FÍSICAS
+    //
+    // Con calibración: utiliza la escala del talle elegido.
+    // Sin calibración: utiliza las dimensiones grandes
+    // configuradas como referencia para el área.
     // =====================================================
 
     function calcularMedidasReales(
@@ -602,6 +609,8 @@ export default function PersonalizadorProducto({ producto }) {
 
     // =====================================================
     // CATEGORÍA AUTOMÁTICA
+    //
+    // Si hay varios diseños, se cobra según el más grande.
     // =====================================================
 
     const categoriaEstampa = useMemo(() => {
@@ -767,6 +776,9 @@ export default function PersonalizadorProducto({ producto }) {
 
     // =====================================================
     // INICIALIZAR DISEÑO
+    //
+    // Solo inicializa diseños vacíos.
+    // No se ejecuta al cambiar talle ni precio.
     // =====================================================
 
     useEffect(() => {
@@ -997,6 +1009,9 @@ export default function PersonalizadorProducto({ producto }) {
 
     // =====================================================
     // REDIMENSIONAR DISEÑO
+    //
+    // Sin límite de 20 o 30 cm.
+    // El único límite es el área de impresión.
     // =====================================================
 
     function iniciarResize(e) {
@@ -1488,7 +1503,7 @@ export default function PersonalizadorProducto({ producto }) {
                         </strong>
 
                         <span>
-                            Chica: hasta 10 × 10 cm. Mediana: hasta 30 × 30 cm.
+                            Chica: hasta 20 × 20 cm. Mediana: hasta 30 × 30 cm.
                             Grande: supera los 30 cm de ancho o alto.
                         </span>
 
