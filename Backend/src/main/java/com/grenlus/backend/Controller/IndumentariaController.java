@@ -157,6 +157,12 @@ public class IndumentariaController {
             Boolean incluyeTallesEspeciales,
 
             @RequestParam(
+                    value = "incluyeTallesEspecialesGrandes",
+                    required = false
+            )
+            Boolean incluyeTallesEspecialesGrandes,
+
+            @RequestParam(
                     value = "precioAdicionalTalleEspecial",
                     required = false
             )
@@ -233,6 +239,8 @@ public class IndumentariaController {
                 usaTalles,
                 incluyeTallesInfantiles,
                 incluyeTallesEspeciales,
+
+                incluyeTallesEspecialesGrandes,
                 precioAdicionalTalleEspecial,
                 usaColores,
                 permiteFrente,
@@ -352,6 +360,12 @@ public class IndumentariaController {
             Boolean incluyeTallesEspeciales,
 
             @RequestParam(
+                    value = "incluyeTallesEspecialesGrandes",
+                    required = false
+            )
+            Boolean incluyeTallesEspecialesGrandes,
+
+            @RequestParam(
                     value = "precioAdicionalTalleEspecial",
                     required = false
             )
@@ -431,6 +445,8 @@ public class IndumentariaController {
                 usaTalles,
                 incluyeTallesInfantiles,
                 incluyeTallesEspeciales,
+
+                incluyeTallesEspecialesGrandes,
                 precioAdicionalTalleEspecial,
                 usaColores,
                 permiteFrente,
@@ -486,6 +502,8 @@ public class IndumentariaController {
             Boolean usaTalles,
             Boolean incluyeTallesInfantiles,
             Boolean incluyeTallesEspeciales,
+
+            Boolean incluyeTallesEspecialesGrandes,
             BigDecimal precioAdicionalTalleEspecial,
             Boolean usaColores,
 
@@ -562,6 +580,16 @@ public class IndumentariaController {
         indumentaria.setIncluyeTallesEspeciales(
                 Boolean.TRUE.equals(
                         incluyeTallesEspeciales
+                )
+        );
+
+        /*
+         * Si no viene el dato (cliente viejo) dejamos T14 y T16
+         * incluidos, que es como venían funcionando.
+         */
+        indumentaria.setIncluyeTallesEspecialesGrandes(
+                !Boolean.FALSE.equals(
+                        incluyeTallesEspecialesGrandes
                 )
         );
 

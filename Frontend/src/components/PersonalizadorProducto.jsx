@@ -30,10 +30,31 @@ const TAMANOS = {
 const TALLES_ESPECIALES = [
     "T6",
     "T8",
-    "T10",
+    "T10"
+];
+
+/*
+ * T14 y T16 solo se ofrecen si el producto los tiene
+ * habilitados, igual que valida el backend.
+ */
+const TALLES_ESPECIALES_GRANDES = [
     "T14",
     "T16"
 ];
+
+function ofreceTalleEspecial(producto, talle) {
+    if (producto?.incluyeTallesEspeciales !== true || !talle) {
+        return false;
+    }
+
+    const normalizado = String(talle).trim().toUpperCase();
+
+    if (TALLES_ESPECIALES_GRANDES.includes(normalizado)) {
+        return producto.incluyeTallesEspecialesGrandes !== false;
+    }
+
+    return TALLES_ESPECIALES.includes(normalizado);
+}
 
 function moneda(valor) {
     return new Intl.NumberFormat("es-AR", {
@@ -771,10 +792,7 @@ export default function PersonalizadorProducto({ producto }) {
     }
 
     const precioAdicionalTalle =
-        producto.incluyeTallesEspeciales === true &&
-        TALLES_ESPECIALES.includes(
-            String(talle).trim().toUpperCase()
-        )
+        ofreceTalleEspecial(producto, talle)
             ? Number(producto.precioAdicionalTalleEspecial || 0)
             : 0;
 
@@ -1654,8 +1672,14 @@ export default function PersonalizadorProducto({ producto }) {
                                     <option value="T6">T6</option>
                                     <option value="T8">T8</option>
                                     <option value="T10">T10</option>
-                                    <option value="T14">T14</option>
-                                    <option value="T16">T16</option>
+
+                                    {producto.incluyeTallesEspecialesGrandes !==
+                                        false && (
+                                        <>
+                                            <option value="T14">T14</option>
+                                            <option value="T16">T16</option>
+                                        </>
+                                    )}
                                 </optgroup>
                             )}
 

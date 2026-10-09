@@ -27,6 +27,15 @@ public class Indumentaria extends Producto {
 
     private Boolean incluyeTallesEspeciales = false;
 
+    /*
+     * Dentro de los talles especiales, T14 y T16 son opcionales.
+     *
+     * Null en los productos cargados antes de esta opción:
+     * los tratamos como incluidos para no sacarles talles
+     * que hoy ya ofrecen.
+     */
+    private Boolean incluyeTallesEspecialesGrandes = true;
+
     private BigDecimal precioAdicionalTalleEspecial = BigDecimal.ZERO;
 
     private boolean usaColores;
@@ -96,13 +105,34 @@ public class Indumentaria extends Producto {
         area.setIndumentaria(null);
     }
 
-    public BigDecimal calcularPrecioAdicionalTalleEspecial(
+    /*
+     * Talles especiales que el producto ofrece hoy.
+     *
+     * T14 y T16 dependen de la opción aparte.
+     */
+    public boolean ofreceTalleEspecial(
             String talle) {
 
         if (!Boolean.TRUE.equals(incluyeTallesEspeciales)
-                || talle == null
-                || !List.of("T6", "T8", "T10", "T14", "T16")
-                        .contains(talle.trim().toUpperCase())) {
+                || talle == null) {
+            return false;
+        }
+
+        String normalizado = talle.trim().toUpperCase();
+
+        if (List.of("T14", "T16").contains(normalizado)) {
+            return !Boolean.FALSE.equals(
+                    incluyeTallesEspecialesGrandes);
+        }
+
+        return List.of("T6", "T8", "T10")
+                .contains(normalizado);
+    }
+
+    public BigDecimal calcularPrecioAdicionalTalleEspecial(
+            String talle) {
+
+        if (!ofreceTalleEspecial(talle)) {
             return BigDecimal.ZERO;
         }
 

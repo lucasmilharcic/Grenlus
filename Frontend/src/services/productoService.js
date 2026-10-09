@@ -240,6 +240,8 @@ export async function crearIndumentaria({
     usaTalles,
     incluyeTallesInfantiles,
     incluyeTallesEspeciales,
+
+    incluyeTallesEspecialesGrandes,
     precioAdicionalTalleEspecial,
     usaColores,
 
@@ -367,6 +369,12 @@ export async function crearIndumentaria({
 
     agregarBoolean(
         formData,
+        "incluyeTallesEspecialesGrandes",
+        incluyeTallesEspecialesGrandes
+    );
+
+    agregarBoolean(
+        formData,
         "usaColores",
         usaColores
     );
@@ -460,6 +468,8 @@ export async function editarIndumentaria(
         usaTalles,
         incluyeTallesInfantiles,
         incluyeTallesEspeciales,
+
+        incluyeTallesEspecialesGrandes,
         precioAdicionalTalleEspecial,
         usaColores,
 
@@ -584,6 +594,12 @@ export async function editarIndumentaria(
         formData,
         "incluyeTallesEspeciales",
         incluyeTallesEspeciales
+    );
+
+    agregarBoolean(
+        formData,
+        "incluyeTallesEspecialesGrandes",
+        incluyeTallesEspecialesGrandes
     );
 
     agregarBoolean(

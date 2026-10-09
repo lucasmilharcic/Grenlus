@@ -25,9 +25,10 @@ const AREA_INICIAL = {
     height: 50
 };
 
-const TALLES_ADULTOS = ["XS", "S", "M", "L", "XL", "XXL"];
+const TALLES_ADULTOS = ["S", "M", "L", "XL", "XXL"];
 const TALLES_INFANTILES = ["4", "6", "8", "10", "12", "14", "16", "18"];
-const TALLES_ESPECIALES = ["T6", "T8", "T10", "T14", "T16"];
+const TALLES_ESPECIALES = ["T6", "T8", "T10"];
+const TALLES_ESPECIALES_GRANDES = ["T14", "T16"];
 
 function numero(valor) {
     const parsed = Number(valor);
@@ -43,12 +44,19 @@ function obtenerTallesCalibrables(producto) {
         return [];
     }
 
+    const especiales =
+        producto.incluyeTallesEspeciales === true;
+
     return [
         ...(producto.incluyeTallesInfantiles !== false
             ? TALLES_INFANTILES
             : []),
-        ...(producto.incluyeTallesEspeciales === true
+        ...(especiales
             ? TALLES_ESPECIALES
+            : []),
+        ...(especiales &&
+            producto.incluyeTallesEspecialesGrandes !== false
+            ? TALLES_ESPECIALES_GRANDES
             : []),
         ...TALLES_ADULTOS
     ];

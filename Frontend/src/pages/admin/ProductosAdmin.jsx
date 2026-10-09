@@ -156,6 +156,11 @@ export default function ProductosAdmin() {
     ] = useState(false);
 
     const [
+        incluyeTallesEspecialesGrandes,
+        setIncluyeTallesEspecialesGrandes
+    ] = useState(true);
+
+    const [
         precioAdicionalTalleEspecial,
         setPrecioAdicionalTalleEspecial
     ] = useState("0");
@@ -320,6 +325,11 @@ export default function ProductosAdmin() {
     ] = useState(false);
 
     const [
+        editIncluyeTallesEspecialesGrandes,
+        setEditIncluyeTallesEspecialesGrandes
+    ] = useState(true);
+
+    const [
         editPrecioAdicionalTalleEspecial,
         setEditPrecioAdicionalTalleEspecial
     ] = useState("0");
@@ -481,6 +491,7 @@ export default function ProductosAdmin() {
         setUsaTalles(true);
         setIncluyeTallesInfantiles(true);
         setIncluyeTallesEspeciales(false);
+        setIncluyeTallesEspecialesGrandes(true);
         setPrecioAdicionalTalleEspecial("0");
         setUsaColores(true);
 
@@ -625,6 +636,8 @@ export default function ProductosAdmin() {
                     usaTalles,
                     incluyeTallesInfantiles,
                     incluyeTallesEspeciales,
+
+                    incluyeTallesEspecialesGrandes,
                     precioAdicionalTalleEspecial,
                     usaColores,
 
@@ -786,6 +799,10 @@ export default function ProductosAdmin() {
 
         setEditIncluyeTallesEspeciales(
             producto.incluyeTallesEspeciales === true
+        );
+
+        setEditIncluyeTallesEspecialesGrandes(
+            producto.incluyeTallesEspecialesGrandes !== false
         );
 
         setEditPrecioAdicionalTalleEspecial(
@@ -1048,6 +1065,9 @@ export default function ProductosAdmin() {
                         incluyeTallesEspeciales:
                             editIncluyeTallesEspeciales,
 
+                        incluyeTallesEspecialesGrandes:
+                            editIncluyeTallesEspecialesGrandes,
+
                         precioAdicionalTalleEspecial:
                             editPrecioAdicionalTalleEspecial || 0,
 
@@ -1178,6 +1198,9 @@ export default function ProductosAdmin() {
 
                     incluyeTallesEspeciales:
                         editIncluyeTallesEspeciales,
+
+                    incluyeTallesEspecialesGrandes:
+                        editIncluyeTallesEspecialesGrandes,
 
                     precioAdicionalTalleEspecial:
                         editPrecioAdicionalTalleEspecial || 0,
@@ -1925,7 +1948,26 @@ export default function ProductosAdmin() {
                                             />
 
                                             <span>
-                                                Incluye talles especiales (T6, T8, T10, T14, T16)
+                                                Incluye talles especiales (T6, T8, T10)
+                                            </span>
+
+                                        </label>
+
+                                        <label className="checkbox-option">
+
+                                            <input
+                                                type="checkbox"
+                                                checked={incluyeTallesEspecialesGrandes}
+                                                disabled={!incluyeTallesEspeciales}
+                                                onChange={(e) =>
+                                                    setIncluyeTallesEspecialesGrandes(
+                                                        e.target.checked
+                                                    )
+                                                }
+                                            />
+
+                                            <span>
+                                                Incluye además T14 y T16
                                             </span>
 
                                         </label>
@@ -3043,7 +3085,30 @@ export default function ProductosAdmin() {
                                                 />
 
                                                 <span>
-                                                    Incluye talles especiales (T6, T8, T10, T14, T16)
+                                                    Incluye talles especiales (T6, T8, T10)
+                                                </span>
+
+                                            </label>
+
+                                            <label className="checkbox-option">
+
+                                                <input
+                                                    type="checkbox"
+                                                    checked={
+                                                        editIncluyeTallesEspecialesGrandes
+                                                    }
+                                                    disabled={
+                                                        !editIncluyeTallesEspeciales
+                                                    }
+                                                    onChange={(e) =>
+                                                        setEditIncluyeTallesEspecialesGrandes(
+                                                            e.target.checked
+                                                        )
+                                                    }
+                                                />
+
+                                                <span>
+                                                    Incluye además T14 y T16
                                                 </span>
 
                                             </label>
