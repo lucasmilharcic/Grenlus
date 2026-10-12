@@ -489,6 +489,252 @@ export default function PersonalizadorProducto({ producto }) {
         talle
     ]);
 
+    // =====================================================
+    // CAMBIO DE COLOR
+    //
+    // Cada color tiene su propio mockup y su propia área.
+    // Al cambiar, el diseño conserva su medida real en cm
+    // y se reacomoda dentro del área nueva, para que el
+    // tamaño de estampa (y el precio) no se muevan solos.
+    // =====================================================
+
+    function buscarArea(posicionVista, colorBuscado) {
+
+        const buscado = String(colorBuscado || "")
+            .trim()
+            .toLowerCase();
+
+        return areas.find(
+            item =>
+                item.posicion === posicionVista &&
+                String(item.color || "").trim().toLowerCase() ===
+                    buscado
+        ) || null;
+    }
+
+    /*
+     * El área de una vista. Con colores, cada uno tiene la
+     * suya: buscar solo por posición devuelve la del primer
+     * color y da medidas equivocadas.
+     */
+    function areaDeVista(posicionVista) {
+
+        if (producto.usaColores && color) {
+
+            const delColor = buscarArea(posicionVista, color);
+
+            if (delColor) {
+                return delColor;
+            }
+        }
+
+        return areas.find(
+            item => item.posicion === posicionVista
+        ) || null;
+    }
+
+    function adaptarLogoAlArea(
+        logoVista,
+        areaVieja,
+        areaNueva
+    ) {
+
+        const aspectRatio =
+            Number(logoVista.aspectRatio) ||
+            (logoVista.height > 0
+                ? logoVista.width / logoVista.height
+                : 1);
+
+        const medidas = calcularMedidasReales(
+            areaVieja,
+            logoVista,
+            talle
+        );
+
+        /*
+         * Ancho visual que mantiene los mismos centímetros
+         * en el área nueva.
+         */
+        let width = Number(logoVista.width || 0);
+
+        const escalaNueva = obtenerEscalaCmPorcentaje(
+            areaNueva,
+            talle
+        );
+
+        if (medidas.ancho > 0 && escalaNueva > 0) {
+
+            width = medidas.ancho / escalaNueva;
+
+        } else if (medidas.ancho > 0) {
+
+            const anchoReferencia =
+                Number(areaNueva.anchoGrandeCm || 0);
+
+            const anchoArea =
+                Number(areaNueva.width || 0);
+
+            if (anchoReferencia > 0 && anchoArea > 0) {
+
+                width =
+                    (medidas.ancho / anchoReferencia) * anchoArea;
+            }
+        }
+
+        /*
+         * Si el área nueva es más chica, el diseño no entra
+         * como estaba: lo ajustamos al máximo que entra y
+         * avisamos, porque puede cambiar el precio.
+         */
+        const maximo = obtenerMaximoVisual(areaNueva, talle);
+
+        const anchoMaximo = Math.max(
+            0,
+            Math.min(
+                maximo.width,
+                maximo.height * aspectRatio,
+                Number(areaNueva.width || 0),
+                Number(areaNueva.height || 0) * aspectRatio
+            )
+        );
+
+        let achicado = false;
+
+        if (anchoMaximo > 0 && width > anchoMaximo) {
+            width = anchoMaximo;
+            achicado = true;
+        }
+
+        const height = width / aspectRatio;
+
+        /*
+         * Misma posición relativa dentro del área.
+         */
+        const relX =
+            Number(areaVieja.width || 0) > 0
+                ? (Number(logoVista.x || 0) -
+                    Number(areaVieja.x || 0)) /
+                    Number(areaVieja.width)
+                : 0;
+
+        const relY =
+            Number(areaVieja.height || 0) > 0
+                ? (Number(logoVista.y || 0) -
+                    Number(areaVieja.y || 0)) /
+                    Number(areaVieja.height)
+                : 0;
+
+        const x = clamp(
+            Number(areaNueva.x || 0) +
+                relX * Number(areaNueva.width || 0),
+            Number(areaNueva.x || 0),
+            Number(areaNueva.x || 0) +
+                Number(areaNueva.width || 0) -
+                width
+        );
+
+        const y = clamp(
+            Number(areaNueva.y || 0) +
+                relY * Number(areaNueva.height || 0),
+            Number(areaNueva.y || 0),
+            Number(areaNueva.y || 0) +
+                Number(areaNueva.height || 0) -
+                height
+        );
+
+        return {
+            logo: {
+                ...logoVista,
+                x,
+                y,
+                width,
+                height,
+                aspectRatio
+            },
+            achicado
+        };
+    }
+
+    function elegirColor(nuevoColor) {
+
+        const anterior = color;
+
+        setError("");
+        setMensaje("");
+
+        if (
+            !anterior ||
+            String(anterior).toLowerCase() ===
+                String(nuevoColor).toLowerCase()
+        ) {
+
+            setColor(nuevoColor);
+            return;
+        }
+
+        /*
+         * Calculamos acá y no dentro del actualizador de
+         * estado, porque React lo corre después y el aviso
+         * se perdería.
+         */
+        let huboAjuste = false;
+
+        const adaptados = { ...disenosPorVista };
+
+        Object.entries(disenosPorVista).forEach(
+            ([posicionVista, diseno]) => {
+
+                if (
+                    !diseno?.logo ||
+                    Number(diseno.logo.width || 0) <= 0
+                ) {
+                    return;
+                }
+
+                const areaVieja = buscarArea(
+                    posicionVista,
+                    anterior
+                );
+
+                const areaNueva = buscarArea(
+                    posicionVista,
+                    nuevoColor
+                );
+
+                if (!areaVieja || !areaNueva) {
+                    return;
+                }
+
+                const resultado = adaptarLogoAlArea(
+                    diseno.logo,
+                    areaVieja,
+                    areaNueva
+                );
+
+                if (resultado.achicado) {
+                    huboAjuste = true;
+                }
+
+                adaptados[posicionVista] = {
+                    ...diseno,
+                    logo: resultado.logo
+                };
+            }
+        );
+
+        setDisenosPorVista(adaptados);
+
+        setColor(nuevoColor);
+
+        if (huboAjuste) {
+            setMensaje(
+                "El área de estampado de este color es más chica, " +
+                "así que achicamos el diseño para que entre. " +
+                "Revisá la medida y el precio."
+            );
+        }
+    }
+
     /*
      * Al cambiar de talle soltamos el color si no está
      * disponible en el talle nuevo.
@@ -878,9 +1124,7 @@ export default function PersonalizadorProducto({ producto }) {
                     return;
                 }
 
-                const area = areas.find(
-                    item => item.posicion === posicionVista
-                );
+                const area = areaDeVista(posicionVista);
 
                 if (!area) {
                     return;
@@ -904,6 +1148,7 @@ export default function PersonalizadorProducto({ producto }) {
     }, [
         disenosPorVista,
         areas,
+        color,
         talle,
         calibraciones
     ]);
@@ -1415,9 +1660,7 @@ export default function PersonalizadorProducto({ producto }) {
                         return false;
                     }
 
-                    const area = areas.find(
-                        item => item.posicion === posicionVista
-                    );
+                    const area = areaDeVista(posicionVista);
 
                     return !obtenerEscalaCmPorcentaje(area, talle);
                 })
@@ -1454,9 +1697,7 @@ export default function PersonalizadorProducto({ producto }) {
                     actualizarDisenoVista(posicionVista, { ruta });
                 }
 
-                const area = areas.find(
-                    item => item.posicion === posicionVista
-                );
+                const area = areaDeVista(posicionVista);
 
                 if (!area) {
                     continue;
@@ -1843,11 +2084,7 @@ export default function PersonalizadorProducto({ producto }) {
                                             ? "active"
                                             : ""
                                     }
-                                    onClick={() => {
-                                        setColor(item);
-                                        setError("");
-                                        setMensaje("");
-                                    }}
+                                    onClick={() => elegirColor(item)}
                                 >
                                     {item}
 
