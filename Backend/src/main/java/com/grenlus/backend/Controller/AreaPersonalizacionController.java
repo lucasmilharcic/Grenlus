@@ -327,4 +327,43 @@ public class AreaPersonalizacionController {
                 areaId
         );
     }
+// =========================================================
+    // RENOMBRAR O ELIMINAR UN COLOR ENTERO
+    // =========================================================
+
+    @PutMapping("/color")
+    public void renombrarColor(
+
+            @PathVariable
+            Long indumentariaId,
+
+            @RequestParam
+            String desde,
+
+            @RequestParam
+            String hacia
+    ) {
+
+        service.renombrarColor(
+                indumentariaId,
+                desde,
+                hacia
+        );
+    }
+
+    @DeleteMapping("/color")
+    public void eliminarColor(
+
+            @PathVariable
+            Long indumentariaId,
+
+            @RequestParam
+            String nombre
+    ) {
+
+        service.eliminarColor(
+                indumentariaId,
+                nombre
+        );
+    }
 }

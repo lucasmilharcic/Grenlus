@@ -575,3 +575,62 @@
         grid-template-columns: 1fr;
     }
 }
+/* =====================================================
+   ACCIONES SOBRE UN COLOR
+===================================================== */
+
+.area-admin-color-acciones {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 9px;
+
+    margin: 10px 0 4px;
+}
+
+.area-admin-color-acciones button {
+    padding: 8px 15px;
+
+    color: #0a315e;
+    background: #ffffff;
+
+    border: 1px solid #cfdfec;
+    border-radius: 999px;
+
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.area-admin-color-acciones button:hover:not(:disabled) {
+    background: #eef5fb;
+}
+
+.area-admin-color-acciones button.peligro {
+    color: #9f3838;
+    border-color: #f0caca;
+}
+
+.area-admin-color-acciones button.peligro:hover:not(:disabled) {
+    background: #ffeaea;
+}
+
+.area-admin-color-acciones button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.area-medida-aviso {
+    padding: 13px 15px;
+
+    color: #678298;
+    background: #f5f8fb;
+
+    border: 1px solid #dce6ee;
+    border-radius: 10px;
+
+    font-size: 12px;
+    line-height: 1.5;
+}

@@ -1,0 +1,155 @@
+.medidas-estampa {
+    grid-column: 1 / -1;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 18px;
+
+    padding: 18px;
+
+    background: #f5f8fb;
+
+    border: 1px solid #dce6ee;
+    border-radius: 12px;
+}
+
+.medidas-estampa-bloque {
+    display: flex;
+    flex-direction: column;
+
+    gap: 11px;
+}
+
+.medidas-estampa-titulo {
+    color: #6e879e;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.medidas-estampa small {
+    color: #7e93a6;
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* CATEGORÍAS */
+
+.medidas-estampa-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 12px;
+}
+
+.medida-categoria {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+
+    padding: 13px;
+
+    background: #ffffff;
+
+    border: 1px solid #dce6ee;
+    border-radius: 10px;
+}
+
+.medida-categoria > span {
+    color: #123d65;
+
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.medida-par {
+    display: flex;
+
+    gap: 9px;
+}
+
+.medida-par label {
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+
+    color: #7b91a5;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.medida-par input,
+.medida-sisa input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 8px 10px;
+
+    color: #123d65;
+    background: #ffffff;
+
+    border: 1px solid #d3e0ea;
+    border-radius: 8px;
+
+    font: inherit;
+    font-size: 13px;
+}
+
+.medida-par input:focus,
+.medida-sisa input:focus {
+    outline: none;
+    border-color: #0a315e;
+}
+
+/* SISA */
+
+.medidas-sisa-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(94px, 1fr));
+
+    gap: 9px;
+}
+
+.medida-sisa {
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+
+    padding: 9px;
+
+    background: #ffffff;
+
+    border: 1px solid #dce6ee;
+    border-radius: 9px;
+}
+
+.medida-sisa span {
+    color: #123d65;
+
+    font-size: 12px;
+    font-weight: 800;
+}
+
+@media (max-width: 760px) {
+
+    .medidas-estampa-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

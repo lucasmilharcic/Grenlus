@@ -7,6 +7,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 
 import SelectorTalles from "../../components/SelectorTalles";
+import MedidasEstampaEditor from "../../components/MedidasEstampaEditor";
 
 import {
     TALLES_ADULTOS,
@@ -192,6 +193,16 @@ export default function ProductosAdmin() {
     ] = useState(TALLES_POR_DEFECTO);
 
     const [
+        medidasEstampa,
+        setMedidasEstampa
+    ] = useState({});
+
+    const [
+        sisaPorTalle,
+        setSisaPorTalle
+    ] = useState({});
+
+    const [
         precioAdicionalTalleEspecial,
         setPrecioAdicionalTalleEspecial
     ] = useState("0");
@@ -371,6 +382,16 @@ export default function ProductosAdmin() {
     ] = useState([]);
 
     const [
+        editMedidasEstampa,
+        setEditMedidasEstampa
+    ] = useState({});
+
+    const [
+        editSisaPorTalle,
+        setEditSisaPorTalle
+    ] = useState({});
+
+    const [
         editPrecioAdicionalTalleEspecial,
         setEditPrecioAdicionalTalleEspecial
     ] = useState("0");
@@ -535,6 +556,8 @@ export default function ProductosAdmin() {
         setIncluyeTallesEspeciales(false);
         setIncluyeTallesEspecialesGrandes(true);
         setTallesDisponibles(TALLES_POR_DEFECTO);
+        setMedidasEstampa({});
+        setSisaPorTalle({});
         setPrecioAdicionalTalleEspecial("0");
         setUsaColores(true);
 
@@ -685,6 +708,12 @@ export default function ProductosAdmin() {
                     incluyeTallesEspecialesGrandes,
 
                     tallesDisponibles,
+
+
+                    ...medidasEstampa,
+
+
+                    medidasSisaCmPorTalle: sisaPorTalle,
                     precioAdicionalTalleEspecial,
                     usaColores,
 
@@ -864,6 +893,23 @@ export default function ProductosAdmin() {
 
         setEditTallesDisponibles(
             tallesDelProducto(producto)
+        );
+
+
+
+        setEditMedidasEstampa({
+            anchoChicaCm: producto.anchoChicaCm ?? "",
+            altoChicaCm: producto.altoChicaCm ?? "",
+            anchoMediaCm: producto.anchoMediaCm ?? "",
+            altoMediaCm: producto.altoMediaCm ?? "",
+            anchoGrandeCm: producto.anchoGrandeCm ?? "",
+            altoGrandeCm: producto.altoGrandeCm ?? ""
+        });
+
+
+
+        setEditSisaPorTalle(
+            producto.medidasSisaCmPorTalle || {}
         );
 
         setEditPrecioAdicionalTalleEspecial(
@@ -1135,6 +1181,15 @@ export default function ProductosAdmin() {
                         tallesDisponibles:
                             editTallesDisponibles,
 
+
+
+                        ...editMedidasEstampa,
+
+
+
+                        medidasSisaCmPorTalle:
+                            editSisaPorTalle,
+
                         precioAdicionalTalleEspecial:
                             editPrecioAdicionalTalleEspecial || 0,
 
@@ -1274,6 +1329,15 @@ export default function ProductosAdmin() {
 
                     tallesDisponibles:
                         editTallesDisponibles,
+
+
+
+                    ...editMedidasEstampa,
+
+
+
+                    medidasSisaCmPorTalle:
+                        editSisaPorTalle,
 
                     precioAdicionalTalleEspecial:
                         editPrecioAdicionalTalleEspecial || 0,
@@ -2032,6 +2096,57 @@ export default function ProductosAdmin() {
                                                 valor={tallesDisponibles}
                                                 deshabilitado={!usaTalles}
                                                 onChange={setTallesDisponibles}
+                                            />
+
+
+                                            <MedidasEstampaEditor
+
+
+                                                medidas={medidasEstampa}
+
+
+                                                talles={tallesDisponibles}
+
+
+                                                sisaPorTalle={sisaPorTalle}
+
+
+                                                onCambiarMedida={(campo, valor) =>
+
+
+                                                    setMedidasEstampa(actuales => ({
+
+
+                                                        ...actuales,
+
+
+                                                        [campo]: valor
+
+
+                                                    }))
+
+
+                                                }
+
+
+                                                onCambiarSisa={(talleSisa, valor) =>
+
+
+                                                    setSisaPorTalle(actuales => ({
+
+
+                                                        ...actuales,
+
+
+                                                        [talleSisa]: valor
+
+
+                                                    }))
+
+
+                                                }
+
+
                                             />
                                         </div>
 
@@ -3156,6 +3271,57 @@ export default function ProductosAdmin() {
                                                     valor={editTallesDisponibles}
                                                     deshabilitado={!editUsaTalles}
                                                     onChange={setEditTallesDisponibles}
+                                                />
+
+
+                                                <MedidasEstampaEditor
+
+
+                                                    medidas={editMedidasEstampa}
+
+
+                                                    talles={editTallesDisponibles}
+
+
+                                                    sisaPorTalle={editSisaPorTalle}
+
+
+                                                    onCambiarMedida={(campo, valor) =>
+
+
+                                                        setEditMedidasEstampa(actuales => ({
+
+
+                                                            ...actuales,
+
+
+                                                            [campo]: valor
+
+
+                                                        }))
+
+
+                                                    }
+
+
+                                                    onCambiarSisa={(talleSisa, valor) =>
+
+
+                                                        setEditSisaPorTalle(actuales => ({
+
+
+                                                            ...actuales,
+
+
+                                                            [talleSisa]: valor
+
+
+                                                        }))
+
+
+                                                    }
+
+
                                                 />
                                             </div>
 

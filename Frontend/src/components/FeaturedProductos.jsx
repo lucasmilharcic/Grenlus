@@ -30,11 +30,12 @@ export default function FeaturedProductos() {
                     : [];
 
                 /*
-                 * Los últimos cargados primero, así lo nuevo
-                 * aparece arriba.
+                 * En el orden en que los fuiste creando: lo
+                 * primero que cargaste (remeras, buzos) va
+                 * arriba.
                  */
                 productosActivos.sort(
-                    (a, b) => Number(b.id || 0) - Number(a.id || 0)
+                    (a, b) => Number(a.id || 0) - Number(b.id || 0)
                 );
 
                 setProductos(productosActivos);

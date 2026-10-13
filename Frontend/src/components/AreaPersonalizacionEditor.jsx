@@ -4,6 +4,8 @@ import {
     crearAreaPersonalizacion,
     editarAreaPersonalizacion,
     eliminarAreaPersonalizacion,
+    renombrarColorProducto,
+    eliminarColorProducto,
     getCalibracionesEstampa,
     guardarCalibracionEstampa,
     obtenerUrlArchivo
@@ -69,15 +71,6 @@ export default function AreaPersonalizacionEditor({
     const [calibraciones, setCalibraciones] = useState([]);
     const [borradoresCalibracion, setBorradoresCalibracion] = useState({});
     const [puntosPendientes, setPuntosPendientes] = useState({});
-
-    const [anchoChicaCm, setAnchoChicaCm] = useState("");
-    const [altoChicaCm, setAltoChicaCm] = useState("");
-
-    const [anchoMediaCm, setAnchoMediaCm] = useState("");
-    const [altoMediaCm, setAltoMediaCm] = useState("");
-
-    const [anchoGrandeCm, setAnchoGrandeCm] = useState("");
-    const [altoGrandeCm, setAltoGrandeCm] = useState("");
 
     const [guardando, setGuardando] = useState(false);
 
@@ -291,41 +284,8 @@ export default function AreaPersonalizacionEditor({
                 width: numero(areaExistente.width),
                 height: numero(areaExistente.height)
             });
-
-            setAnchoChicaCm(
-                areaExistente.anchoChicaCm ?? ""
-            );
-
-            setAltoChicaCm(
-                areaExistente.altoChicaCm ?? ""
-            );
-
-            setAnchoMediaCm(
-                areaExistente.anchoMediaCm ?? ""
-            );
-
-            setAltoMediaCm(
-                areaExistente.altoMediaCm ?? ""
-            );
-
-            setAnchoGrandeCm(
-                areaExistente.anchoGrandeCm ?? ""
-            );
-
-            setAltoGrandeCm(
-                areaExistente.altoGrandeCm ?? ""
-            );
         } else {
             setArea(AREA_INICIAL);
-
-            setAnchoChicaCm("");
-            setAltoChicaCm("");
-
-            setAnchoMediaCm("");
-            setAltoMediaCm("");
-
-            setAnchoGrandeCm("");
-            setAltoGrandeCm("");
         }
     }, [posicion, areaExistente]);
 
@@ -663,35 +623,21 @@ export default function AreaPersonalizacionEditor({
                     area.height.toFixed(3)
                 ),
 
-                anchoChicaCm:
-                    producto.permiteEstampaChica
-                        ? anchoChicaCm
-                        : "",
+                /*
+                 * Las medidas de estampa ya no se cargan acá:
+                 * son del producto y valen para todos sus
+                 * colores y vistas. Mandamos las que ya tenía
+                 * el área para no borrárselas a los productos
+                 * viejos.
+                 */
+                anchoChicaCm: areaExistente?.anchoChicaCm ?? "",
+                altoChicaCm: areaExistente?.altoChicaCm ?? "",
 
-                altoChicaCm:
-                    producto.permiteEstampaChica
-                        ? altoChicaCm
-                        : "",
+                anchoMediaCm: areaExistente?.anchoMediaCm ?? "",
+                altoMediaCm: areaExistente?.altoMediaCm ?? "",
 
-                anchoMediaCm:
-                    producto.permiteEstampaMedia
-                        ? anchoMediaCm
-                        : "",
-
-                altoMediaCm:
-                    producto.permiteEstampaMedia
-                        ? altoMediaCm
-                        : "",
-
-                anchoGrandeCm:
-                    producto.permiteEstampaGrande
-                        ? anchoGrandeCm
-                        : "",
-
-                altoGrandeCm:
-                    producto.permiteEstampaGrande
-                        ? altoGrandeCm
-                        : ""
+                anchoGrandeCm: areaExistente?.anchoGrandeCm ?? "",
+                altoGrandeCm: areaExistente?.altoGrandeCm ?? ""
             };
 
             if (areaExistente) {
@@ -721,6 +667,84 @@ export default function AreaPersonalizacionEditor({
                 err.message ||
                 "No se pudo guardar el área."
             );
+        } finally {
+            setGuardando(false);
+        }
+    }
+
+    /*
+     * Renombrar o eliminar un color toca todas sus vistas
+     * de una vez, y arrastra su ficha de precio.
+     */
+    async function renombrarColor() {
+
+        const nombreNuevo = window.prompt(
+            `Nuevo nombre para el color "${color}":`,
+            color
+        );
+
+        if (
+            !nombreNuevo ||
+            !nombreNuevo.trim() ||
+            nombreNuevo.trim() === color
+        ) {
+            return;
+        }
+
+        try {
+
+            setGuardando(true);
+            setError("");
+            setMensaje("");
+
+            await renombrarColorProducto(
+                producto.id,
+                color,
+                nombreNuevo.trim()
+            );
+
+            setColor(nombreNuevo.trim());
+            setMensaje(
+                `El color pasó a llamarse ${nombreNuevo.trim()}.`
+            );
+
+            onActualizado?.();
+
+        } catch (err) {
+            console.error(err);
+            setError(err.message || "No se pudo renombrar el color.");
+        } finally {
+            setGuardando(false);
+        }
+    }
+
+    async function eliminarColor() {
+
+        const confirmar = window.confirm(
+            `¿Eliminar el color "${color}"? Se borran todas sus vistas ` +
+            "y su ficha de precio. No se puede deshacer."
+        );
+
+        if (!confirmar) {
+            return;
+        }
+
+        try {
+
+            setGuardando(true);
+            setError("");
+            setMensaje("");
+
+            await eliminarColorProducto(producto.id, color);
+
+            setColor("");
+            setMensaje("Color eliminado.");
+
+            onActualizado?.();
+
+        } catch (err) {
+            console.error(err);
+            setError(err.message || "No se pudo eliminar el color.");
         } finally {
             setGuardando(false);
         }
@@ -834,6 +858,34 @@ export default function AreaPersonalizacionEditor({
 
                                 )
                             )}
+
+                        </div>
+                    )}
+
+                    {color && coloresConfigurados.some(
+                        item =>
+                            item.toLowerCase() ===
+                            String(color).toLowerCase()
+                    ) && (
+
+                        <div className="area-admin-color-acciones">
+
+                            <button
+                                type="button"
+                                disabled={guardando}
+                                onClick={renombrarColor}
+                            >
+                                Renombrar {color}
+                            </button>
+
+                            <button
+                                type="button"
+                                className="peligro"
+                                disabled={guardando}
+                                onClick={eliminarColor}
+                            >
+                                Eliminar {color}
+                            </button>
 
                         </div>
                     )}
@@ -1160,137 +1212,11 @@ export default function AreaPersonalizacionEditor({
                         </div>
                     )}
 
-                    {producto.permiteEstampaChica && (
-                        <div className="area-medida-card">
-                            <strong>
-                                Estampa chica
-                            </strong>
-
-                            <div className="area-medida-grid">
-                                <label>
-                                    Ancho cm
-                                    <input
-                                        type="number"
-                                        min="0.1"
-                                        step="0.1"
-                                        value={
-                                            anchoChicaCm
-                                        }
-                                        onChange={(e) =>
-                                            setAnchoChicaCm(
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </label>
-
-                                <label>
-                                    Alto cm
-                                    <input
-                                        type="number"
-                                        min="0.1"
-                                        step="0.1"
-                                        value={
-                                            altoChicaCm
-                                        }
-                                        onChange={(e) =>
-                                            setAltoChicaCm(
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </label>
-                            </div>
-                        </div>
-                    )}
-
-                    {producto.permiteEstampaMedia && (
-                        <div className="area-medida-card">
-                            <strong>
-                                Estampa mediana
-                            </strong>
-
-                            <div className="area-medida-grid">
-                                <label>
-                                    Ancho cm
-                                    <input
-                                        type="number"
-                                        min="0.1"
-                                        step="0.1"
-                                        value={
-                                            anchoMediaCm
-                                        }
-                                        onChange={(e) =>
-                                            setAnchoMediaCm(
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </label>
-
-                                <label>
-                                    Alto cm
-                                    <input
-                                        type="number"
-                                        min="0.1"
-                                        step="0.1"
-                                        value={
-                                            altoMediaCm
-                                        }
-                                        onChange={(e) =>
-                                            setAltoMediaCm(
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </label>
-                            </div>
-                        </div>
-                    )}
-
-                    {producto.permiteEstampaGrande && (
-                        <div className="area-medida-card">
-                            <strong>
-                                Estampa grande
-                            </strong>
-
-                            <div className="area-medida-grid">
-                                <label>
-                                    Ancho cm
-                                    <input
-                                        type="number"
-                                        min="0.1"
-                                        step="0.1"
-                                        value={
-                                            anchoGrandeCm
-                                        }
-                                        onChange={(e) =>
-                                            setAnchoGrandeCm(
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </label>
-
-                                <label>
-                                    Alto cm
-                                    <input
-                                        type="number"
-                                        min="0.1"
-                                        step="0.1"
-                                        value={
-                                            altoGrandeCm
-                                        }
-                                        onChange={(e) =>
-                                            setAltoGrandeCm(
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </label>
-                            </div>
-                        </div>
-                    )}
+                    <div className="area-medida-aviso">
+                        Las medidas de estampa (chica, mediana y grande)
+                        ahora se cargan una sola vez en el producto y valen
+                        para todos sus colores y vistas.
+                    </div>
 
                     {error && (
                         <div className="area-admin-message error">

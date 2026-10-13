@@ -13,6 +13,7 @@ import com.grenlus.backend.Entity.PosicionDiseno;
 import com.grenlus.backend.Exception.BadRequestException;
 import com.grenlus.backend.Exception.ResourceNotFoundException;
 import com.grenlus.backend.Repository.AreaPersonalizacionRepository;
+import com.grenlus.backend.Repository.ColorProductoRepository;
 import com.grenlus.backend.Repository.IndumentariaRepository;
 
 @Service
@@ -24,13 +25,17 @@ public class AreaPersonalizacionService {
 
     private final FileStorageService fileStorageService;
 
+    private final ColorProductoRepository colorRepository;
+
     public AreaPersonalizacionService(
 
             AreaPersonalizacionRepository areaRepository,
 
             IndumentariaRepository indumentariaRepository,
 
-            FileStorageService fileStorageService
+            FileStorageService fileStorageService,
+
+            ColorProductoRepository colorRepository
     ) {
 
         this.areaRepository =
@@ -41,6 +46,9 @@ public class AreaPersonalizacionService {
 
         this.fileStorageService =
                 fileStorageService;
+
+        this.colorRepository =
+                colorRepository;
     }
 
     // =========================================================
@@ -428,6 +436,132 @@ public class AreaPersonalizacionService {
         areaRepository.delete(
                 area
         );
+    }
+
+    // =========================================================
+    // RENOMBRAR UN COLOR
+    //
+    // Toca todas las vistas de ese color de una vez.
+    // =========================================================
+
+    @Transactional
+    public void renombrarColor(
+            Long indumentariaId,
+            String desde,
+            String hacia) {
+
+        String nombreViejo = limpiar(desde);
+        String nombreNuevo = limpiar(hacia);
+
+        if (nombreViejo == null || nombreNuevo == null) {
+
+            throw new BadRequestException(
+                    "Indicá el color que querés renombrar y el nombre nuevo.");
+        }
+
+        List<AreaPersonalizacion> delColor =
+                areasDelColor(indumentariaId, nombreViejo);
+
+        if (delColor.isEmpty()) {
+
+            throw new ResourceNotFoundException(
+                    "El color " + nombreViejo
+                            + " no tiene vistas cargadas.");
+        }
+
+        if (!nombreViejo.equalsIgnoreCase(nombreNuevo)) {
+
+            boolean yaExiste = areaRepository
+                    .findByIndumentariaIdOrderByIdAsc(indumentariaId)
+                    .stream()
+                    .anyMatch(area ->
+                            nombreNuevo.equalsIgnoreCase(
+                                    limpiar(area.getColor())));
+
+            if (yaExiste) {
+
+                throw new BadRequestException(
+                        "Ya hay un color llamado " + nombreNuevo + ".");
+            }
+        }
+
+        delColor.forEach(area -> area.setColor(nombreNuevo));
+
+        areaRepository.saveAll(delColor);
+
+        /*
+         * La ficha de precio del color acompaña el cambio.
+         */
+        colorRepository
+                .findByIndumentariaIdAndNombreIgnoreCase(
+                        indumentariaId,
+                        nombreViejo)
+                .ifPresent(ficha -> {
+                    ficha.setNombre(nombreNuevo);
+                    colorRepository.save(ficha);
+                });
+    }
+
+    // =========================================================
+    // ELIMINAR UN COLOR
+    // =========================================================
+
+    @Transactional
+    public void eliminarColor(
+            Long indumentariaId,
+            String nombre) {
+
+        String color = limpiar(nombre);
+
+        if (color == null) {
+
+            throw new BadRequestException(
+                    "Indicá el color que querés eliminar.");
+        }
+
+        List<AreaPersonalizacion> delColor =
+                areasDelColor(indumentariaId, color);
+
+        if (delColor.isEmpty()) {
+
+            throw new ResourceNotFoundException(
+                    "El color " + color
+                            + " no tiene vistas cargadas.");
+        }
+
+        areaRepository.deleteAll(delColor);
+
+        colorRepository
+                .findByIndumentariaIdAndNombreIgnoreCase(
+                        indumentariaId,
+                        color)
+                .ifPresent(colorRepository::delete);
+    }
+
+    private List<AreaPersonalizacion> areasDelColor(
+            Long indumentariaId,
+            String color) {
+
+        return areaRepository
+                .findByIndumentariaIdOrderByIdAsc(indumentariaId)
+                .stream()
+                .filter(area ->
+                        color.equalsIgnoreCase(
+                                limpiar(area.getColor())))
+                .toList();
+    }
+
+    private String limpiar(String valor) {
+
+        if (valor == null) {
+            return null;
+        }
+
+        String limpio = valor.trim();
+
+        return limpio.isEmpty()
+                ? null
+                : limpio;
     }
 
     // =========================================================

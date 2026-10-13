@@ -1,7 +1,9 @@
 package com.grenlus.backend.Controller;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.http.MediaType;
@@ -184,6 +186,54 @@ public class IndumentariaController {
             BigDecimal precioAdicionalTalleEspecial,
 
             @RequestParam(
+                    value = "anchoChicaCm",
+                    required = false
+            )
+            BigDecimal anchoChicaCm,
+
+            @RequestParam(
+                    value = "altoChicaCm",
+                    required = false
+            )
+            BigDecimal altoChicaCm,
+
+            @RequestParam(
+                    value = "anchoMediaCm",
+                    required = false
+            )
+            BigDecimal anchoMediaCm,
+
+            @RequestParam(
+                    value = "altoMediaCm",
+                    required = false
+            )
+            BigDecimal altoMediaCm,
+
+            @RequestParam(
+                    value = "anchoGrandeCm",
+                    required = false
+            )
+            BigDecimal anchoGrandeCm,
+
+            @RequestParam(
+                    value = "altoGrandeCm",
+                    required = false
+            )
+            BigDecimal altoGrandeCm,
+
+            @RequestParam(
+                    value = "sisaTalles",
+                    required = false
+            )
+            List<String> sisaTalles,
+
+            @RequestParam(
+                    value = "sisaMedidas",
+                    required = false
+            )
+            List<BigDecimal> sisaMedidas,
+
+            @RequestParam(
                     value = "usaColores",
                     required = false
             )
@@ -262,6 +312,22 @@ public class IndumentariaController {
 
                 tallesDisponibles,
                 precioAdicionalTalleEspecial,
+
+                anchoChicaCm,
+
+                altoChicaCm,
+
+                anchoMediaCm,
+
+                altoMediaCm,
+
+                anchoGrandeCm,
+
+                altoGrandeCm,
+
+                sisaTalles,
+
+                sisaMedidas,
                 usaColores,
                 permiteFrente,
                 permiteEspalda,
@@ -404,6 +470,54 @@ public class IndumentariaController {
             BigDecimal precioAdicionalTalleEspecial,
 
             @RequestParam(
+                    value = "anchoChicaCm",
+                    required = false
+            )
+            BigDecimal anchoChicaCm,
+
+            @RequestParam(
+                    value = "altoChicaCm",
+                    required = false
+            )
+            BigDecimal altoChicaCm,
+
+            @RequestParam(
+                    value = "anchoMediaCm",
+                    required = false
+            )
+            BigDecimal anchoMediaCm,
+
+            @RequestParam(
+                    value = "altoMediaCm",
+                    required = false
+            )
+            BigDecimal altoMediaCm,
+
+            @RequestParam(
+                    value = "anchoGrandeCm",
+                    required = false
+            )
+            BigDecimal anchoGrandeCm,
+
+            @RequestParam(
+                    value = "altoGrandeCm",
+                    required = false
+            )
+            BigDecimal altoGrandeCm,
+
+            @RequestParam(
+                    value = "sisaTalles",
+                    required = false
+            )
+            List<String> sisaTalles,
+
+            @RequestParam(
+                    value = "sisaMedidas",
+                    required = false
+            )
+            List<BigDecimal> sisaMedidas,
+
+            @RequestParam(
                     value = "usaColores",
                     required = false
             )
@@ -485,6 +599,22 @@ public class IndumentariaController {
 
                 tallesDisponibles,
                 precioAdicionalTalleEspecial,
+
+                anchoChicaCm,
+
+                altoChicaCm,
+
+                anchoMediaCm,
+
+                altoMediaCm,
+
+                anchoGrandeCm,
+
+                altoGrandeCm,
+
+                sisaTalles,
+
+                sisaMedidas,
                 usaColores,
                 permiteFrente,
                 permiteEspalda,
@@ -548,6 +678,22 @@ public class IndumentariaController {
 
             List<String> tallesDisponibles,
             BigDecimal precioAdicionalTalleEspecial,
+
+            BigDecimal anchoChicaCm,
+
+            BigDecimal altoChicaCm,
+
+            BigDecimal anchoMediaCm,
+
+            BigDecimal altoMediaCm,
+
+            BigDecimal anchoGrandeCm,
+
+            BigDecimal altoGrandeCm,
+
+            List<String> sisaTalles,
+
+            List<BigDecimal> sisaMedidas,
             Boolean usaColores,
 
             Boolean permiteFrente,
@@ -702,6 +848,69 @@ public class IndumentariaController {
 
         indumentaria.setPrecioAdicionalTalleEspecial(adicionalTalle);
 
+        // =========================================================
+        // MEDIDAS DE ESTAMPA Y SISA
+        // =========================================================
+
+        indumentaria.setAnchoChicaCm(
+                medidaValida(anchoChicaCm, "ancho de la estampa chica"));
+
+        indumentaria.setAltoChicaCm(
+                medidaValida(altoChicaCm, "alto de la estampa chica"));
+
+        indumentaria.setAnchoMediaCm(
+                medidaValida(anchoMediaCm, "ancho de la estampa mediana"));
+
+        indumentaria.setAltoMediaCm(
+                medidaValida(altoMediaCm, "alto de la estampa mediana"));
+
+        indumentaria.setAnchoGrandeCm(
+                medidaValida(anchoGrandeCm, "ancho de la estampa grande"));
+
+        indumentaria.setAltoGrandeCm(
+                medidaValida(altoGrandeCm, "alto de la estampa grande"));
+
+        /*
+         * El ancho de sisa llega como dos listas paralelas:
+         * un talle y su medida.
+         *
+         * Si no vienen, no tocamos lo que ya estaba.
+         */
+        if (sisaTalles != null) {
+
+            Map<String, BigDecimal> sisa =
+                    new LinkedHashMap<>();
+
+            for (int i = 0; i < sisaTalles.size(); i++) {
+
+                String talle =
+                        CatalogoTalles.normalizar(
+                                sisaTalles.get(i));
+
+                BigDecimal medida =
+                        sisaMedidas != null
+                                && i < sisaMedidas.size()
+                                        ? sisaMedidas.get(i)
+                                        : null;
+
+                if (talle == null || medida == null) {
+                    continue;
+                }
+
+                if (medida.compareTo(BigDecimal.ZERO) <= 0) {
+
+                    throw new BadRequestException(
+                            "El ancho de sisa del talle " + talle
+                                    + " debe ser mayor a cero.");
+                }
+
+                sisa.put(talle, medida);
+            }
+
+            indumentaria.getMedidasSisaCmPorTalle().clear();
+            indumentaria.getMedidasSisaCmPorTalle().putAll(sisa);
+        }
+
         indumentaria.setUsaColores(
                 Boolean.TRUE.equals(
                         usaColores
@@ -749,5 +958,25 @@ public class IndumentariaController {
                         permiteEstampaGrande
                 )
         );
+    }
+    /*
+     * Una medida de estampa en blanco queda sin cargar.
+     * Si viene, tiene que ser mayor a cero.
+     */
+    private BigDecimal medidaValida(
+            BigDecimal valor,
+            String nombre) {
+
+        if (valor == null) {
+            return null;
+        }
+
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+
+            throw new BadRequestException(
+                    "El " + nombre + " debe ser mayor a cero.");
+        }
+
+        return valor;
     }
 }

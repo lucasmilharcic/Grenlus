@@ -249,6 +249,20 @@ export async function crearIndumentaria({
 
     tallesDisponibles,
     precioAdicionalTalleEspecial,
+
+    anchoChicaCm,
+
+    altoChicaCm,
+
+    anchoMediaCm,
+
+    altoMediaCm,
+
+    anchoGrandeCm,
+
+    altoGrandeCm,
+
+    medidasSisaCmPorTalle,
     usaColores,
 
     permiteFrente,
@@ -321,6 +335,57 @@ export async function crearIndumentaria({
         formData,
         "precioAdicionalTalleEspecial",
         precioAdicionalTalleEspecial
+    );
+
+    agregarNumero(
+        formData,
+        "anchoChicaCm",
+        anchoChicaCm
+    );
+
+    agregarNumero(
+        formData,
+        "altoChicaCm",
+        altoChicaCm
+    );
+
+    agregarNumero(
+        formData,
+        "anchoMediaCm",
+        anchoMediaCm
+    );
+
+    agregarNumero(
+        formData,
+        "altoMediaCm",
+        altoMediaCm
+    );
+
+    agregarNumero(
+        formData,
+        "anchoGrandeCm",
+        anchoGrandeCm
+    );
+
+    agregarNumero(
+        formData,
+        "altoGrandeCm",
+        altoGrandeCm
+    );
+
+    /*
+     * El ancho de sisa viaja como dos listas paralelas:
+     * el talle y su medida.
+     */
+    Object.entries(medidasSisaCmPorTalle || {}).forEach(
+        ([talleSisa, medidaSisa]) => {
+            if (medidaSisa === "" || medidaSisa === null) {
+                return;
+            }
+
+            formData.append("sisaTalles", talleSisa);
+            formData.append("sisaMedidas", medidaSisa);
+        }
     );
 
     // =========================
@@ -498,6 +563,20 @@ export async function editarIndumentaria(
 
         tallesDisponibles,
         precioAdicionalTalleEspecial,
+
+        anchoChicaCm,
+
+        altoChicaCm,
+
+        anchoMediaCm,
+
+        altoMediaCm,
+
+        anchoGrandeCm,
+
+        altoGrandeCm,
+
+        medidasSisaCmPorTalle,
         usaColores,
 
         permiteFrente,
@@ -571,6 +650,57 @@ export async function editarIndumentaria(
         formData,
         "precioAdicionalTalleEspecial",
         precioAdicionalTalleEspecial
+    );
+
+    agregarNumero(
+        formData,
+        "anchoChicaCm",
+        anchoChicaCm
+    );
+
+    agregarNumero(
+        formData,
+        "altoChicaCm",
+        altoChicaCm
+    );
+
+    agregarNumero(
+        formData,
+        "anchoMediaCm",
+        anchoMediaCm
+    );
+
+    agregarNumero(
+        formData,
+        "altoMediaCm",
+        altoMediaCm
+    );
+
+    agregarNumero(
+        formData,
+        "anchoGrandeCm",
+        anchoGrandeCm
+    );
+
+    agregarNumero(
+        formData,
+        "altoGrandeCm",
+        altoGrandeCm
+    );
+
+    /*
+     * El ancho de sisa viaja como dos listas paralelas:
+     * el talle y su medida.
+     */
+    Object.entries(medidasSisaCmPorTalle || {}).forEach(
+        ([talleSisa, medidaSisa]) => {
+            if (medidaSisa === "" || medidaSisa === null) {
+                return;
+            }
+
+            formData.append("sisaTalles", talleSisa);
+            formData.append("sisaMedidas", medidaSisa);
+        }
     );
 
     // =========================
@@ -1047,6 +1177,69 @@ export async function eliminarAreaPersonalizacion(
             await leerError(
                 response,
                 "No se pudo eliminar el área de personalización."
+            )
+        );
+    }
+
+    return true;
+}
+
+// =====================================================
+// COLORES DE UN PRODUCTO (todas sus vistas a la vez)
+// =====================================================
+
+export async function renombrarColorProducto(
+    indumentariaId,
+    desde,
+    hacia
+) {
+
+    const query = new URLSearchParams({ desde, hacia });
+
+    const response =
+        await fetch(
+            `${API_URL}/indumentarias/${indumentariaId}/areas/color?${query}`,
+            {
+                method: "PUT",
+                headers: getAuthHeaders()
+            }
+        );
+
+    if (!response.ok) {
+
+        throw new Error(
+            await leerError(
+                response,
+                "No se pudo renombrar el color."
+            )
+        );
+    }
+
+    return true;
+}
+
+export async function eliminarColorProducto(
+    indumentariaId,
+    nombre
+) {
+
+    const query = new URLSearchParams({ nombre });
+
+    const response =
+        await fetch(
+            `${API_URL}/indumentarias/${indumentariaId}/areas/color?${query}`,
+            {
+                method: "DELETE",
+                headers: getAuthHeaders()
+            }
+        );
+
+    if (!response.ok) {
+
+        throw new Error(
+            await leerError(
+                response,
+                "No se pudo eliminar el color."
             )
         );
     }

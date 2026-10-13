@@ -85,10 +85,14 @@ function clamp(valor, min, max) {
  *
  * Devuelve null si esa categoria no tiene medidas cargadas.
  */
-function obtenerMaximoCm(area, categoria) {
-    if (!area) {
-        return null;
-    }
+/*
+ * Medidas de estampa en centímetros.
+ *
+ * Viven en el producto y valen para todos sus colores y
+ * vistas. Las de las áreas quedan como respaldo, para los
+ * productos cargados antes de este cambio.
+ */
+function obtenerMaximoCm(producto, categoria, area = null) {
 
     const campos = {
         CHICA: ["anchoChicaCm", "altoChicaCm"],
@@ -100,12 +104,21 @@ function obtenerMaximoCm(area, categoria) {
         return null;
     }
 
-    const ancho = Number(area[campos[0]] || 0);
-    const alto = Number(area[campos[1]] || 0);
+    for (const fuente of [producto, area]) {
 
-    return ancho > 0 && alto > 0
-        ? { ancho, alto }
-        : null;
+        if (!fuente) {
+            continue;
+        }
+
+        const ancho = Number(fuente[campos[0]] || 0);
+        const alto = Number(fuente[campos[1]] || 0);
+
+        if (ancho > 0 && alto > 0) {
+            return { ancho, alto };
+        }
+    }
+
+    return null;
 }
 
 /*
@@ -115,7 +128,7 @@ function obtenerMaximoCm(area, categoria) {
  * Si el area no tiene medidas cargadas caemos en los
  * valores de referencia de siempre (20 / 30 cm).
  */
-function obtenerCategoriaEstampa(medidas, area) {
+function obtenerCategoriaEstampa(medidas, producto, area = null) {
     const ancho = Number(medidas?.ancho || 0);
     const alto = Number(medidas?.alto || 0);
 
@@ -124,14 +137,14 @@ function obtenerCategoriaEstampa(medidas, area) {
     }
 
     for (const categoria of ["CHICA", "MEDIA", "GRANDE"]) {
-        const max = obtenerMaximoCm(area, categoria);
+        const max = obtenerMaximoCm(producto, categoria, area);
 
         if (max && ancho <= max.ancho && alto <= max.alto) {
             return categoria;
         }
     }
 
-    if (obtenerMaximoCm(area, "GRANDE")) {
+    if (obtenerMaximoCm(producto, "GRANDE", area)) {
         /*
          * Hay medidas configuradas y el diseño no entra en
          * ninguna: queda GRANDE y el editor ya lo limita.
@@ -943,12 +956,22 @@ export default function PersonalizadorProducto({ producto }) {
             item => item.posicion === area.posicion
         );
 
-        const medidasPorTalle = calibracion?.medidasCmPorTalle || {};
+        const talleNormalizado =
+            String(talleSeleccionado).trim().toUpperCase();
 
+        /*
+         * El ancho de sisa es de la prenda, así que el mismo
+         * vale para el frente y para la espalda. Los dos
+         * puntos sí son de cada vista, porque se marcan
+         * sobre su propia foto.
+         *
+         * Las medidas viejas, guardadas por vista, quedan
+         * como respaldo.
+         */
         const distanciaCm = Number(
-            medidasPorTalle[
-                String(talleSeleccionado).trim().toUpperCase()
-            ] || 0
+            producto.medidasSisaCmPorTalle?.[talleNormalizado] ||
+            calibracion?.medidasCmPorTalle?.[talleNormalizado] ||
+            0
         );
 
         if (
@@ -998,7 +1021,7 @@ export default function PersonalizadorProducto({ producto }) {
          * Restamos medio milimetro porque las medidas se
          * redondean a un decimal antes de enviarlas.
          */
-        const maxCm = obtenerMaximoCm(area, "GRANDE");
+        const maxCm = obtenerMaximoCm(producto, "GRANDE", area);
 
         const escala = obtenerEscalaCmPorcentaje(
             area,
@@ -1136,7 +1159,7 @@ export default function PersonalizadorProducto({ producto }) {
                     talle
                 );
 
-                const categoria = obtenerCategoriaEstampa(medidas, area);
+                const categoria = obtenerCategoriaEstampa(medidas, producto, area);
 
                 if (prioridad[categoria] > prioridad[categoriaMayor]) {
                     categoriaMayor = categoria;
@@ -1152,6 +1175,47 @@ export default function PersonalizadorProducto({ producto }) {
         talle,
         calibraciones
     ]);
+
+    /*
+     * Las medidas que decidimos cobrar, dichas con los
+     * centímetros que cargó el admin en este producto.
+     */
+    const textoDeCategorias = useMemo(() => {
+
+        const chica = obtenerMaximoCm(producto, "CHICA", areaActual);
+        const media = obtenerMaximoCm(producto, "MEDIA", areaActual);
+        const grande = obtenerMaximoCm(producto, "GRANDE", areaActual);
+
+        if (!chica && !media && !grande) {
+            return (
+                "Chica: hasta 20 × 20 cm. Mediana: hasta 30 × 30 cm. " +
+                "Grande: supera los 30 cm de ancho o alto."
+            );
+        }
+
+        const partes = [];
+
+        if (chica) {
+            partes.push(
+                `Chica: hasta ${chica.ancho} × ${chica.alto} cm.`
+            );
+        }
+
+        if (media) {
+            partes.push(
+                `Mediana: hasta ${media.ancho} × ${media.alto} cm.`
+            );
+        }
+
+        if (grande) {
+            partes.push(
+                `Grande: hasta ${grande.ancho} × ${grande.alto} cm.`
+            );
+        }
+
+        return partes.join(" ");
+
+    }, [producto, areaActual]);
 
     function obtenerAdicional(categoria = categoriaEstampa) {
         if (categoria === "CHICA") {
@@ -1710,7 +1774,7 @@ export default function PersonalizadorProducto({ producto }) {
                 );
 
                 const categoriaDiseno =
-                    obtenerCategoriaEstampa(medidas, area);
+                    obtenerCategoriaEstampa(medidas, producto, area);
 
                 disenosFinales.push({
                     rutaImagen: ruta,
@@ -1996,8 +2060,7 @@ export default function PersonalizadorProducto({ producto }) {
                         </strong>
 
                         <span>
-                            Chica: hasta 20 × 20 cm. Mediana: hasta 30 × 30 cm.
-                            Grande: supera los 30 cm de ancho o alto.
+                            {textoDeCategorias}
                         </span>
 
                         <span>

@@ -19,10 +19,18 @@ public interface IndumentariaRepository
         extends JpaRepository<Indumentaria, Long> {
 
     @Override
-    @EntityGraph(attributePaths = { "areasPersonalizacion", "tallesDisponibles" })
+    @EntityGraph(attributePaths = {
+            "areasPersonalizacion",
+            "tallesDisponibles",
+            "medidasSisaCmPorTalle"
+    })
     List<Indumentaria> findAll();
 
     @Override
-    @EntityGraph(attributePaths = { "areasPersonalizacion", "tallesDisponibles" })
+    @EntityGraph(attributePaths = {
+            "areasPersonalizacion",
+            "tallesDisponibles",
+            "medidasSisaCmPorTalle"
+    })
     Optional<Indumentaria> findById(Long id);
 }

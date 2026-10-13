@@ -2,8 +2,10 @@ package com.grenlus.backend.Entity;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -18,6 +20,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 
@@ -57,6 +60,42 @@ public class Indumentaria extends Producto {
     private Boolean incluyeTallesEspecialesGrandes = true;
 
     private BigDecimal precioAdicionalTalleEspecial = BigDecimal.ZERO;
+
+    /*
+     * Medidas de estampa del producto, en centímetros.
+     *
+     * Valen para todos sus colores y vistas: lo que define
+     * si una estampa es chica, mediana o grande es cuánto
+     * mide, no cuánto ocupa de la prenda.
+     *
+     * Antes vivían en cada área (color + vista), lo que
+     * obligaba a recargarlas y dejaba frente y espalda
+     * desparejos.
+     */
+    private BigDecimal anchoChicaCm;
+    private BigDecimal altoChicaCm;
+
+    private BigDecimal anchoMediaCm;
+    private BigDecimal altoMediaCm;
+
+    private BigDecimal anchoGrandeCm;
+    private BigDecimal altoGrandeCm;
+
+    /*
+     * Ancho de sisa a sisa por talle, en centímetros.
+     *
+     * Es una medida de la prenda, no de la foto: la misma
+     * sirve para el frente y para la espalda. Cada vista
+     * marca sus dos puntos sobre su propio mockup.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "indumentaria_sisa",
+            joinColumns = @JoinColumn(name = "indumentaria_id"))
+    @MapKeyColumn(name = "talle", length = 20)
+    @Column(name = "ancho_cm")
+    private Map<String, BigDecimal> medidasSisaCmPorTalle =
+            new LinkedHashMap<>();
 
     /*
      * Talles que este producto ofrece, elegidos uno por uno
