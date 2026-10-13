@@ -1,6 +1,7 @@
 package com.grenlus.backend.Exception;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -101,13 +102,27 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {
-        // Log stack trace to container logs to help debugging (temporary)
+
+        /*
+         * El mensaje al cliente es genérico a propósito, pero sin una
+         * referencia no hay forma de cruzarlo con el log del servidor.
+         * Este código aparece en los dos lados.
+         */
+        String codigo = UUID.randomUUID()
+                .toString()
+                .substring(0, 8)
+                .toUpperCase();
+
+        System.err.println("[ERROR " + codigo + "] "
+                + ex.getClass().getSimpleName() + ": " + ex.getMessage());
+
         ex.printStackTrace();
+
         ApiErrorResponse errorResponse = new ApiErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "Ha ocurrido un error inesperado.");
+                "Ha ocurrido un error inesperado. Código: " + codigo);
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
