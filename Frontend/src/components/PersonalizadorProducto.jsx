@@ -136,7 +136,12 @@ function obtenerCategoriaEstampa(medidas, producto, area = null) {
         return "CHICA";
     }
 
-    for (const categoria of ["CHICA", "MEDIA", "GRANDE"]) {
+    /*
+     * Chica y mediana son umbrales: el diseño entra en la
+     * primera donde quepa. Todo lo que las supere es grande,
+     * sin tope.
+     */
+    for (const categoria of ["CHICA", "MEDIA"]) {
         const max = obtenerMaximoCm(producto, categoria, area);
 
         if (max && ancho <= max.ancho && alto <= max.alto) {
@@ -144,11 +149,10 @@ function obtenerCategoriaEstampa(medidas, producto, area = null) {
         }
     }
 
-    if (obtenerMaximoCm(producto, "GRANDE", area)) {
-        /*
-         * Hay medidas configuradas y el diseño no entra en
-         * ninguna: queda GRANDE y el editor ya lo limita.
-         */
+    if (
+        obtenerMaximoCm(producto, "CHICA", area) ||
+        obtenerMaximoCm(producto, "MEDIA", area)
+    ) {
         return "GRANDE";
     }
 
@@ -599,7 +603,7 @@ export default function PersonalizadorProducto({ producto }) {
          * como estaba: lo ajustamos al máximo que entra y
          * avisamos, porque puede cambiar el precio.
          */
-        const maximo = obtenerMaximoVisual(areaNueva, talle);
+        const maximo = obtenerMaximoVisual(areaNueva);
 
         const anchoMaximo = Math.max(
             0,
@@ -1000,8 +1004,7 @@ export default function PersonalizadorProducto({ producto }) {
     // =====================================================
 
     function obtenerMaximoVisual(
-        area = areaActual,
-        talleSeleccionado = talle
+        area = areaActual
     ) {
         if (!area) {
             return {
@@ -1010,47 +1013,16 @@ export default function PersonalizadorProducto({ producto }) {
             };
         }
 
-        const width = Math.max(0, Number(area.width || 0));
-        const alto = Math.max(0, Number(area.height || 0));
-
         /*
-         * Tope fisico: el diseño no puede pasar la medida
-         * GRANDE del area, porque es la que valida el backend
-         * al confirmar el pedido.
+         * El único tope es el área de estampado.
          *
-         * Restamos medio milimetro porque las medidas se
-         * redondean a un decimal antes de enviarlas.
-         */
-        const maxCm = obtenerMaximoCm(producto, "GRANDE", area);
-
-        const escala = obtenerEscalaCmPorcentaje(
-            area,
-            talleSeleccionado
-        );
-
-        if (maxCm && escala > 0) {
-            const MARGEN_CM = 0.05;
-
-            return {
-                width: Math.min(
-                    width,
-                    Math.max(0, maxCm.ancho - MARGEN_CM) / escala
-                ),
-                height: Math.min(
-                    alto,
-                    Math.max(0, maxCm.alto - MARGEN_CM) / escala
-                )
-            };
-        }
-
-        /*
-         * Sin calibracion las medidas se derivan del area
-         * completa tomando GRANDE como referencia, asi que
-         * el area ya es el tope.
+         * Las medidas de chica y mediana son umbrales de
+         * precio, no límites: pasarse de ellas cambia la
+         * categoría, no impide agrandar.
          */
         return {
-            width,
-            height: alto
+            width: Math.max(0, Number(area.width || 0)),
+            height: Math.max(0, Number(area.height || 0))
         };
     }
 
@@ -1184,12 +1156,11 @@ export default function PersonalizadorProducto({ producto }) {
 
         const chica = obtenerMaximoCm(producto, "CHICA", areaActual);
         const media = obtenerMaximoCm(producto, "MEDIA", areaActual);
-        const grande = obtenerMaximoCm(producto, "GRANDE", areaActual);
 
-        if (!chica && !media && !grande) {
+        if (!chica && !media) {
             return (
                 "Chica: hasta 20 × 20 cm. Mediana: hasta 30 × 30 cm. " +
-                "Grande: supera los 30 cm de ancho o alto."
+                "Grande: de ahí en adelante."
             );
         }
 
@@ -1207,11 +1178,11 @@ export default function PersonalizadorProducto({ producto }) {
             );
         }
 
-        if (grande) {
-            partes.push(
-                `Grande: hasta ${grande.ancho} × ${grande.alto} cm.`
-            );
-        }
+        const ultima = media || chica;
+
+        partes.push(
+            `Grande: más de ${ultima.ancho} × ${ultima.alto} cm.`
+        );
 
         return partes.join(" ");
 

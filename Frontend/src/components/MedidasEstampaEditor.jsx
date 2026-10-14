@@ -13,12 +13,6 @@ const CATEGORIAS = [
         ancho: "anchoMediaCm",
         alto: "altoMediaCm"
     },
-    {
-        id: "GRANDE",
-        nombre: "Grande",
-        ancho: "anchoGrandeCm",
-        alto: "altoGrandeCm"
-    }
 ];
 
 /*
@@ -44,6 +38,13 @@ export default function MedidasEstampaEditor({
                 <label className="medidas-estampa-titulo">
                     Hasta cuánto mide cada estampa
                 </label>
+
+                <small>
+                    Son los límites de precio, no del editor: el
+                    cliente puede agrandar el diseño hasta donde dé
+                    el área de estampado. Todo lo que pase de la
+                    mediana se cobra como grande.
+                </small>
 
                 <div className="medidas-estampa-grid">
 
@@ -105,6 +106,9 @@ export default function MedidasEstampaEditor({
                     Una estampa entra en la primera categoría donde
                     quepa. Si no cargás medidas, se usan 20 × 20 y
                     30 × 30 cm.
+                    {medidas.anchoMediaCm && medidas.altoMediaCm
+                        ? ` Grande: más de ${medidas.anchoMediaCm} × ${medidas.altoMediaCm} cm.`
+                        : ""}
                 </small>
 
             </div>
